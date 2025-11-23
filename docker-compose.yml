@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  db:
+    image: mariadb:11
+    container_name: inventario_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: inventario_it
+      MYSQL_USER: inventario_user
+      MYSQL_PASSWORD: InventarioPass123!
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/inventario_schema.sql:/docker-entrypoint-initdb.d/inventario_schema.sql:ro
+    networks:
+      - inventario_net
+
+  php:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: inventario_php
+    restart: always
+    depends_on:
+      - db
+    volumes:
+      - ./web:/var/www/html
+    ports:
+      - "8080:80"
+    networks:
+      - inventario_net
+
+
+  phpmyadmin:
+    image: lscr.io/linuxserver/phpmyadmin:latest
+    container_name: inventario_phpmyadmin
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+      - PMA_ARBITRARY=1
+      - PMA_HOST=db
+      - PMA_PORT=3306
+    ports:
+      - "8081:80"
+    networks:
+      - inventario_net
+
+
+volumes:
+  db_data:
+
+networks:
+  inventario_net:
