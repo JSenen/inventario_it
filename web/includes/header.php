@@ -31,6 +31,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="redes_gestion.php">Gestión de redes</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="averias_list.php">Gestión de averías</a>
+                </li>
             </ul>
         </div>
     </div>

@@ -108,3 +108,5 @@ CREATE TABLE averias (
     FOREIGN KEY (equipo_id) REFERENCES equipos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+ALTER TABLE averias
+ADD COLUMN fecha_cierre DATETIME NULL AFTER fecha_creacion;

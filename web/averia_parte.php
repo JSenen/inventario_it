@@ -24,6 +24,7 @@ $sql = "
         ON ip.equipo_id = e.id AND ip.es_principal = 1
     WHERE a.id = :id
 ";
+
 $stmt = $pdo->prepare($sql);
 $stmt->execute([':id' => $id]);
 $averia = $stmt->fetch(PDO::FETCH_ASSOC);
