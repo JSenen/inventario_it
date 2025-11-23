@@ -55,6 +55,9 @@ $sql .= " ORDER BY a.fecha_creacion DESC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
+
+logActividad($pdo, 'VER_LISTADO_AVERIAS', 'Listado de averías visualizado');
+
 $averias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>

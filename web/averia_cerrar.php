@@ -15,5 +15,7 @@ $sql = "UPDATE averias
 $stmt = $pdo->prepare($sql);
 $stmt->execute([':id' => $id_averia]);
 
+logActividad($pdo, 'CERRAR_AVERIA', 'Avería cerrada: ID=' . $id_averia);
+
 header('Location: averias_list.php');
 exit;

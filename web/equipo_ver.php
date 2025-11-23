@@ -35,6 +35,9 @@ $sql_ips = "SELECT ie.ip, ie.mac, r.nombre AS red_nombre, r.direccion_red
 
 $stmt_ips = $pdo->prepare($sql_ips);
 $stmt_ips->execute(['id' => $id]);
+
+logActividad($pdo, 'VER_EQUIPO', 'Detalle del equipo visualizado: ID=' . $id);
+
 $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

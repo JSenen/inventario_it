@@ -34,6 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':direccion_red' => $direccion_red,
                     ':mascara'       => (string)$mascaraInt,
                 ]);
+                logActividad($pdo, 'CREAR_RED', "Red: $nombre ($direccion_red/$mascara)");
+
                 header('Location: redes_gestion.php?msg=creada');
                 exit;
             } catch (Exception $e) {

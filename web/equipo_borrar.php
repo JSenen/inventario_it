@@ -11,6 +11,7 @@ if ($id <= 0) {
 // Borramos el equipo. Las IPs asociadas se eliminan por la FK ON DELETE CASCADE.
 $stmt = $pdo->prepare("DELETE FROM equipos WHERE id = :id");
 $stmt->execute([':id' => $id]);
+logActividad($pdo, 'BORRAR_EQUIPO', 'Equipo eliminado: ID=' . $id);
 
 header('Location: index.php?msg=ok');
 exit;

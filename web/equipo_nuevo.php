@@ -96,6 +96,8 @@ if (!empty($_FILES['imagen']['name'])) {
                 ]);
             }
 
+            logActividad($pdo, 'CREAR_EQUIPO', 'Nuevo equipo creado: ID=' . $equipoId);
+
             $pdo->commit();
              // 🔴 Redirección ANTES de sacar NADA de HTML
             header('Location: index.php?msg=ok');

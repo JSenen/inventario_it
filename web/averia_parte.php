@@ -31,6 +31,9 @@ $sql = "
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([':id' => $id]);
+
+logActividad($pdo, 'VER_PARTE_AVERIA', 'Parte de avería visualizado: ID=' . $id);
+
 $averia = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$averia) {

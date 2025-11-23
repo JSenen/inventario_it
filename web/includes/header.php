@@ -43,6 +43,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="averias_list.php">Gestión de averías</a>
                 </li>
+                <?php if ($_SESSION['rol'] === 'admin'): ?>
+    <a class="nav-link" href="actividad_logs.php">logs</a>
+<?php endif; ?>
                 <?php if (!empty($_SESSION['tip'])): ?>
     <span class="navbar-text me-3">
         <?= htmlspecialchars($_SESSION['tip']) ?> (<?= htmlspecialchars($_SESSION['rol']) ?>)

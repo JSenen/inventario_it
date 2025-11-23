@@ -144,5 +144,15 @@ CREATE TABLE usuarios (
 -- php -r "echo hash('sha3-256', 'TuClaveSuperSegura123!') . PHP_EOL;"
 
 -- Insertar usuario admin por defecto (cambiar password después de la primera conexión)
-INSERT INTO usuarios (tip, password_hash, rol)
-VALUES ('X12345X', 'EHAS_COPIADO', 'admin');
+--INSERT INTO usuarios (tip, password_hash, rol)
+--VALUES ('X12345X', 'EHAS_COPIADO', 'admin');
+
+-- 8) TABLA ACTIVIDAD LOGS
+CREATE TABLE actividad_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_tip VARCHAR(20) NOT NULL,
+    accion VARCHAR(255) NOT NULL,
+    detalles TEXT,
+    ip VARCHAR(45) DEFAULT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

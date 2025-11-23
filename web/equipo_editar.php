@@ -241,6 +241,7 @@ if ($estado === 'Baja') {
                 }
                 */
             }
+            logActividad($pdo, 'EDITAR_EQUIPO', 'Equipo editado: ID=' . $id);
 
             $pdo->commit();
 
