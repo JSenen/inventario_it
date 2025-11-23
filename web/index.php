@@ -137,6 +137,7 @@ require_once __DIR__ . '/includes/header.php';
                         <td><?= htmlspecialchars($eq['estado']) ?></td>
                         <td>
                             <div class="btn-group btn-group-sm" role="group">
+                                <a href="equipo_ver.php?id=<?= $eq['id'] ?>" class="btn btn-outline-primary">Ver</a>
                                 <a href="equipo_editar.php?id=<?= $eq['id'] ?>" class="btn btn-outline-secondary">Editar</a>
                                 <a href="equipo_borrar.php?id=<?= $eq['id'] ?>"
                                    class="btn btn-outline-danger"
