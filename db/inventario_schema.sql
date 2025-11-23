@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS redes (
 ) ENGINE=InnoDB;
 
 INSERT INTO redes (nombre, direccion_red, mascara, gateway, vlan, notas) VALUES
-('Red 1', '10.52.2.0', '255.255.255.0', '10.52.2.1', NULL, 'Red principal 10.52.2.x'),
-('Red 2', '10.52.3.0', '255.255.255.0', '10.52.3.1', NULL, 'Red secundaria 10.52.3.x');
+('Red 2', '10.52.2.0', '255.255.255.0', '10.52.2.1', NULL, 'Red 2 10.52.2.x'),
+('Red 3', '10.52.3.0', '255.255.255.0', '10.52.3.1', NULL, 'Red 3 10.52.3.x');
 
 -- 2) TABLA EQUIPOS
 CREATE TABLE IF NOT EXISTS equipos (
@@ -114,3 +114,12 @@ ADD COLUMN fecha_cierre DATETIME NULL AFTER fecha_creacion;
 ALTER TABLE equipos
 ADD COLUMN fecha_baja DATETIME NULL AFTER fecha_compra;
 
+-- PARA HACER TRUNCATE A TABLAS
+-- SET FOREIGN_KEY_CHECKS = 0;
+-- TRUNCATE TABLE ips_equipos;
+-- TRUNCATE TABLE licencias_asignadas;
+-- TRUNCATE TABLE licencias;
+-- TRUNCATE TABLE averias;
+-- TRUNCATE TABLE equipos;
+-- TRUNCATE TABLE redes;
+-- SET FOREIGN_KEY_CHECKS = 1;

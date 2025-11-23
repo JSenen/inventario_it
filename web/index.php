@@ -48,6 +48,19 @@ $sql = "
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$totalequipos = count($equipos);
+$totalactivos = 0;
+$totalaveriados = 0;
+$totalbaja = 0;
+foreach ($equipos as $eq) {
+    if ($eq['estado'] === 'Activo') {
+        $totalactivos++;
+    } elseif ($eq['estado'] === 'Averiado') {
+        $totalaveriados++;
+    } elseif ($eq['estado'] === 'Baja') {
+        $totalbaja++;
+    }
+}
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -76,7 +89,13 @@ require_once __DIR__ . '/includes/header.php';
         <a href="index.php" class="btn btn-outline-secondary">Limpiar</a>
     </div>
 </form>
-
+ <div>
+                    <span class="badge bg-secondary">Total: <?= $totalequipos ?></span>
+                    <span class="badge bg-success">Activos: <?= $totalactivos ?></span>
+                    <span class="badge bg-warning">Averiado: <?= $totalaveriados ?></span>
+                    <span class="badge bg-danger">Baja: <?= $totalbaja ?></span>
+                
+                </div>
 <?php if (isset($_GET['msg']) && $_GET['msg'] === 'ok'): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         Operación realizada correctamente.
