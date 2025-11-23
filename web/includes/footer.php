@@ -3,7 +3,7 @@
 ?>
 </div> <!-- .container -->
 <footer class="bg-light text-center text-muted py-3 mt-4 border-top">
-    <small>Inventario Informático — Docker</small>
+    <small>Inventario Informático — By JSenen </small>
 </footer>
 
 <!-- Bootstrap local JS -->

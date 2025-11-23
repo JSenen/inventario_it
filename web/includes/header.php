@@ -11,8 +11,17 @@
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
 </head>
 <body>
+    <!--
+    <div style="padding:10px 0; text-align:left;">
+    <img src="assets/logo_departamento.png" 
+         alt="Logo del departamento" 
+         style="height:60px;">
+    </div> -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
+    <div class="container-fluid d-flex align-items-center">
+        <img src="assets/logo_departamento.png" 
+             alt="Logo" 
+             style="height:80px; margin-right:15px;">
         <a class="navbar-brand" href="index.php">Inventario IT</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarNav" aria-controls="navbarNav"

@@ -10,17 +10,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $accion = $_POST['accion'] ?? '';
 
     if ($accion === 'crear') {
-        $nombre        = strtoupper(trim($_POST['nombre'] ?? ''));
-        $direccion_red = trim($_POST['direccion_red'] ?? '');
+    $nombre        = strtoupper(trim($_POST['nombre'] ?? ''));
+    $direccion_red = trim($_POST['direccion_red'] ?? '');
+    $mascara       = trim($_POST['mascara'] ?? '24');
 
-        if ($nombre === '' || $direccion_red === '') {
-            $errores[] = "Nombre y dirección de red son obligatorios para crear una red.";
+    if ($nombre === '' || $direccion_red === '') {
+        $errores[] = "Nombre y dirección de red son obligatorios para crear una red.";
+    } else {
+        // Validar máscara simple: 16–30
+        $mascaraInt = (int)$mascara;
+        if ($mascaraInt < 16 || $mascaraInt > 30) {
+            $errores[] = "La máscara CIDR debe estar entre 16 y 30.";
         } else {
             try {
-                $stmt = $pdo->prepare("INSERT INTO redes (nombre, direccion_red) VALUES (:nombre, :direccion_red)");
+                $stmt = $pdo->prepare("
+                    INSERT INTO redes (nombre, direccion_red, mascara)
+                    VALUES (:nombre, :direccion_red, :mascara)
+                ");
                 $stmt->execute([
                     ':nombre'        => $nombre,
                     ':direccion_red' => $direccion_red,
+                    ':mascara'       => (string)$mascaraInt,
                 ]);
                 header('Location: redes_gestion.php?msg=creada');
                 exit;
@@ -28,22 +38,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errores[] = "Error al crear la red: " . $e->getMessage();
             }
         }
+    }
 
     } elseif ($accion === 'editar') {
-        $id            = (int)($_POST['id'] ?? 0);
-        $nombre        = strtoupper(trim($_POST['nombre'] ?? ''));
-        $direccion_red = trim($_POST['direccion_red'] ?? '');
+    $id            = (int)($_POST['id'] ?? 0);
+    $nombre        = strtoupper(trim($_POST['nombre'] ?? ''));
+    $direccion_red = trim($_POST['direccion_red'] ?? '');
+    $mascara       = trim($_POST['mascara'] ?? '24');
 
-        if ($id <= 0) {
-            $errores[] = "ID de red no válido.";
-        } elseif ($nombre === '' || $direccion_red === '') {
-            $errores[] = "Nombre y dirección de red son obligatorios.";
+    if ($id <= 0) {
+        $errores[] = "ID de red no válido.";
+    } elseif ($nombre === '' || $direccion_red === '') {
+        $errores[] = "Nombre y dirección de red son obligatorios.";
+    } else {
+        $mascaraInt = (int)$mascara;
+        if ($mascaraInt < 16 || $mascaraInt > 30) {
+            $errores[] = "La máscara CIDR debe estar entre 16 y 30.";
         } else {
             try {
-                $stmt = $pdo->prepare("UPDATE redes SET nombre = :nombre, direccion_red = :direccion_red WHERE id = :id");
+                $stmt = $pdo->prepare("
+                    UPDATE redes
+                    SET nombre = :nombre,
+                        direccion_red = :direccion_red,
+                        mascara = :mascara
+                    WHERE id = :id
+                ");
                 $stmt->execute([
                     ':nombre'        => $nombre,
                     ':direccion_red' => $direccion_red,
+                    ':mascara'       => (string)$mascaraInt,
                     ':id'            => $id,
                 ]);
                 header('Location: redes_gestion.php?msg=editada');
@@ -52,6 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errores[] = "Error al editar la red: " . $e->getMessage();
             }
         }
+    }
+
 
     } elseif ($accion === 'borrar') {
         $id = (int)($_POST['id'] ?? 0);
@@ -113,7 +138,8 @@ if ($editId > 0) {
 }
 
 // Listado de redes
-$stmtRedes = $pdo->query("SELECT id, nombre, direccion_red FROM redes ORDER BY id ASC");
+$stmtRedes = $pdo->query("SELECT id, nombre, direccion_red, mascara FROM redes ORDER BY id ASC");
+
 $redes = $stmtRedes->fetchAll(PDO::FETCH_ASSOC);
 
 require_once __DIR__ . '/includes/header.php';
@@ -179,12 +205,43 @@ require_once __DIR__ . '/includes/header.php';
                             class="form-control"
                             required
                             value="<?= htmlspecialchars($editRed['direccion_red'] ?? '') ?>"
-                            placeholder="Ej: 10.52.2.0/24 o 10.52.2.0"
+                            placeholder="Ej: 10.52.2.0/24"
                         >
                         <div class="form-text">
                             Se asume /24 para el cálculo de IPs libres (rango 1–254).
                         </div>
                     </div>
+                    <div class="col-12">
+    <label class="form-label">Dirección de red *</label>
+    <input
+        type="text"
+        name="direccion_red"
+        class="form-control"
+        required
+        value="<?= htmlspecialchars($editRed['direccion_red'] ?? '') ?>"
+        placeholder="Ej: 192.168.3.0"
+    >
+    <div class="form-text">
+        La máscara se indica en el campo siguiente (CIDR).
+    </div>
+</div>
+
+<div class="col-12">
+    <label class="form-label">Máscara (CIDR) *</label>
+    <input
+        type="number"
+        name="mascara"
+        class="form-control"
+        min="16"
+        max="30"
+        value="<?= htmlspecialchars($editRed['mascara'] ?? '24') ?>"
+        required
+    >
+    <div class="form-text">
+        Ejemplos: 24 (=255.255.255.0), 23 (=255.255.254.0), etc.
+    </div>
+</div>
+
 
                     <div class="col-12 mt-3">
                         <button type="submit" class="btn btn-success">
@@ -225,7 +282,13 @@ require_once __DIR__ . '/includes/header.php';
                                     <tr>
                                         <td><?= (int)$r['id'] ?></td>
                                         <td><?= htmlspecialchars($r['nombre']) ?></td>
-                                        <td><code><?= htmlspecialchars($r['direccion_red']) ?></code></td>
+                                        <?php
+$textoRed = $r['direccion_red'];
+if (!empty($r['mascara'])) {
+    $textoRed .= '/' . $r['mascara'];
+}
+?>
+<td><code><?= htmlspecialchars($textoRed) ?></code></td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <a href="redes_gestion.php?editar=<?= (int)$r['id'] ?>"

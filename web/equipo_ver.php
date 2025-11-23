@@ -57,11 +57,21 @@ $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
     <h4>Información del equipo</h4>
     <table class="table table-bordered">
         <tr><th>ID</th> <td><?= htmlspecialchars($equipo['id']) ?></td></tr>
+        <?php if (!empty($equipo['imagen'])): ?>
+        <tr>
+            <th>Imagen</th>
+            <td>
+                <img src="<?= htmlspecialchars($equipo['imagen']) ?>"
+                     alt="Imagen del equipo"
+                     style="max-width: 250px; height: auto;">
+            </td>
+        </tr>
+    <?php endif; ?>
         <tr><th>Tipo</th> <td><?= htmlspecialchars($equipo['tipo']) ?></td></tr>
         <tr><th>Marca</th> <td><?= htmlspecialchars($equipo['marca']) ?></td></tr>
         <tr><th>Modelo</th> <td><?= htmlspecialchars($equipo['modelo']) ?></td></tr>
         <tr><th>Número de serie</th> <td><?= htmlspecialchars($equipo['numero_serie']) ?></td></tr>
-        <tr><th>Hostname</th> <td><?= htmlspecialchars($equipo['hostname']) ?></td></tr>
+        <tr><th>Servicio</th> <td><?= htmlspecialchars($equipo['hostname']) ?></td></tr>
         <tr><th>Usuario asignado</th> <td><?= htmlspecialchars($equipo['usuario_asignado']) ?></td></tr>
         <tr><th>Departamento</th> <td><?= htmlspecialchars($equipo['departamento']) ?></td></tr>
         <tr><th>Ubicación</th> <td><?= htmlspecialchars($equipo['ubicacion']) ?></td></tr>

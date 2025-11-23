@@ -17,6 +17,7 @@ $sql = "
         e.usuario_asignado,
         e.departamento,
         e.ubicacion,
+        e.imagen,
         ip.ip AS ip_principal
     FROM averias a
     JOIN equipos e ON e.id = a.equipo_id
@@ -24,6 +25,7 @@ $sql = "
         ON ip.equipo_id = e.id AND ip.es_principal = 1
     WHERE a.id = :id
 ";
+
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([':id' => $id]);
@@ -114,6 +116,21 @@ if (!$averia) {
                     <th style="width: 200px;">ID equipo</th>
                     <td><?= (int)$averia['equipo_id'] ?></td>
                 </tr>
+                <?php if (!empty($averia['imagen'])): ?>
+                <tr>
+                    <th>Imagen</th>
+                    <td>
+                        <img src="<?= htmlspecialchars($averia['imagen']) ?>"
+                            alt="Imagen del equipo"
+                            style="max-width:180px; height:auto; border:1px solid #ccc; padding:4px;">
+                    </td>
+                </tr>
+                <?php endif; ?>
+
+        <tr>
+            <th>Tipo</th>
+            <td><?= htmlspecialchars($averia['tipo']) ?></td>
+        </tr>
                 <tr>
                     <th>Tipo / Marca / Modelo</th>
                     <td><?= htmlspecialchars($averia['tipo']) ?> / <?= htmlspecialchars($averia['marca']) ?> / <?= htmlspecialchars($averia['modelo']) ?></td>
@@ -123,7 +140,7 @@ if (!$averia) {
                     <td><?= htmlspecialchars($averia['numero_serie']) ?></td>
                 </tr>
                 <tr>
-                    <th>Hostname</th>
+                    <th>Servicio</th>
                     <td><?= htmlspecialchars($averia['hostname']) ?></td>
                 </tr>
                 <tr>

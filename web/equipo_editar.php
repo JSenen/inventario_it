@@ -34,6 +34,38 @@ $redes = $redesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $errores = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // Mantener la imagen actual por defecto
+    $imagenRuta = $equipo['imagen'] ?? null;
+
+    // Si se sube una nueva imagen, sustituirla
+if (!empty($_FILES['imagen']['name'])) {
+    $uploadDir = __DIR__ . '/uploads/equipos/';
+
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0775, true);
+    }
+
+    $nombreOriginal = basename($_FILES['imagen']['name']);
+    $nombreLimpio   = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
+    $nombreFinal    = time() . '_' . $nombreLimpio;
+
+    $rutaRelativa = 'uploads/equipos/' . $nombreFinal;
+    $rutaFisica   = $uploadDir . $nombreFinal;
+
+    if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaFisica)) {
+
+        // Borrar la imagen anterior si existe
+        if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {
+            @unlink(__DIR__ . '/' . $imagenRuta);
+        }
+
+        $imagenRuta = $rutaRelativa;
+    } else {
+        $errores[] = "No se pudo guardar la nueva imagen del equipo.";
+    }
+}
+
     // Campos principales
     $tipo             = strtoupper(trim($_POST['tipo'] ?? ''));
     $marca            = strtoupper(trim($_POST['marca'] ?? ''));
@@ -109,7 +141,8 @@ if ($estado === 'Baja') {
                 proveedor = :proveedor,
                 coste = :coste,
                 estado = :estado,
-                notas = :notas
+                notas = :notas,
+                imagen = :imagen
               WHERE id = :id";
 
             $stmtUp = $pdo->prepare($sqlEquipo);
@@ -127,6 +160,7 @@ if ($estado === 'Baja') {
                 ':coste'            => $coste !== '' ? $coste : null,
                 ':estado'           => $estado,
                 ':notas'            => $notas,
+                ':imagen'           => $imagenRuta,   
                 ':id'               => $id,
             ]);
 
@@ -276,7 +310,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 <?php endif; ?>
 
-<form method="post" class="row g-3">
+<form method="post" class="row g-3" enctype="multipart/form-data">
     <div class="col-md-4">
         <label class="form-label">Tipo *</label>
         <select name="tipo" class="form-select" required>
@@ -305,8 +339,18 @@ require_once __DIR__ . '/includes/header.php';
         <input type="text" name="numero_serie" class="form-control" value="<?= htmlspecialchars($equipo['numero_serie'] ?? '') ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label">Hostname</label>
-        <input type="text" name="hostname" class="form-control" value="<?= htmlspecialchars($equipo['hostname'] ?? '') ?>">
+        <label class="form-label">Servicio</label>
+        <select name="hostname" class="form-select">
+            <?php
+            $hostnames = ['Intranet', 'Internet', 'VPN', 'Ninguno', 'Otro'];
+            foreach ($hostnames as $hostname):
+            ?>
+                <option value="<?= $hostname ?>" <?= (($equipo['hostname'] ?? '') === $hostname) ? 'selected' : '' ?>>
+                    <?= $hostname ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+       
     </div>
     <div class="col-md-4">
         <label class="form-label">Usuario asignado</label>
@@ -347,6 +391,21 @@ require_once __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
         </select>
     </div>
+
+    <div class="mb-3">
+        <label for="imagen" class="form-label">Imagen del equipo</label>
+            <?php if (!empty($equipo['imagen'])): ?>
+                <div class="mb-3">
+                    <label class="form-label">Imagen actual:</label><br>
+                    <img src="<?= htmlspecialchars($equipo['imagen']) ?>" 
+                        alt="Imagen del equipo"
+                        style="max-width:180px; height:auto; border:1px solid #ccc; padding:4px;">
+                </div>
+            <?php endif; ?>
+
+        <input type="file" class="form-control" name="imagen" accept="image/*">
+    </div>
+
 
     <div class="col-12">
         <label class="form-label">Notas</label>

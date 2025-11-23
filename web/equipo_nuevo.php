@@ -28,15 +28,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($tipo === '') {
         $errores[] = "El campo Tipo es obligatorio.";
     }
+    // Por defecto, sin imagen
+$imagenRuta = null;
+
+// Procesar imagen si se ha enviado
+if (!empty($_FILES['imagen']['name'])) {
+    $uploadDir = __DIR__ . '/uploads/equipos/';
+
+    // Crear carpeta si no existe
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0775, true);
+    }
+
+    // Nombre de archivo limpio
+    $nombreOriginal = basename($_FILES['imagen']['name']);
+    $nombreLimpio = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
+    $nombreFinal = time() . '_' . $nombreLimpio;
+
+    $rutaRelativa = 'uploads/equipos/' . $nombreFinal;     // Lo que guardas en BD
+    $rutaFisica   = $uploadDir . $nombreFinal;             // Ruta en el disco
+
+    if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaFisica)) {
+        $imagenRuta = $rutaRelativa;
+    } else {
+        $errores[] = "No se pudo guardar la imagen del equipo.";
+    }
+}
 
     if (empty($errores)) {
         try {
             $pdo->beginTransaction();
 
             $sqlEquipo = "INSERT INTO equipos 
-                (tipo, marca, modelo, numero_serie, hostname, usuario_asignado, departamento, ubicacion, fecha_compra, proveedor, coste, estado, notas)
+                (tipo, marca, modelo, numero_serie, hostname, usuario_asignado, departamento, ubicacion, fecha_compra, proveedor, coste, estado, notas, imagen)
                 VALUES 
-                (:tipo, :marca, :modelo, :numero_serie, :hostname, :usuario_asignado, :departamento, :ubicacion, :fecha_compra, :proveedor, :coste, :estado, :notas)";
+                (:tipo, :marca, :modelo, :numero_serie, :hostname, :usuario_asignado, :departamento, :ubicacion, :fecha_compra, :proveedor, :coste, :estado, :notas, :imagen)";
             $stmtEq = $pdo->prepare($sqlEquipo);
             $stmtEq->execute([
                 ':tipo'            => $tipo,
@@ -52,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':coste'           => $coste !== '' ? $coste : null,
                 ':estado'          => $estado,
                 ':notas'           => $notas,
+                ':imagen'          => $imagenRuta,
             ]);
 
             $equipoId = (int)$pdo->lastInsertId();
@@ -98,7 +125,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 <?php endif; ?>
 
-<form method="post" class="row g-3">
+<form method="post" class="row g-3" enctype="multipart/form-data">
     <div class="col-md-4">
         <label class="form-label">Tipo *</label>
         <select name="tipo" class="form-select" required>
@@ -127,8 +154,19 @@ require_once __DIR__ . '/includes/header.php';
         <input type="text" name="numero_serie" class="form-control" value="<?= htmlspecialchars($_POST['numero_serie'] ?? '') ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label">Hostname</label>
-        <input type="text" name="hostname" class="form-control" value="<?= htmlspecialchars($_POST['hostname'] ?? '') ?>">
+        <label class="form-label">Servicio</label>
+        <select name="estado" class="form-select">
+            <?php
+            $hostnames = ['Intranet', 'Internet', 'VPN', 'Ninguno', 'Otro'];
+            $hostname = $_POST['hostname'] ?? '';
+            foreach ($hostnames as $hostname):
+            ?>
+                <option value="<?= $hostname ?>" <?= ($hostnames === $hostname) ? 'selected' : '' ?>>
+                    <?= $hostname ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        
     </div>
     <div class="col-md-4">
         <label class="form-label">Usuario asignado</label>
@@ -170,6 +208,12 @@ require_once __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
         </select>
     </div>
+
+    <div class="mb-3">
+        <label for="imagen" class="form-label">Imagen del equipo</label>
+        <input type="file" class="form-control" name="imagen" accept="image/*">
+    </div>
+
 
     <div class="col-12">
         <label class="form-label">Notas</label>

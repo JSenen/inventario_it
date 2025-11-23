@@ -35,7 +35,8 @@ $sql = "
         e.ubicacion,
         e.estado,
         ip.ip,
-        r.nombre AS red_nombre
+        r.nombre AS red_nombre,
+        e.imagen
     FROM equipos e
     LEFT JOIN ips_equipos ip 
         ON e.id = ip.equipo_id AND ip.es_principal = 1
@@ -71,7 +72,7 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <!-- Buscador -->
-<form method="get" class="row g-2 mb-3">
+<form method="get" class="row g-2 mb-3" enctype="multipart/form-data">
     <div class="col-md-4 col-sm-8">
         <input
             type="text"
@@ -125,10 +126,11 @@ require_once __DIR__ . '/includes/header.php';
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
+                    <th>Imagen</th>
                     <th>Tipo</th>
                     <th>Marca / Modelo</th>
                     <th>Usuario / Depto.</th>
-                    <th>Hostname</th>
+                    <th>Servicio</th>
                     <th>Ubicación</th>
                     <th>IP principal</th>
                     <th>Red</th>
@@ -138,35 +140,52 @@ require_once __DIR__ . '/includes/header.php';
             </thead>
             <tbody>
                 <?php foreach ($equipos as $eq): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($eq['id']) ?></td>
-                        <td><?= htmlspecialchars($eq['tipo']) ?></td>
-                        <td>
-                            <strong><?= htmlspecialchars($eq['marca']) ?></strong><br>
-                            <small class="text-muted"><?= htmlspecialchars($eq['modelo']) ?></small>
-                        </td>
-                        <td>
-                            <?= htmlspecialchars($eq['usuario_asignado']) ?><br>
-                            <small class="text-muted"><?= htmlspecialchars($eq['departamento']) ?></small>
-                        </td>
-                        <td><?= htmlspecialchars($eq['hostname']) ?></td>
-                        <td><?= htmlspecialchars($eq['ubicacion']) ?></td>
-                        <td><?= htmlspecialchars($eq['ip'] ?? '') ?></td>
-                        <td><?= htmlspecialchars($eq['red_nombre'] ?? '') ?></td>
-                        <td><?= htmlspecialchars($eq['estado']) ?></td>
-                        <td>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a href="equipo_ver.php?id=<?= $eq['id'] ?>" class="btn btn-outline-primary">Ver</a>
-                                <a href="equipo_editar.php?id=<?= $eq['id'] ?>" class="btn btn-outline-secondary">Editar</a>
-                                <a href="equipo_borrar.php?id=<?= $eq['id'] ?>"
-                                   class="btn btn-outline-danger"
-                                   onclick="return confirm('¿Seguro que quieres eliminar este equipo?');">
-                                    Borrar
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
+    <tr>
+        <td><?= htmlspecialchars($eq['id']) ?></td>
+
+        <!-- Imagen -->
+        <td>
+            <?php if (!empty($eq['imagen'])): ?>
+                <img src="<?= htmlspecialchars($eq['imagen']) ?>" 
+                     alt="Imagen del equipo"
+                     style="width: 50px; height: auto;">
+            <?php else: ?>
+                <span class="text-muted">Sin imagen</span>
+            <?php endif; ?>
+        </td>
+
+        <td><?= htmlspecialchars($eq['tipo']) ?></td>
+
+        <td>
+            <strong><?= htmlspecialchars($eq['marca']) ?></strong><br>
+            <small class="text-muted"><?= htmlspecialchars($eq['modelo']) ?></small>
+        </td>
+
+        <td>
+            <?= htmlspecialchars($eq['usuario_asignado']) ?><br>
+            <small class="text-muted"><?= htmlspecialchars($eq['departamento']) ?></small>
+        </td>
+
+        <td><?= htmlspecialchars($eq['hostname']) ?></td>
+        <td><?= htmlspecialchars($eq['ubicacion']) ?></td>
+        <td><?= htmlspecialchars($eq['ip'] ?? '') ?></td>
+        <td><?= htmlspecialchars($eq['red_nombre'] ?? '') ?></td>
+        <td><?= htmlspecialchars($eq['estado']) ?></td>
+
+        <td>
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="equipo_ver.php?id=<?= $eq['id'] ?>" class="btn btn-outline-primary">Ver</a>
+                <a href="equipo_editar.php?id=<?= $eq['id'] ?>" class="btn btn-outline-secondary">Editar</a>
+                <a href="equipo_borrar.php?id=<?= $eq['id'] ?>"
+                   class="btn btn-outline-danger"
+                   onclick="return confirm('¿Seguro que quieres eliminar este equipo?');">
+                    Borrar
+                </a>
+            </div>
+        </td>
+    </tr>
+<?php endforeach; ?>
+
             </tbody>
         </table>
     </div>

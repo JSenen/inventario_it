@@ -2,7 +2,8 @@
 require_once __DIR__ . '/config.php';
 
 // Obtenemos todas las redes
-$stmtRedes = $pdo->query("SELECT id, nombre, direccion_red FROM redes ORDER BY id ASC");
+$stmtRedes = $pdo->query("SELECT id, nombre, direccion_red, mascara FROM redes ORDER BY id ASC");
+
 $redes = $stmtRedes->fetchAll(PDO::FETCH_ASSOC);
 
 function calcularPrefix($direccionRed) {
@@ -60,6 +61,11 @@ require_once __DIR__ . '/includes/header.php';
         $direccionRed = $r['direccion_red'];
         $prefix       = calcularPrefix($direccionRed);
 
+        $textoRed = $direccionRed;
+if (!empty($mascara)) {
+    $textoRed .= '/' . $mascara;
+}
+
         $inicio = 1;
         $fin    = 254;
 
@@ -93,11 +99,14 @@ require_once __DIR__ . '/includes/header.php';
         ?>
 
         <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <strong><?= htmlspecialchars($nombreRed) ?></strong>
-                    <span class="text-muted"> (<?= htmlspecialchars($direccionRed) ?>)</span>
-                </div>
+           <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+        <strong><?= htmlspecialchars($nombreRed) ?></strong>
+        <span class="text-muted">
+            (<?= htmlspecialchars($textoRed) ?>)
+        </span>
+    </div>
+
                 <div>
                     <span class="badge bg-secondary">Total: <?= $totalPosibles ?> IPs</span>
                     <span class="badge bg-success">Libres: <?= $totalLibres ?></span>

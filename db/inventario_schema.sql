@@ -123,3 +123,13 @@ ADD COLUMN fecha_baja DATETIME NULL AFTER fecha_compra;
 -- TRUNCATE TABLE equipos;
 -- TRUNCATE TABLE redes;
 -- SET FOREIGN_KEY_CHECKS = 1;
+
+ALTER TABLE equipos 
+ADD COLUMN imagen TEXT NULL AFTER proveedor;
+-- La columna 'imagen' almacenará la ruta o el nombre del archivo de imagen asociado al equipo.
+
+ALTER TABLE redes 
+    MODIFY mascara VARCHAR(20) NULL DEFAULT '24';
+-- Permitir valores NULL en la columna 'mascara' y establecer un valor predeterminado de '24'.
+
+
