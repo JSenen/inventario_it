@@ -66,3 +66,46 @@ inventario-it/
 
 sudo chown -R www-data:www-data /home/jsenen/inventario-it/web/uploads
 sudo chmod -R 775 /home/jsenen/inventario-it/web/uploads
+
+# Migración del proyecto Inventario-IT a otro PC
+
+Este documento explica cómo **mover el proyecto completo** (código + base de datos + imágenes + configuración) a otro ordenador, ya sea para clonarlo, migrarlo o ponerlo en producción.
+
+Incluye procedimientos tanto para instalaciones **con Docker** como para **LAMP clásico (Apache + PHP + MySQL/MariaDB)**.
+
+---
+
+## 📁 1. Qué hay que copiar
+
+Para que el proyecto funcione igual en otro PC necesitas tres cosas:
+
+1. **Código completo del proyecto**, normalmente en:
+2. **Base de datos MySQL/MariaDB**: contiene equipos, usuarios, averías, redes, logs, etc.
+3. **Carpeta de imágenes**:
+   Ya contiene las imágenes de los equipos, necesarias para que todo se vea igual.
+
+---
+
+## 🗄️ 2. Exportar la base de datos del PC original
+
+### ✔️ Si MySQL/MariaDB está instalado en el sistema (LAMP)
+
+Ejecutar:
+
+```bash
+mysqldump -u TU_USUARIO -p inventario_it > inventario_it_backup.sql
+docker ps
+docker exec -i inventario-db \
+    mysqldump -u TU_USUARIO -p inventario_it > inventario_it_backup.sql
+scp -r usuario@IP_ORIGEN:/ruta/inventario-it ~/inventario-it
+scp usuario@IP_ORIGEN:/ruta/inventario_it_backup.sql ~/
+mysql -u TU_USUARIO -p -e "CREATE DATABASE inventario_it CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u TU_USUARIO -p inventario_it < inventario_it_backup.sql
+```
+
+## PERMISOS Carpetas
+
+cd ~/inventario-it/web
+mkdir -p uploads/equipos
+sudo chown -R www-data:www-data uploads
+sudo chmod -R 775 uploads
