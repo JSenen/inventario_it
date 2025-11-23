@@ -1,4 +1,5 @@
 <?php
+require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 
 // Cargar redes para el select

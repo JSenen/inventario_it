@@ -1,6 +1,8 @@
 <?php
+require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/header.php';
+
 
 if (!isset($_GET['id'])) {
     die("ID de equipo no especificado.");

@@ -132,4 +132,17 @@ ALTER TABLE redes
     MODIFY mascara VARCHAR(20) NULL DEFAULT '24';
 -- Permitir valores NULL en la columna 'mascara' y establecer un valor predeterminado de '24'.
 
+-- 7) TABLA USUARIOS
+CREATE TABLE usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tip VARCHAR(20) NOT NULL UNIQUE,
+    password_hash CHAR(64) NOT NULL,   -- SHA3-256 en hex = 64 chars
+    rol ENUM('admin','usuario') NOT NULL DEFAULT 'usuario',
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Generar hash de la contraseña (ejemplo con PHP):
+-- php -r "echo hash('sha3-256', 'TuClaveSuperSegura123!') . PHP_EOL;"
 
+-- Insertar usuario admin por defecto (cambiar password después de la primera conexión)
+INSERT INTO usuarios (tip, password_hash, rol)
+VALUES ('X12345X', 'EHAS_COPIADO', 'admin');

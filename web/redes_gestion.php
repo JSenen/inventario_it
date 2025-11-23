@@ -1,6 +1,8 @@
 <?php
 // redes_gestion.php
+require_once 'auth.php';
 require_once __DIR__ . '/config.php';
+
 
 $errores = [];
 $mensajes = [];

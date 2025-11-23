@@ -1,6 +1,8 @@
 <?php
 // index.php
+require_once 'auth.php';
 require_once __DIR__ . '/config.php';
+
 
 // --- Buscar ---
 $search = strtoupper(trim($_GET['q'] ?? ''));
