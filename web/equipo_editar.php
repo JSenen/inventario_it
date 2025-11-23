@@ -7,7 +7,7 @@ if ($id <= 0) {
     header('Location: index.php');
     exit;
 }
-
+$id_equipo = $id;
 // Cargar equipo
 $stmtEq = $pdo->prepare("SELECT * FROM equipos WHERE id = :id");
 $stmtEq->execute([':id' => $id]);
@@ -74,6 +74,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errores[] = "El número de asunto es obligatorio cuando el equipo está en estado AVERIADO.";
         }
     }
+
+   // Si el estado pasa a BAJA por primera vez → guardar fecha_baja
+if ($estado === 'Baja') {
+
+    $sql_check = "SELECT fecha_baja FROM equipos WHERE id = :id";
+    $stmt_check = $pdo->prepare($sql_check);
+    $stmt_check->execute([':id' => $id_equipo]);
+    $check = $stmt_check->fetch(PDO::FETCH_ASSOC);
+
+    // Solo insertar fecha_baja si está vacía (evita sobrescritura)
+    if (empty($check['fecha_baja'])) {
+        $sql_baja = "UPDATE equipos SET fecha_baja = NOW() WHERE id = :id";
+        $stmt_baja = $pdo->prepare($sql_baja);
+        $stmt_baja->execute([':id' => $id_equipo]);
+    }
+}
 
     if (empty($errores)) {
         try {
@@ -306,7 +322,7 @@ require_once __DIR__ . '/includes/header.php';
         <input type="text" name="ubicacion" class="form-control" value="<?= htmlspecialchars($equipo['ubicacion'] ?? '') ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label">Fecha de compra</label>
+        <label class="form-label">Fecha Alta</label>
         <input type="date" name="fecha_compra" class="form-control" value="<?= htmlspecialchars($equipo['fecha_compra'] ?? '') ?>">
     </div>
 

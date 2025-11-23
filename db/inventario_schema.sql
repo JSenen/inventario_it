@@ -110,3 +110,7 @@ CREATE TABLE averias (
 
 ALTER TABLE averias
 ADD COLUMN fecha_cierre DATETIME NULL AFTER fecha_creacion;
+
+ALTER TABLE equipos
+ADD COLUMN fecha_baja DATETIME NULL AFTER fecha_compra;
+

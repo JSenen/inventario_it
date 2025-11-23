@@ -144,7 +144,7 @@ require_once __DIR__ . '/includes/header.php';
         <input type="text" name="ubicacion" class="form-control" value="<?= htmlspecialchars($_POST['ubicacion'] ?? '') ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label">Fecha de compra</label>
+        <label class="form-label">Fecha Alta</label>
         <input type="date" name="fecha_compra" class="form-control" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">
     </div>
 

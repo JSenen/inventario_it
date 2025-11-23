@@ -50,7 +50,7 @@ $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
     <hr>
 
     <div class="mb-3">
-        <a href="equipos_list.php" class="btn btn-secondary">Volver al listado</a>
+        <a href="index.php" class="btn btn-secondary">Volver al listado</a>
         <a href="averias_list.php?equipo_id=<?= $id ?>" class="btn btn-warning">Ver averías de este equipo</a>
     </div>
 
@@ -66,8 +66,13 @@ $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
         <tr><th>Departamento</th> <td><?= htmlspecialchars($equipo['departamento']) ?></td></tr>
         <tr><th>Ubicación</th> <td><?= htmlspecialchars($equipo['ubicacion']) ?></td></tr>
         <tr>
-    <th>Fecha compra</th>
+    <th>Fecha Alta</th>
     <td><?= htmlspecialchars($equipo['fecha_compra'] ?? '') ?></td>
+</tr>
+<tr><th>Fecha de baja</th> 
+    <td>
+        <?= $equipo['fecha_baja'] ? htmlspecialchars($equipo['fecha_baja']) : '<span class="text-muted">-</span>' ?>
+    </td>
 </tr>
 <tr>
     <th>Proveedor</th>
