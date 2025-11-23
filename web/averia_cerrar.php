@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . "/includes/logger.php";
 
 if (!isset($_GET['id'])) {
     die('ID de avería no indicado');

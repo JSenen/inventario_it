@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . "/includes/logger.php";
 
 header('Content-Type: application/json; charset=utf-8');
 

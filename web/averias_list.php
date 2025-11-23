@@ -2,6 +2,7 @@
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . "/includes/logger.php";
 
 
 $estado_filtro = $_GET['estado'] ?? 'TODAS';

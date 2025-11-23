@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once __DIR__ . "/includes/logger.php";
 
 // Solo admin
 if (($_SESSION['rol'] ?? '') !== 'admin') {
@@ -16,6 +17,7 @@ $stmt = $pdo->query("
 $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 include 'includes/header.php';
+
 ?>
 
 <div class="container mt-4">

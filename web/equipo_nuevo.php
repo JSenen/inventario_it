@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . "/includes/logger.php";
 
 // Cargar redes para el select
 $redesStmt = $pdo->query("SELECT id, nombre, direccion_red FROM redes ORDER BY id ASC");
