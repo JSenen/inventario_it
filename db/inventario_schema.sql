@@ -156,3 +156,7 @@ CREATE TABLE actividad_logs (
     ip VARCHAR(45) DEFAULT NULL,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Impedir duplicados en numero_serie de equipos
+ALTER TABLE equipos
+ADD UNIQUE KEY uniq_numero_serie (numero_serie);

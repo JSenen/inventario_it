@@ -57,6 +57,17 @@ if (!empty($_FILES['imagen']['name'])) {
     }
 }
 
+// Comprobar si el número de serie ya existe
+if ($numero_serie !== '') {
+    $stmtCheck = $pdo->prepare("SELECT id FROM equipos WHERE numero_serie = :ns");
+    $stmtCheck->execute([':ns' => $numero_serie]);
+
+    if ($stmtCheck->fetch()) {
+        $errores[] = "El número de serie $numero_serie ya existe en otro equipo.";
+    }
+}
+    // Si no hay errores, proceder a guardar
+
     if (empty($errores)) {
         try {
             $pdo->beginTransaction();
@@ -161,7 +172,7 @@ require_once __DIR__ . '/includes/header.php';
         <label class="form-label">Servicio</label>
         <select name="estado" class="form-select">
             <?php
-            $hostnames = ['Intranet', 'Internet', 'VPN', 'Ninguno', 'Otro'];
+            $hostnames = ['Intranet', 'Internet', 'VPN', '-----', 'Otro'];
             $hostname = $_POST['hostname'] ?? '';
             foreach ($hostnames as $hostname):
             ?>

@@ -125,6 +125,26 @@ if ($estado === 'Baja') {
     }
 }
 
+    // Verificar número de serie único si se ha proporcionado
+    // Comprobar duplicado de número de serie (excluyendo el propio)
+if ($numero_serie !== '') {
+    $stmtCheck = $pdo->prepare("
+        SELECT id 
+        FROM equipos 
+        WHERE numero_serie = :ns 
+          AND id <> :id
+        LIMIT 1
+    ");
+    $stmtCheck->execute([
+        ':ns' => $numero_serie,
+        ':id' => $id_equipo
+    ]);
+
+    if ($stmtCheck->fetch()) {
+        $errores[] = "El número de serie $numero_serie ya está asignado a otro equipo.";
+    }
+}
+
     if (empty($errores)) {
         try {
             $pdo->beginTransaction();
@@ -345,7 +365,7 @@ require_once __DIR__ . '/includes/header.php';
         <label class="form-label">Servicio</label>
         <select name="hostname" class="form-select">
             <?php
-            $hostnames = ['Intranet', 'Internet', 'VPN', 'Ninguno', 'Otro'];
+            $hostnames = ['Intranet', 'Internet', 'VPN', '-----', 'Otro'];
             foreach ($hostnames as $hostname):
             ?>
                 <option value="<?= $hostname ?>" <?= (($equipo['hostname'] ?? '') === $hostname) ? 'selected' : '' ?>>
