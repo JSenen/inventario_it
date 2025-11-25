@@ -52,6 +52,7 @@ $sql = "
         e.tipo,
         e.marca,
         e.modelo,
+        e.numero_serie,
         e.hostname,
         e.usuario_asignado,
         e.departamento,
@@ -264,6 +265,7 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <!-- Buscador -->
+ <!--
 <form method="get" class="row g-2 mb-3" enctype="multipart/form-data">
     <div class="col-md-4 col-sm-8">
         <input
@@ -281,7 +283,7 @@ require_once __DIR__ . '/includes/header.php';
     <div class="col-auto">
         <a href="index.php" class="btn btn-outline-secondary">Limpiar</a>
     </div>
-</form>
+</form> 
 <form method="get" class="row g-2 mb-3">
 
     <div class="col-md-4">
@@ -302,13 +304,13 @@ require_once __DIR__ . '/includes/header.php';
                 </option>
             <?php endforeach; ?>
         </select>
-    </div>
-<!-- Filtro por tipo -->
+    </div>-->
+    <!-- Filtro por tipo 
     <div class="col-md-3">
         <select name="tipo" class="form-select">
             <option value="">-- Tipo --</option>
             <?php
-            $tipos = ['PC','Portátil','Monitor','Impresora','Switch','Router','Móvil','Tablet','Otro'];
+            $tipos = ['PC','PORTATIL','MONITOR','IMPRESORA','SWITCH','ROUTER','MÓVIL','TABLET','ESCANER','OTRO'];
             foreach ($tipos as $t):
             ?>
                 <option value="<?= $t ?>" <?= ($t === ($_GET['tipo'] ?? '')) ? 'selected' : '' ?>>
@@ -323,22 +325,22 @@ require_once __DIR__ . '/includes/header.php';
         <a href="index.php" class="btn btn-secondary w-50">Limpiar</a>
     </div>
 
-</form>
-
- <div>
+</form> -->
+<!--
+            <div>
                     <span class="badge bg-secondary">Total: <?= $totalequipos ?></span>
                     <span class="badge bg-success">Activos: <?= $totalactivos ?></span>
                     <span class="badge bg-warning">Averiado: <?= $totalaveriados ?></span>
                     <span class="badge bg-danger">Baja: <?= $totalbaja ?></span>
                 
-                </div>
+            </div> -->
 <?php if (isset($_GET['msg']) && $_GET['msg'] === 'ok'): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         Operación realizada correctamente.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
-<?php endif; ?>
-
+<?php endif; ?> 
+<!-- 
 <?php if (empty($equipos)): ?>
     <div class="alert alert-info">
         <?php if ($search !== ''): ?>
@@ -355,77 +357,134 @@ require_once __DIR__ . '/includes/header.php';
  ?></strong>
             (<?= count($equipos) ?> equipo(s)).
         </p>
-    <?php endif; ?>
+    <?php endif; ?> -->
 
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Imagen</th>
-                    <th>Tipo</th>
-                    <th>Marca / Modelo</th>
-                    <th>Usuario / Depto.</th>
-                    <th>Servicio</th>
-                    <th>Ubicación</th>
-                    <th>IP principal</th>
-                    <th>Red</th>
-                    <th>Estado</th>
-                    <th style="width: 150px;">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($equipos as $eq): ?>
-    <tr>
-        <td><?= htmlspecialchars($eq['id']) ?></td>
+           <table id="tablaEquipos" class="table table-striped table-sm align-middle">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Imagen</th>
+            <th>Nº serie</th>
+            <th>Tipo</th>
+            <th>Marca / Modelo</th>
+            <th>Usuario / Depto.</th>
+            <th>Servicio</th>
+            <th>Ubicación</th>
+            <th>IP principal</th>
+            <th>Red</th>
+            <th>Estado</th>
+            <th style="width: 150px;">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Ahora lo rellena DataTables por AJAX -->
+    </tbody>
+</table>
 
-        <!-- Imagen -->
-        <td>
-            <?php if (!empty($eq['imagen'])): ?>
-                <img src="<?= htmlspecialchars($eq['imagen']) ?>" 
-                     alt="Imagen del equipo"
-                     style="width: 50px; height: auto;">
-            <?php else: ?>
-                <span class="text-muted">Sin imagen</span>
-            <?php endif; ?>
-        </td>
 
-        <td><?= htmlspecialchars($eq['tipo']) ?></td>
-
-        <td>
-            <strong><?= htmlspecialchars($eq['marca']) ?></strong><br>
-            <small class="text-muted"><?= htmlspecialchars($eq['modelo']) ?></small>
-        </td>
-
-        <td>
-            <?= htmlspecialchars($eq['usuario_asignado']) ?><br>
-            <small class="text-muted"><?= htmlspecialchars($eq['departamento']) ?></small>
-        </td>
-
-        <td><?= htmlspecialchars($eq['hostname']) ?></td>
-        <td><?= htmlspecialchars($eq['ubicacion']) ?></td>
-        <td><?= htmlspecialchars($eq['ip'] ?? '') ?></td>
-        <td><?= htmlspecialchars($eq['red_nombre'] ?? '') ?></td>
-        <td><?= htmlspecialchars($eq['estado']) ?></td>
-
-        <td>
-            <div class="btn-group btn-group-sm" role="group">
-                <a href="equipo_ver.php?id=<?= $eq['id'] ?>" class="btn btn-outline-primary">Ver</a>
-                <a href="equipo_editar.php?id=<?= $eq['id'] ?>" class="btn btn-outline-secondary">Editar</a>
-                <a href="equipo_borrar.php?id=<?= $eq['id'] ?>"
-                   class="btn btn-outline-danger"
-                   onclick="return confirm('¿Seguro que quieres eliminar este equipo?');">
-                    Borrar
-                </a>
-            </div>
-        </td>
-    </tr>
-<?php endforeach; ?>
-
-            </tbody>
-        </table>
     </div>
 <?php endif; ?>
+
+<!-- DataTables (puedes pasar a local más adelante si quieres) -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<!-- jQuery (obligatorio) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- DataTables base -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<!-- DataTables botones de exportación -->
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<!-- Script de inicialización de DataTables -->
+<script>
+$(document).ready(function () {
+
+    var tabla = $('#tablaEquipos').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: 'equipos_data.php',
+            type: 'GET',
+            data: function (d) {
+                d.estado = $('#filtroEstado').val();
+                d.tipo   = $('#filtroTipo').val();
+            }
+        },
+
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+
+        // Botones de exportación
+        dom: 'Bfrtip',
+        buttons: [
+        {
+            extend: 'copy',
+            text: 'Copiar'
+        },
+        {
+            extend: 'excel',
+            text: 'Excel (página actual)'
+        },
+        {
+            extend: 'csv',
+            text: 'CSV (página actual)'
+        },
+        {
+            extend: 'print',
+            text: 'Imprimir'
+        },
+        {
+            // NUEVO: exportar TODO a CSV (respetando filtros/búsqueda)
+            text: 'CSV (todos los registros)',
+            action: function (e, dt, button, config) {
+                // Cogemos los mismos parámetros que DataTables envía al servidor
+                var params = dt.ajax.params();
+                params.export = 'csv';
+
+                // Construimos la querystring
+                var query = $.param(params);
+
+                // Abrimos la descarga
+                window.location = 'equipos_export.php?' + query;
+            }
+        },
+        {
+            text: 'Excel (todos los registros)',
+            action: function (e, dt, button, config) {
+                var params = dt.ajax.params();
+                params.export = 'excel';
+                var query = $.param(params);
+                window.location = 'equipos_export_excel.php?' + query;
+            }
+        }
+    ],
+
+        order: [[0, 'asc']],
+        columnDefs: [
+            { orderable: false, searchable: false, targets: [1, 11] } // imagen y acciones
+        ],
+
+        // Traducción al castellano
+        language: {
+            search: "Buscar:",
+            searchPlaceholder: "Buscar en la tabla...",
+            url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json'
+        }
+    });
+
+    // (opcional) si usaramos formulario de búsqueda manual, aquí iría el .search()...
+
+});
+
+</script>
+
 
 <?php
 require_once __DIR__ . '/includes/footer.php';

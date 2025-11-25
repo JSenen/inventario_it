@@ -146,7 +146,7 @@ require_once __DIR__ . '/includes/header.php';
         <select name="tipo" class="form-select" required>
             <option value="">-- Selecciona --</option>
             <?php
-            $tipos = ['PC', 'Portátil', 'Monitor', 'Impresora', 'Escaner', 'Switch', 'Router', 'Móvil', 'Tablet', 'Otro'];
+            $tipos = ['PC', 'PORTÁTIL', 'MONITOR', 'IMPRESORA', 'ESCÁNER', 'SWITCH', 'ROUTER', 'MOVIL', 'TABLET', 'VIDEO', 'OTRO'];
             foreach ($tipos as $t):
             ?>
                 <option value="<?= $t ?>" <?= (($_POST['tipo'] ?? '') === $t) ? 'selected' : '' ?>>

@@ -335,19 +335,23 @@ require_once __DIR__ . '/includes/header.php';
 
 <form method="post" class="row g-3" enctype="multipart/form-data">
     <div class="col-md-4">
-        <label class="form-label">Tipo *</label>
+    <label class="form-label">Tipo *</label>
         <select name="tipo" class="form-select" required>
             <option value="">-- Selecciona --</option>
             <?php
-            $tipos = ['PC', 'Portátil', 'Monitor', 'Impresora', 'Switch', 'Router', 'Móvil', 'Tablet', 'Otro'];
+            // Valores en MAYÚSCULAS para que coincidan con lo que guardas con strtoupper()
+            $tipos = ['PC', 'PORTÁTIL', 'MONITOR', 'IMPRESORA', 'ESCÁNER', 'SWITCH', 'ROUTER', 'MOVIL', 'TABLET', 'VIDEO', 'OTRO'];
             foreach ($tipos as $t):
             ?>
-                <option value="<?= $t ?>" <?= ($equipo['tipo'] === $t) ? 'selected' : '' ?>>
-                    <?= $t ?>
+                <option
+                    value="<?= $t ?>"
+                    <?= (strcasecmp($equipo['tipo'] ?? '', $t) === 0) ? 'selected' : '' ?>>
+                    <?= ucfirst(strtolower($t)) ?>
                 </option>
             <?php endforeach; ?>
         </select>
     </div>
+
     <div class="col-md-4">
         <label class="form-label">Marca</label>
         <input type="text" name="marca" class="form-control" value="<?= htmlspecialchars($equipo['marca'] ?? '') ?>">
@@ -362,19 +366,31 @@ require_once __DIR__ . '/includes/header.php';
         <input type="text" name="numero_serie" class="form-control" value="<?= htmlspecialchars($equipo['numero_serie'] ?? '') ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label">Servicio</label>
+    <label class="form-label">Servicio</label>
         <select name="hostname" class="form-select">
             <?php
-            $hostnames = ['Intranet', 'Internet', 'VPN', '-----', 'Otro'];
-            foreach ($hostnames as $hostname):
+            // Clave = lo que se guarda en BD (MAYÚSCULAS)
+            // Valor = cómo se muestra en pantalla
+            $hostnames = [
+                'INTRANET' => 'Intranet',
+                'INTERNET' => 'Internet',
+                'VPN'      => 'VPN',
+                '-----'    => '-----',
+                'OTRO'     => 'Otro',
+            ];
+
+            $hostnameActual = $equipo['hostname'] ?? '';
+            foreach ($hostnames as $value => $label):
             ?>
-                <option value="<?= $hostname ?>" <?= (($equipo['hostname'] ?? '') === $hostname) ? 'selected' : '' ?>>
-                    <?= $hostname ?>
+                <option
+                    value="<?= $value ?>"
+                    <?= (strcasecmp($hostnameActual, $value) === 0) ? 'selected' : '' ?>>
+                    <?= $label ?>
                 </option>
             <?php endforeach; ?>
         </select>
-       
     </div>
+
     <div class="col-md-4">
         <label class="form-label">Usuario asignado</label>
         <input type="text" name="usuario_asignado" class="form-control" value="<?= htmlspecialchars($equipo['usuario_asignado'] ?? '') ?>">
