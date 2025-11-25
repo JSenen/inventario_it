@@ -1,18 +1,14 @@
 <?php
 require_once __DIR__ . '/config.php';
-require __DIR__ . '/vendor/autoload.php';
 
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-
-// Recibir parámetros como DataTables
+// Recuperamos los mismos parámetros que DataTables
 $req = $_GET;
 
 $searchValue = trim($req['search']['value'] ?? '');
-
 $estado = $req['estado'] ?? '';
 $tipo   = $req['tipo']   ?? '';
 
+// WHERE dinámico (igual que en equipos_export.php)
 $where  = [];
 $params = [];
 
@@ -58,9 +54,7 @@ if ($searchValue !== '') {
 
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
-// ----------------------
-// CONSULTA SIN LIMIT
-// ----------------------
+// Consulta SIN LIMIT → exporta TODO lo que cumpla filtros/búsqueda
 $sql = "
     SELECT
         e.*,
@@ -79,85 +73,63 @@ foreach ($params as $k => $v) {
 }
 $stmt->execute();
 
+// Cabeceras para que el navegador lo trate como Excel
+$filename = "equipos_export_" . date("Ymd_His") . ".xls";
 
-// ----------------------
-// GENERAR EXCEL
-// ----------------------
-$spreadsheet = new Spreadsheet();
-$sheet = $spreadsheet->getActiveSheet();
-
-// Encabezados
-$headers = [
-    'ID',
-    'Numero serie',
-    'Tipo',
-    'Marca',
-    'Modelo',
-    'Usuario asignado',
-    'Departamento',
-    'Hostname / Servicio',
-    'Ubicacion',
-    'IP principal',
-    'Red',
-    'Fecha compra',
-    'Fecha baja',
-    'Proveedor',
-    'Coste',
-    'Estado',
-    'Notas',
-];
-
-$col = 1;
-foreach ($headers as $header) {
-    $sheet->setCellValueByColumnAndRow($col, 1, $header);
-    $col++;
-}
-
-// Filas
-$rowNum = 2;
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-
-    $dataRow = [
-        $row['id'],
-        $row['numero_serie'],
-        $row['tipo'],
-        $row['marca'],
-        $row['modelo'],
-        $row['usuario_asignado'],
-        $row['departamento'],
-        $row['hostname'],
-        $row['ubicacion'],
-        $row['ip_principal'] ?? '',
-        $row['red_nombre'] ?? '',
-        $row['fecha_compra'],
-        $row['fecha_baja'],
-        $row['proveedor'],
-        $row['coste'],
-        $row['estado'],
-        $row['notas'],
-    ];
-
-    $col = 1;
-    foreach ($dataRow as $cellValue) {
-        $sheet->setCellValueByColumnAndRow($col, $rowNum, $cellValue);
-        $col++;
-    }
-
-    $rowNum++;
-}
-
-// Auto-width
-foreach (range('A', $sheet->getHighestColumn()) as $colName) {
-    $sheet->getColumnDimension($colName)->setAutoSize(true);
-}
-
-// Descargar
-$filename = "equipos_export_" . date("Ymd_His") . ".xlsx";
-
-header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+header("Content-Type: application/vnd.ms-excel; charset=utf-8");
 header("Content-Disposition: attachment; filename=\"$filename\"");
-header('Cache-Control: max-age=0');
+header("Cache-Control: max-age=0");
 
-$writer = new Xlsx($spreadsheet);
-$writer->save('php://output');
+// Importante para caracteres especiales
+echo "\xEF\xBB\xBF";
+
+// Comenzamos una tabla HTML que Excel entiende perfectamente
+?>
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Número serie</th>
+            <th>Tipo</th>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Usuario asignado</th>
+            <th>Departamento</th>
+            <th>Hostname / Servicio</th>
+            <th>Ubicación</th>
+            <th>IP principal</th>
+            <th>Red</th>
+            <th>Fecha compra</th>
+            <th>Fecha baja</th>
+            <th>Proveedor</th>
+            <th>Coste</th>
+            <th>Estado</th>
+            <th>Notas</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
+            <tr>
+                <td><?= htmlspecialchars($row['id']) ?></td>
+                <td><?= htmlspecialchars($row['numero_serie'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['tipo'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['marca'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['modelo'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['usuario_asignado'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['departamento'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['hostname'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['ubicacion'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['ip_principal'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['red_nombre'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['fecha_compra'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['fecha_baja'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['proveedor'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['coste'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['estado'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['notas'] ?? '') ?></td>
+            </tr>
+        <?php endwhile; ?>
+    </tbody>
+</table>
+<?php
 exit;

@@ -459,11 +459,11 @@ $(document).ready(function () {
             text: 'Excel (todos los registros)',
             action: function (e, dt, button, config) {
                 var params = dt.ajax.params();
-                params.export = 'excel';
                 var query = $.param(params);
                 window.location = 'equipos_export_excel.php?' + query;
             }
         }
+
     ],
 
         order: [[0, 'asc']],

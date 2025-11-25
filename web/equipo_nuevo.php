@@ -172,7 +172,7 @@ require_once __DIR__ . '/includes/header.php';
         <label class="form-label">Servicio</label>
         <select name="estado" class="form-select">
             <?php
-            $hostnames = ['Intranet', 'Internet', 'VPN', '-----', 'Otro'];
+            $hostnames = ['-----','Intranet', 'Internet', 'SITEL', 'VPN', 'Otro'];
             $hostname = $_POST['hostname'] ?? '';
             foreach ($hostnames as $hostname):
             ?>

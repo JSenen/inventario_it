@@ -340,7 +340,7 @@ require_once __DIR__ . '/includes/header.php';
             <option value="">-- Selecciona --</option>
             <?php
             // Valores en MAYÚSCULAS para que coincidan con lo que guardas con strtoupper()
-            $tipos = ['PC', 'PORTÁTIL', 'MONITOR', 'IMPRESORA', 'ESCÁNER', 'SWITCH', 'ROUTER', 'MOVIL', 'TABLET', 'VIDEO', 'OTRO'];
+            $tipos = ['PC', 'PORTÁTIL', 'MONITOR', 'IMPRESORA', 'ESCANER', 'SWITCH', 'ROUTER', 'MOVIL', 'TABLET', 'VIDEO', 'OTRO'];
             foreach ($tipos as $t):
             ?>
                 <option
@@ -372,10 +372,11 @@ require_once __DIR__ . '/includes/header.php';
             // Clave = lo que se guarda en BD (MAYÚSCULAS)
             // Valor = cómo se muestra en pantalla
             $hostnames = [
+                '-----'    => '-----',
                 'INTRANET' => 'Intranet',
                 'INTERNET' => 'Internet',
+                'SITEL'    => 'SITEL',
                 'VPN'      => 'VPN',
-                '-----'    => '-----',
                 'OTRO'     => 'Otro',
             ];
 
