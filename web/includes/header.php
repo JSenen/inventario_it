@@ -8,8 +8,78 @@
     <title>Inventario Informático</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Bootstrap local -->
-    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-    
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css"> 
+    <!-- <link rel="stylesheet" href="vendor/bootstrap/css/theme_wildwest.css"> -->
+
+    <style>
+    /* Overlay de puertas del saloon */
+.saloon-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    background: radial-gradient(circle at 50% 10%, rgba(250, 230, 190, 0.35), rgba(0, 0, 0, 0.9));
+    overflow: hidden;
+}
+
+/* Cada puerta ocupa media pantalla */
+.saloon-door {
+    flex: 1;
+    height: 100%;
+    background:
+        linear-gradient(90deg, rgba(0,0,0,0.3), transparent 20%, transparent 80%, rgba(0,0,0,0.5)),
+        repeating-linear-gradient(
+            to bottom,
+            #5b3a1b 0,
+            #5b3a1b 12px,
+            #6d4821 12px,
+            #6d4821 24px
+        );
+    background-size: cover;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+}
+
+/* Puerta izquierda */
+.saloon-door-left {
+    border-right: 3px solid #c79a5d;
+    transform-origin: left center;
+    animation: doorLeftOpen 1.8s forwards ease-out;
+}
+
+/* Puerta derecha */
+.saloon-door-right {
+    border-left: 3px solid #c79a5d;
+    transform-origin: right center;
+    animation: doorRightOpen 1.8s forwards ease-out;
+}
+
+/* Desvanecimiento del overlay al final */
+.saloon-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease-out;
+}
+
+/* Animaciones */
+@keyframes doorLeftOpen {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes doorRightOpen {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+</style>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
     <!--

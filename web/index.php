@@ -4,6 +4,53 @@ require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . "/includes/logger.php";
 
+// Reproducir sonido de entrada si se ha iniciado sesión correctamente
+if (!empty($_SESSION['play_saloon_sound'])): ?>
+    <!-- Overlay de puertas del saloon -->
+    <div id="saloonOverlay" class="saloon-overlay">
+        <div class="saloon-door saloon-door-left"></div>
+        <div class="saloon-door saloon-door-right"></div>
+    </div>
+
+    <!-- Sonido de puertas -->
+    <audio id="saloonSound" autoplay>
+        <source src="sounds/west.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const audio   = document.getElementById('saloonSound');
+            const overlay = document.getElementById('saloonOverlay');
+
+            // Reproducir sonido (por si autoplay se bloquea)
+            if (audio) {
+                audio.volume = 1.0;
+                audio.play().catch(() => {});
+            }
+
+            if (overlay) {
+                const removeOverlay = () => {
+                    overlay.classList.add('hidden');
+                    setTimeout(() => {
+                        if (overlay && overlay.parentNode) {
+                            overlay.parentNode.removeChild(overlay);
+                        }
+                    }, 700);
+                };
+
+                // Cuando terminen las animaciones de las puertas
+                overlay.addEventListener('animationend', removeOverlay, { once: true });
+
+                // Por si acaso, lo quitamos también tras un tiempo máximo
+                setTimeout(removeOverlay, 3000);
+            }
+        });
+    </script>
+
+    <?php unset($_SESSION['play_saloon_sound']); ?>
+<?php endif; ?>
+
+<?php
 
 // --- Buscar ---
 // --- Filtros ---

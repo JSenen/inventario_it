@@ -26,6 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['usuario_id'] = $usuario['id'];
                 $_SESSION['tip']        = $usuario['tip'];
                 $_SESSION['rol']        = $usuario['rol'];
+                $_SESSION['play_saloon_sound'] = true;
+
 
                 header('Location: index.php');
                 exit;
@@ -41,10 +43,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <title>Login Inventario IT</title>
-    <<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+<style>
+    .sheriff-badge {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    margin: 0 auto 20px auto;
+    position: relative;
+    background: radial-gradient(circle at 30% 30%, #ffe9a6, #d49a32);
+    border: 4px solid #f7d49c;
+    box-shadow: 0 0 10px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #5a360f;
+    font-size: 40px;
+    font-weight: 900;
+}
+
+/* Picos de la estrella */
+.sheriff-badge::before,
+.sheriff-badge::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 4px solid rgba(247, 212, 156, 0.7);
+    transform: translate(-50%, -50%) rotate(30deg);
+}
+
+.sheriff-badge::after {
+    transform: translate(-50%, -50%) rotate(-30deg);
+}
+</style>
 </head>
 <body class="bg-light">
-
+    <!--
+<div class="sheriff-badge">★</div> -->
 <div class="container mt-5" style="max-width: 420px;">
     <h1 class="h4 mb-4 text-center">Acceso Inventario IT</h1>
 
@@ -78,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button class="btn btn-primary w-100" type="submit">Entrar</button>
     </form>
 </div>
+
 
 </body>
 </html>
