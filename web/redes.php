@@ -7,6 +7,94 @@ $stmtRedes = $pdo->query("SELECT id, nombre, direccion_red, mascara FROM redes O
 
 $redes = $stmtRedes->fetchAll(PDO::FETCH_ASSOC);
 
+// Funciones auxiliares para cálculo de rangos IP
+function maskToCidr(string $mask): ?int {
+    $long = ip2long($mask);
+    if ($long === false) {
+        return null;
+    }
+    $bits = 0;
+    for ($i = 31; $i >= 0; $i--) {
+        if ($long & (1 << $i)) {
+            $bits++;
+        }
+    }
+    return $bits;
+}
+// A partir de direccion_red y mascara (DB) obtiene IP base y prefijo CIDR
+function parseNetworkFromDb(string $direccionRed, ?string $mascaraDb): ?array {
+    $direccionRed = trim($direccionRed);
+    $mascaraDb    = $mascaraDb !== null ? trim($mascaraDb) : '';
+
+    if ($direccionRed === '') {
+        return null;
+    }
+
+    $ip   = null;
+    $cidr = null;
+
+    // "10.52.2.0/24"
+    if (strpos($direccionRed, '/') !== false) {
+        [$ipPart, $cidrPart] = explode('/', $direccionRed, 2);
+        if (filter_var($ipPart, FILTER_VALIDATE_IP)) {
+            $ip = $ipPart;
+            if (ctype_digit($cidrPart)) {
+                $cidr = (int)$cidrPart;
+            }
+        }
+    } else {
+        if (filter_var($direccionRed, FILTER_VALIDATE_IP)) {
+            $ip = $direccionRed;
+        }
+    }
+
+    if ($cidr === null && $mascaraDb !== '') {
+        if (strpos($mascaraDb, '.') !== false) {
+            $cidr = maskToCidr($mascaraDb);
+        } elseif (ctype_digit($mascaraDb)) {
+            $cidr = (int)$mascaraDb;
+        }
+    }
+
+    if ($cidr === null) {
+        $cidr = 24;
+    }
+
+    if (!$ip || $cidr < 0 || $cidr > 32) {
+        return null;
+    }
+
+    return [$ip, $cidr];
+}
+//  Calcula rango de hosts usables a partir de IP y CIDR
+function calcularRangoHosts(string $ip, int $cidr): ?array {
+    $ipLong = ip2long($ip);
+    if ($ipLong === false) {
+        return null;
+    }
+
+    $maskLong  = ~((1 << (32 - $cidr)) - 1) & 0xFFFFFFFF;
+    $network   = $ipLong & $maskLong;
+    $broadcast = $network | (~$maskLong & 0xFFFFFFFF);
+
+    $hostStart = $network + 1;
+    $hostEnd   = $broadcast - 1;
+
+    if ($hostStart > $hostEnd) {
+        $hostEnd = $hostStart;
+    }
+
+    return [
+        'network_long' => $network,
+        'start_long'   => $hostStart,
+        'end_long'     => $hostEnd,
+        'network_ip'   => long2ip($network),
+        'start_ip'     => long2ip($hostStart),
+        'end_ip'       => long2ip($hostEnd),
+    ];
+}
+
+
 function calcularPrefix($direccionRed) {
     // Esperamos algo tipo "10.52.2.0" o "10.52.2.0/24"
     if (preg_match('/^(\d+\.\d+\.\d+)\./', $direccionRed, $m)) {
@@ -46,8 +134,9 @@ require_once __DIR__ . '/includes/header.php';
 <h1 class="h3 mb-4">Control de direcciones IP</h1>
 
 <p class="text-muted">
-    Resumen de IPs por red. CDIR /24 (1–254) para el cálculo de libres
+    Resumen de IPs por red. El cálculo de IPs libres se realiza según la máscara CIDR de cada red.
 </p>
+
 
 <?php if (empty($redes)): ?>
     <div class="alert alert-info">
@@ -60,18 +149,63 @@ require_once __DIR__ . '/includes/header.php';
         $redId        = (int)$r['id'];
         $nombreRed    = $r['nombre'];
         $direccionRed = $r['direccion_red'];
-        $prefix       = calcularPrefix($direccionRed);
+        $mascaraDb    = $r['mascara'] ?? '';
 
-        $textoRed = $direccionRed;
-if (!empty($mascara)) {
-    $textoRed .= '/' . $mascara;
-}
-
-        $inicio = 1;
-        $fin    = 254;
-
-        $usadas = [];
         $listaUsadas = $ipsPorRed[$redId] ?? [];
+
+        $networkInfo = parseNetworkFromDb($direccionRed, $mascaraDb);
+
+        $totalPosibles = 0;
+        $totalUsadas   = 0;
+        $totalLibres   = 0;
+        $muestraLibres = [];
+        $textoRed      = $direccionRed;
+
+        // Si podemos interpretar bien la red…
+        if ($networkInfo !== null) {
+            [$ipBase, $cidr] = $networkInfo;
+            $rango = calcularRangoHosts($ipBase, $cidr);
+
+            if ($rango !== null) {
+                $inicioLong = $rango['start_long'];
+                $finLong    = $rango['end_long'];
+
+                // Texto bonito: 10.52.2.0/23, etc.
+                $textoRed = $rango['network_ip'] . '/' . $cidr;
+
+                // Marcar IPs usadas en esa red
+                $usadas = [];
+                foreach ($listaUsadas as $row) {
+                    $ip = $row['ip'];
+                    $ipLong = ip2long($ip);
+                    if ($ipLong === false) {
+                        continue;
+                    }
+                    if ($ipLong >= $inicioLong && $ipLong <= $finLong) {
+                        $usadas[$ip] = true;
+                    }
+                }
+
+                $totalPosibles = max(0, $finLong - $inicioLong + 1);
+                $totalUsadas   = count($usadas);
+                $totalLibres   = max(0, $totalPosibles - $totalUsadas);
+
+                // Primera muestra de IPs libres (máx. 10)
+                $muestraLibres = [];
+                for ($ipLong = $inicioLong; $ipLong <= $finLong && count($muestraLibres) < 10; $ipLong++) {
+                    $ip = long2ip($ipLong);
+                    if (!isset($usadas[$ip])) {
+                        $muestraLibres[] = $ip;
+                    }
+                }
+            }
+        } else {
+            // No se entiende la red -> se mostrará aviso en el cuerpo de la card
+            $cidr        = null;
+            $inicioLong  = null;
+            $finLong     = null;
+        }
+
 
         // Marcar últimos octetos usados
         foreach ($listaUsadas as $row) {
@@ -101,12 +235,12 @@ if (!empty($mascara)) {
 
         <div class="card mb-4">
            <div class="card-header d-flex justify-content-between align-items-center">
-    <div>
-        <strong><?= htmlspecialchars($nombreRed) ?></strong>
-        <span class="text-muted">
-            (<?= htmlspecialchars($textoRed) ?>)
-        </span>
-    </div>
+        <div>
+            <strong><?= htmlspecialchars($nombreRed) ?></strong>
+            <span class="text-muted">
+                (<?= htmlspecialchars($textoRed) ?>)
+            </span>
+        </div>
 
                 <div>
                     <span class="badge bg-secondary">Total: <?= $totalPosibles ?> IPs</span>
@@ -115,13 +249,15 @@ if (!empty($mascara)) {
                 </div>
             </div>
             <div class="card-body">
-                <?php if ($prefix === null): ?>
+               <?php if ($networkInfo === null): ?>
                     <div class="alert alert-warning">
-                        No se ha podido interpretar el prefijo de esta red a partir de
-                        <code><?= htmlspecialchars($direccionRed) ?></code>. Revisa el formato
-                        (ejemplo válido: <code>10.52.2.0</code> o <code>10.52.2.0/24</code>).
+                        No se ha podido interpretar la red a partir de
+                        <code><?= htmlspecialchars($direccionRed) ?></code>.
+                        Formatos válidos: <code>10.52.2.0</code> con máscara CIDR en la columna
+                        o <code>10.52.2.0/24</code>.
                     </div>
                 <?php else: ?>
+
 
                     <?php if ($totalLibres > 0): ?>
                         <p class="mb-2">

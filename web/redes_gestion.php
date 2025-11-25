@@ -213,7 +213,9 @@ require_once __DIR__ . '/includes/header.php';
                             placeholder="Ej: 10.52.2.0/24"
                         >
                         <div class="form-text">
-                            Se asume /24 para el cálculo de IPs libres (rango 1–254).
+                            La red se define por la dirección y la máscara (CIDR).
+                            Ejemplo: dirección <code>10.52.2.0</code> y máscara <code>23</code>
+                            cubre de <code>10.52.2.1</code> a <code>10.52.3.254</code>.
                         </div>
                     </div>
                     <div class="col-12">
