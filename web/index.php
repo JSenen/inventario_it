@@ -515,7 +515,7 @@ $(document).ready(function () {
 
     ],
 
-        order: [[0, 'asc']],
+        order: [[0, 'desc']],
         columnDefs: [
             { orderable: false, searchable: false, targets: [1, 11] } // imagen y acciones
         ],
@@ -524,7 +524,7 @@ $(document).ready(function () {
         language: {
             search: "Buscar:",
             searchPlaceholder: "Buscar en la tabla...",
-            url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json'
+            url: 'vendor/datatables/i18n/es-ES.json'
         }
     });
 
