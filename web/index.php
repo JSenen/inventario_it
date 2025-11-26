@@ -435,21 +435,23 @@ require_once __DIR__ . '/includes/header.php';
 <?php endif; ?>
 
 <!-- DataTables (puedes pasar a local más adelante si quieres) -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-<!-- jQuery (obligatorio) -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- jQuery local -->
+<script src="vendor/jquery/jquery-3.7.1.min.js"></script>
 
-<!-- DataTables base -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
-<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-<!-- DataTables botones de exportación -->
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-<!-- Script de inicialización de DataTables -->
+<!-- DataTables núcleo -->
+<script src="vendor/datatables/js/dataTables.min.js"></script>
+
+<!-- Extensión Buttons -->
+<script src="vendor/datatables/js/dataTables.buttons.min.js"></script>
+<script src="vendor/datatables/js/jszip.min.js"></script>
+<script src="vendor/datatables/js/pdfmake.min.js"></script>
+<script src="vendor/datatables/js/vfs_fonts.js"></script>
+<script src="vendor/datatables/js/buttons.html5.min.js"></script>
+<script src="vendor/datatables/js/buttons.print.min.js"></script>
+
+<!-- Idioma español -->
+<script src="vendor/datatables/i18n/es-ES.json"></script>
+
 <script>
 $(document).ready(function () {
 

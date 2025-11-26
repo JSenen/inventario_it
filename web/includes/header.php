@@ -10,6 +10,10 @@
     <!-- Bootstrap local -->
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css"> 
     <!-- <link rel="stylesheet" href="vendor/bootstrap/css/theme_wildwest.css"> -->
+     <!-- CSS local -->
+    <link rel="stylesheet" href="vendor/datatables/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="vendor/datatables/css/buttons.dataTables.min.css">
+
 
     <style>
     /* Overlay de puertas del saloon */

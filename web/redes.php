@@ -175,16 +175,16 @@ require_once __DIR__ . '/includes/header.php';
 
                 // Marcar IPs usadas en esa red
                 $usadas = [];
-                foreach ($listaUsadas as $row) {
-                    $ip = $row['ip'];
-                    $ipLong = ip2long($ip);
-                    if ($ipLong === false) {
-                        continue;
-                    }
-                    if ($ipLong >= $inicioLong && $ipLong <= $finLong) {
-                        $usadas[$ip] = true;
-                    }
-                }
+                // foreach ($listaUsadas as $row) {
+                //     $ip = $row['ip'];
+                //     $ipLong = ip2long($ip);
+                //     if ($ipLong === false) {
+                //         continue;
+                //     }
+                //     if ($ipLong >= $inicioLong && $ipLong <= $finLong) {
+                //         $usadas[$ip] = true;
+                //     }
+                // }
 
                 $totalPosibles = max(0, $finLong - $inicioLong + 1);
                 $totalUsadas   = count($usadas);
@@ -218,19 +218,19 @@ require_once __DIR__ . '/includes/header.php';
             }
         }
 
-        $totalPosibles = ($fin - $inicio + 1);
+        //$totalPosibles = ($fin - $inicio + 1);
         $totalUsadas   = count($usadas);
         $totalLibres   = $totalPosibles - $totalUsadas;
 
         // Generar una pequeña muestra de IPs libres
         $muestraLibres = [];
-        if ($prefix) {
-            for ($i = $inicio; $i <= $fin && count($muestraLibres) < 10; $i++) {
-                if (!isset($usadas[$i])) {
-                    $muestraLibres[] = $prefix . $i;
-                }
-            }
-        }
+        // if ($prefix) {
+        //     for ($i = $inicio; $i <= $fin && count($muestraLibres) < 10; $i++) {
+        //         if (!isset($usadas[$i])) {
+        //             $muestraLibres[] = $prefix . $i;
+        //         }
+        //     }
+        // }
         ?>
 
         <div class="card mb-4">
