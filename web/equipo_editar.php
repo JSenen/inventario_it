@@ -34,11 +34,41 @@ $ipRow = $stmtIp->fetch(PDO::FETCH_ASSOC);
 $redesStmt = $pdo->query("SELECT id, nombre, direccion_red FROM redes ORDER BY id ASC");
 $redes = $redesStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Monitores que se pueden elegir (libres o ya asignados a este equipo)
+$sqlMonitores = "
+    SELECT e.id, e.marca, e.modelo, e.numero_serie,
+           CASE WHEN pm_actual.id_pc IS NULL THEN 0 ELSE 1 END AS asignado_a_este
+    FROM equipos e
+    LEFT JOIN pc_monitores pm_actual
+        ON pm_actual.id_monitor = e.id
+       AND pm_actual.id_pc = :id_pc
+    LEFT JOIN pc_monitores pm_otro
+        ON pm_otro.id_monitor = e.id
+       AND pm_otro.id_pc <> :id_pc
+    WHERE e.tipo = 'MONITOR'
+      AND pm_otro.id_monitor IS NULL
+    ORDER BY asignado_a_este DESC, e.marca, e.modelo, e.numero_serie
+";
+$stmtMon = $pdo->prepare($sqlMonitores);
+$stmtMon->execute([':id_pc' => $id_equipo]);
+$monitores = $stmtMon->fetchAll(PDO::FETCH_ASSOC);
+
+// Monitores ya asociados a este equipo
+$stmtMonSel = $pdo->prepare("SELECT id_monitor FROM pc_monitores WHERE id_pc = :id_pc");
+$stmtMonSel->execute([':id_pc' => $id_equipo]);
+$monitoresSeleccionados = $stmtMonSel->fetchAll(PDO::FETCH_COLUMN);
+
+
 $errores = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Mantener la imagen actual por defecto
     $imagenRuta = $equipo['imagen'] ?? null;
+    // Monitores seleccionados en el formulario
+    $monitoresSeleccionadosPost = isset($_POST['monitores']) && is_array($_POST['monitores'])
+    ? array_map('intval', $_POST['monitores'])
+    : [];
+
 
     // Si se sube una nueva imagen, sustituirla
 if (!empty($_FILES['imagen']['name'])) {
@@ -215,6 +245,30 @@ if ($numero_serie !== '') {
                     ]);
                 }
             }
+            
+            // Gestionar monitores asociados
+            if (in_array($tipo, ['PC','PORTÁTIL'])) {
+                // Borrar relaciones actuales y crear nuevas
+                $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :id_pc");
+                $stmtDel->execute([':id_pc' => $id_equipo]);
+
+                if (!empty($monitoresSeleccionadosPost)) {
+                    $stmtIns = $pdo->prepare("INSERT INTO pc_monitores (id_pc, id_monitor)
+                                            VALUES (:id_pc, :id_monitor)");
+                    foreach ($monitoresSeleccionadosPost as $idMon) {
+                        if ($idMon > 0) {
+                            $stmtIns->execute([
+                                ':id_pc'     => $id_equipo,
+                                ':id_monitor'=> $idMon
+                            ]);
+                        }
+                    }
+                }
+            } else {
+                // Si deja de ser PC/PORTÁTIL, se eliminan sus monitores
+                $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :id_pc");
+                $stmtDel->execute([':id_pc' => $id_equipo]);
+            }
 
             // Gestionar AVERÍA
             $averiaId = null;
@@ -351,6 +405,33 @@ require_once __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
         </select>
     </div>
+
+    <div class="col-md-8" id="bloque-monitores" style="display:none;">
+    <label class="form-label">Monitores asociados</label>
+    <select name="monitores[]" class="form-select" multiple size="5">
+        <?php
+        $seleccionActual = $_POST['monitores'] ?? $monitoresSeleccionados;
+        if (!is_array($seleccionActual)) {
+            $seleccionActual = [];
+        }
+        $seleccionActual = array_map('intval', $seleccionActual);
+
+        foreach ($monitores as $m):
+            $idMon    = (int)$m['id'];
+            $selected = in_array($idMon, $seleccionActual) ? 'selected' : '';
+        ?>
+            <option value="<?= $idMon ?>" <?= $selected ?>>
+                <?= htmlspecialchars(trim(
+                    ($m['marca'] ?? '') . ' ' .
+                    ($m['modelo'] ?? '') .
+                    ( $m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '' )
+                )) ?>
+                <?= $m['asignado_a_este'] ? ' (actual)' : '' ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+</div>
+
 
     <div class="col-md-4">
         <label class="form-label">Marca</label>
@@ -630,6 +711,30 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+
+<!-- Mostrar/ocultar bloque de monitores según tipo de equipo -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tipoSelect       = document.querySelector('select[name="tipo"]');
+    const bloqueMonitores  = document.getElementById('bloque-monitores');
+
+    function actualizarBloqueMonitores() {
+        if (!tipoSelect) return;
+        const valor = (tipoSelect.value || '').toUpperCase();
+        if (valor === 'PC' || valor === 'PORTÁTIL') {
+            bloqueMonitores.style.display = 'block';
+        } else {
+            bloqueMonitores.style.display = 'none';
+        }
+    }
+
+    if (tipoSelect && bloqueMonitores) {
+        tipoSelect.addEventListener('change', actualizarBloqueMonitores);
+        actualizarBloqueMonitores();
+    }
+});
+</script>
+
 
 <?php
 require_once __DIR__ . '/includes/footer.php';

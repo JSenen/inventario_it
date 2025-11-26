@@ -112,18 +112,25 @@ try {
     $recordsFiltered = (int)$stmtCount->fetchColumn();
 
     // CONSULTA PRINCIPAL
-    $sqlData = "
-        SELECT
-            e.*,
-            ip.ip     AS ip_principal,
-            r.nombre  AS red_nombre
-        FROM equipos e
-        LEFT JOIN ips_equipos ip ON ip.equipo_id = e.id AND ip.es_principal = 1
-        LEFT JOIN redes r        ON r.id = ip.red_id
-        $whereSql
-        $orderSql
-        LIMIT :start, :length
-    ";
+   // CONSULTA PRINCIPAL
+$sqlData = "
+    SELECT
+        e.*,
+        ip.ip     AS ip_principal,
+        r.nombre  AS red_nombre,
+        (
+            SELECT COUNT(*)
+            FROM pc_monitores pm
+            WHERE pm.id_pc = e.id
+        ) AS num_monitores
+    FROM equipos e
+    LEFT JOIN ips_equipos ip ON ip.equipo_id = e.id AND ip.es_principal = 1
+    LEFT JOIN redes r        ON r.id = ip.red_id
+    $whereSql
+    $orderSql
+    LIMIT :start, :length
+";
+
 
     $stmt = $pdo->prepare($sqlData);
     foreach ($params as $k => $v) {
@@ -156,6 +163,22 @@ try {
         $colUbicacion = htmlspecialchars($row['ubicacion'] ?? '');
         $colIp        = htmlspecialchars($row['ip_principal'] ?? '');
         $colRed       = htmlspecialchars($row['red_nombre'] ?? '');
+        $colMonitores = '';
+$numMon = (int)($row['num_monitores'] ?? 0);
+
+if (in_array($row['tipo'], ['PC', 'PORTÁTIL'])) {
+    if ($numMon === 0) {
+        $colMonitores = '<span class="badge bg-secondary">0</span>';
+    } elseif ($numMon === 1) {
+        $colMonitores = '<span class="badge bg-success">1</span>';
+    } else {
+        $colMonitores = '<span class="badge bg-primary">' . $numMon . '</span>';
+    }
+} else {
+    // Para monitores, impresoras, etc.
+    $colMonitores = '<span class="text-muted">-</span>';
+}
+
         $colEstado    = htmlspecialchars($row['estado'] ?? '');
 
         $colAcciones =
@@ -179,6 +202,7 @@ try {
             $colUbicacion,
             $colIp,
             $colRed,
+            $colMonitores,
             $colEstado,
             $colAcciones,
         ];

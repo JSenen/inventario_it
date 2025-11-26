@@ -21,6 +21,33 @@ if (!$equipo) {
     die("Equipo no encontrado.");
 }
 
+// Inicializar variables para monitores o PC asociado
+$monitores_pc = [];
+$pc_asociado  = null;
+
+// Si es PC o PORTÁTIL → listar monitores
+if (in_array($equipo['tipo'], ['PC','PORTÁTIL'])) {
+    $sqlMon = "SELECT e.*
+               FROM pc_monitores pm
+               JOIN equipos e ON e.id = pm.id_monitor
+               WHERE pm.id_pc = :id_pc
+               ORDER BY e.marca, e.modelo, e.numero_serie";
+    $stmtMon = $pdo->prepare($sqlMon);
+    $stmtMon->execute([':id_pc' => $equipo['id']]);
+    $monitores_pc = $stmtMon->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Si es MONITOR → ver a qué PC está asignado
+if ($equipo['tipo'] === 'MONITOR') {
+    $sqlPc = "SELECT e.*
+              FROM pc_monitores pm
+              JOIN equipos e ON e.id = pm.id_pc
+              WHERE pm.id_monitor = :id_monitor";
+    $stmtPc = $pdo->prepare($sqlPc);
+    $stmtPc->execute([':id_monitor' => $equipo['id']]);
+    $pc_asociado = $stmtPc->fetch(PDO::FETCH_ASSOC);
+}
+
 // Obtener IP principal
 $sql_ip_principal = "SELECT ip, mac FROM ips_equipos WHERE equipo_id = :id AND es_principal = 1 LIMIT 1";
 $stmt_ip = $pdo->prepare($sql_ip_principal);
@@ -81,6 +108,48 @@ $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
         <tr><th>Usuario asignado</th> <td><?= htmlspecialchars($equipo['usuario_asignado']) ?></td></tr>
         <tr><th>Departamento</th> <td><?= htmlspecialchars($equipo['departamento']) ?></td></tr>
         <tr><th>Ubicación</th> <td><?= htmlspecialchars($equipo['ubicacion']) ?></td></tr>
+        <?php if (in_array($equipo['tipo'], ['PC','PORTÁTIL'])): ?>
+<tr>
+    <th>Monitores asociados</th>
+    <td>
+        <?php if (!empty($monitores_pc)): ?>
+            <ul class="mb-0">
+                <?php foreach ($monitores_pc as $m): ?>
+                    <li>
+                        <a href="equipo_ver.php?id=<?= (int)$m['id'] ?>">
+                            <?= htmlspecialchars(($m['marca'] ?? '').' '.($m['modelo'] ?? '')) ?>
+                            <?php if (!empty($m['numero_serie'])): ?>
+                                (SN: <?= htmlspecialchars($m['numero_serie']) ?>)
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <span class="text-muted">Sin monitores asociados</span>
+        <?php endif; ?>
+    </td>
+</tr>
+<?php endif; ?>
+
+<?php if ($equipo['tipo'] === 'MONITOR'): ?>
+<tr>
+    <th>Asignado a PC</th>
+    <td>
+        <?php if ($pc_asociado): ?>
+            <a href="equipo_ver.php?id=<?= (int)$pc_asociado['id'] ?>">
+                <?= htmlspecialchars(
+                    $pc_asociado['hostname']
+                    ?: (($pc_asociado['marca'] ?? '').' '.($pc_asociado['modelo'] ?? ''))
+                ) ?>
+            </a>
+        <?php else: ?>
+            <span class="text-muted">No asignado</span>
+        <?php endif; ?>
+    </td>
+</tr>
+<?php endif; ?>
+
         <tr>
     <th>Fecha Alta</th>
     <td><?= htmlspecialchars($equipo['fecha_compra'] ?? '') ?></td>

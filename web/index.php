@@ -421,6 +421,7 @@ require_once __DIR__ . '/includes/header.php';
             <th>Ubicación</th>
             <th>IP principal</th>
             <th>Red</th>
+            <th>Monitores</th>
             <th>Estado</th>
             <th style="width: 150px;">Acciones</th>
         </tr>
@@ -511,7 +512,7 @@ $(document).ready(function () {
 
         order: [[0, 'desc']],
         columnDefs: [
-            { orderable: false, searchable: false, targets: [1, 11] } // imagen y acciones
+            { orderable: false, searchable: false, targets: [1, 12] } // imagen y acciones
         ],
 
         // 👇 AÑADIMOS ESTO
@@ -520,7 +521,7 @@ $(document).ready(function () {
             // ID(0), Imagen(1), Nº serie(2), Tipo(3), Marca(4),
             // Usuario(5), Servicio(6), Ubicación(7),
             // IP principal(8), Red(9), Estado(10), Acciones(11)
-            var indiceEstado = 10;
+            var indiceEstado = 11;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();
@@ -531,7 +532,11 @@ $(document).ready(function () {
                 $celda.addClass('estado-averiado');
             } else if (estado === 'baja') {
                 $celda.addClass('estado-baja');
-            }
+            } else if ( estado === 'almacen') {
+                $celda.addClass('estado-almacen');
+            } else if (estado === 'prestado') {
+                $celda.addClass('estado-prestado');
+            }   
         },
 
         // Traducción al castellano

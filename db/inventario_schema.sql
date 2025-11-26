@@ -160,3 +160,21 @@ CREATE TABLE actividad_logs (
 -- Impedir duplicados en numero_serie de equipos
 ALTER TABLE equipos
 ADD UNIQUE KEY uniq_numero_serie (numero_serie);
+
+
+-- 19 Tabla para relacionar PCs con Monitores
+
+CREATE TABLE pc_monitores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_pc INT NOT NULL,
+    id_monitor INT NOT NULL,
+    fecha_asignacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_pc_monitores_pc
+        FOREIGN KEY (id_pc) REFERENCES equipos(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_pc_monitores_monitor
+        FOREIGN KEY (id_monitor) REFERENCES equipos(id)
+        ON DELETE CASCADE,
+    -- 1 monitor solo puede estar en un PC
+    CONSTRAINT uq_monitor_unico UNIQUE (id_monitor)
+);

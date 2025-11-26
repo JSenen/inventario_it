@@ -7,6 +7,18 @@ require_once __DIR__ . "/includes/logger.php";
 $redesStmt = $pdo->query("SELECT id, nombre, direccion_red FROM redes ORDER BY id ASC");
 $redes = $redesStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Monitores libres (no asignados todavía)
+$monitoresStmt = $pdo->query("
+    SELECT e.id, e.marca, e.modelo, e.numero_serie
+    FROM equipos e
+    LEFT JOIN pc_monitores pm ON pm.id_monitor = e.id
+    WHERE e.tipo = 'MONITOR'
+      AND pm.id_monitor IS NULL
+    ORDER BY e.marca, e.modelo, e.numero_serie
+");
+$monitores = $monitoresStmt->fetchAll(PDO::FETCH_ASSOC);
+
+
 $errores = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tipo            = trim($_POST['tipo'] ?? '');
@@ -26,6 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ip              = trim($_POST['ip'] ?? '');
     $mac             = strtoupper(trim($_POST['mac'] ?? ''));
     $red_id          = $_POST['red_id'] ?? '';
+    $monitoresSeleccionados = isset($_POST['monitores']) && is_array($_POST['monitores'])
+    ? array_map('intval', $_POST['monitores'])
+    : [];
+
 
     if ($tipo === '') {
         $errores[] = "El campo Tipo es obligatorio.";
@@ -96,6 +112,23 @@ if ($numero_serie !== '') {
 
             $equipoId = (int)$pdo->lastInsertId();
 
+            // Si es PC o PORTÁTIL, guardar monitores asociados
+        if (in_array($tipo, ['PC','PORTÁTIL']) && !empty($monitoresSeleccionados)) {
+            $sqlRel = "INSERT INTO pc_monitores (id_pc, id_monitor)
+                    VALUES (:id_pc, :id_monitor)";
+            $stmtRel = $pdo->prepare($sqlRel);
+
+            foreach ($monitoresSeleccionados as $idMon) {
+                if ($idMon > 0) {
+                    $stmtRel->execute([
+                        ':id_pc'     => $equipoId,
+                        ':id_monitor'=> $idMon
+                    ]);
+                }
+            }
+        }
+
+
             if ($ip !== '' && $red_id !== '') {
                 $sqlIp = "INSERT INTO ips_equipos (equipo_id, red_id, ip, mac, es_principal, notas)
                           VALUES (:equipo_id, :red_id, :ip, :mac, 1, NULL)";
@@ -155,6 +188,31 @@ require_once __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
         </select>
     </div>
+    <div class="col-md-8" id="bloque-monitores" style="display:none;">
+    <label class="form-label">Monitores libres para asociar</label>
+        <select name="monitores[]" class="form-select" multiple size="5">
+            <?php
+            $postMonitores = isset($_POST['monitores']) && is_array($_POST['monitores'])
+                ? array_map('intval', $_POST['monitores'])
+                : [];
+            foreach ($monitores as $m):
+                $idMon = (int)$m['id'];
+                $selected = in_array($idMon, $postMonitores) ? 'selected' : '';
+            ?>
+                <option value="<?= $idMon ?>" <?= $selected ?>>
+                    <?= htmlspecialchars(trim(
+                        ($m['marca'] ?? '') . ' ' .
+                        ($m['modelo'] ?? '') .
+                        ( $m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '' )
+                    )) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <small class="form-text text-muted">
+            Mantén Ctrl (o Cmd en Mac) para seleccionar varios monitores.
+        </small>
+    </div>
+
     <div class="col-md-4">
         <label class="form-label">Marca</label>
         <input type="text" name="marca" class="form-control" value="<?= htmlspecialchars($_POST['marca'] ?? '') ?>">
@@ -277,7 +335,29 @@ require_once __DIR__ . '/includes/header.php';
         <a href="index.php" class="btn btn-secondary">Cancelar</a>
     </div>
 </form>
+<!-- JavaScript para mostrar/ocultar bloque de monitores -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tipoSelect       = document.querySelector('select[name="tipo"]');
+    const bloqueMonitores  = document.getElementById('bloque-monitores');
 
+    function actualizarBloqueMonitores() {
+        if (!tipoSelect) return;
+        const valor = (tipoSelect.value || '').toUpperCase();
+        if (valor === 'PC' || valor === 'PORTÁTIL') {
+            bloqueMonitores.style.display = 'block';
+        } else {
+            bloqueMonitores.style.display = 'none';
+        }
+    }
+
+    if (tipoSelect && bloqueMonitores) {
+        tipoSelect.addEventListener('change', actualizarBloqueMonitores);
+        actualizarBloqueMonitores(); // Estado inicial (por si hay errores en POST)
+    }
+});
+</script>
+<!-- JavaScript para cargar IPs libres según red seleccionada -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const redSelect = document.getElementById('redSelect');
