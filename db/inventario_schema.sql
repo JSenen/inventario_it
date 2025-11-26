@@ -178,3 +178,45 @@ CREATE TABLE pc_monitores (
     -- 1 monitor solo puede estar en un PC
     CONSTRAINT uq_monitor_unico UNIQUE (id_monitor)
 );
+
+-- 20 Tabla para gestionar materiales de almacén
+-- Tabla principal de material / fungibles
+CREATE TABLE materiales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    referencia     VARCHAR(50)  NOT NULL,
+    descripcion    VARCHAR(255) NOT NULL,
+    categoria      VARCHAR(50)  NOT NULL,
+    unidad         VARCHAR(20)  NOT NULL DEFAULT 'ud',
+    stock_actual   INT NOT NULL DEFAULT 0,
+    stock_minimo   INT NOT NULL DEFAULT 0,
+    ubicacion      VARCHAR(100) DEFAULT NULL,
+    proveedor      VARCHAR(100) DEFAULT NULL,
+    coste_unitario DECIMAL(10,2) DEFAULT NULL,
+    notas          TEXT,
+    creado_en      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                  ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Movimientos de stock (entradas / salidas)
+CREATE TABLE materiales_movimientos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    material_id INT NOT NULL,
+    fecha       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    tipo        ENUM('ENTRADA','SALIDA') NOT NULL,
+    cantidad    INT NOT NULL,
+    motivo      VARCHAR(255) DEFAULT NULL,
+    usuario     VARCHAR(100) DEFAULT NULL,
+    equipo_id   INT DEFAULT NULL,  -- opcional: equipos.id si lo asocias a un PC
+    notas       TEXT,
+    CONSTRAINT fk_mm_material
+        FOREIGN KEY (material_id) REFERENCES materiales(id)
+        ON DELETE CASCADE
+);
+
+-- FK opcional a equipos desde movimientos de materiales
+ALTER TABLE materiales_movimientos
+    ADD CONSTRAINT fk_mm_equipo
+    FOREIGN KEY (equipo_id) REFERENCES equipos(id)
+    ON DELETE SET NULL;
+

@@ -64,6 +64,25 @@ $sql_ips = "SELECT ie.ip, ie.mac, r.nombre AS red_nombre, r.direccion_red
 $stmt_ips = $pdo->prepare($sql_ips);
 $stmt_ips->execute(['id' => $id]);
 
+
+// Materiales instalados / consumidos en este equipo (SALIDAS)
+$sqlMat = "
+    SELECT 
+        mm.*,
+        m.referencia,
+        m.descripcion,
+        m.unidad
+    FROM materiales_movimientos mm
+    JOIN materiales m ON m.id = mm.material_id
+    WHERE mm.equipo_id = :equipo_id
+      AND mm.tipo = 'SALIDA'
+    ORDER BY mm.fecha DESC, mm.id DESC
+";
+$stmtMat = $pdo->prepare($sqlMat);
+$stmtMat->execute([':equipo_id' => $equipo['id']]);
+$materiales_instalados = $stmtMat->fetchAll(PDO::FETCH_ASSOC);
+
+
 logActividad($pdo, 'VER_EQUIPO', 'Detalle del equipo visualizado: ID=' . $id);
 
 $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
@@ -176,6 +195,36 @@ $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
         <tr><th>Estado</th> <td><?= htmlspecialchars($equipo['estado']) ?></td></tr>
         <tr><th>Creado en</th> <td><?= htmlspecialchars($equipo['creado_en']) ?></td></tr>
     </table>
+<h4 class="mt-4">Material instalado / consumido</h4>
+
+<?php if (!empty($materiales_instalados)): ?>
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Referencia</th>
+                <th>Descripción</th>
+                <th>Cantidad</th>
+                <th>Usuario</th>
+                <th>Motivo</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($materiales_instalados as $mi): ?>
+            <tr>
+                <td><?= htmlspecialchars($mi['fecha']) ?></td>
+                <td><?= htmlspecialchars($mi['referencia']) ?></td>
+                <td><?= htmlspecialchars($mi['descripcion']) ?></td>
+                <td><?= (int)$mi['cantidad'] . ' ' . htmlspecialchars($mi['unidad']) ?></td>
+                <td><?= htmlspecialchars($mi['usuario']) ?></td>
+                <td><?= htmlspecialchars($mi['motivo']) ?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php else: ?>
+    <p class="text-muted">No hay registros de material asociado a este equipo.</p>
+<?php endif; ?>
 
     <h4>Notas del equipo</h4>
     <div class="border p-2 mb-4" style="white-space: pre-wrap;">

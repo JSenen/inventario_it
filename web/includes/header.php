@@ -143,16 +143,22 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php">Equipos</a>
+                    <a class="nav-link" href="index.php">👨🏽‍💻 Equipos</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="redes.php">Control de IPs</a>
+                    <a class="nav-link" href="redes.php">🌐 Control de IPs</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="redes_gestion.php">Gestión de redes</a>
+                    <a class="nav-link" href="redes_gestion.php">🌐 Gestión de redes</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="averias_list.php">Gestión de averías</a>
+                    <a class="nav-link" href="materiales.php">
+                        📦 Material / Fungibles
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="averias_list.php">⚠️ Gestión de averías</a>
                 </li>
                 <?php if ($_SESSION['rol'] === 'admin'): ?>
     <a class="nav-link" href="actividad_logs.php">logs</a>
