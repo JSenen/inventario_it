@@ -82,6 +82,29 @@
         transform: translateX(100%);
     }
 }
+
+.estado-activo {
+    background-color: #28a745 !important;  /* verde */
+    color: white !important;
+    font-weight: bold;
+    text-align: center;
+}
+
+.estado-averiado {
+    background-color: #ffc107 !important;  /* amarillo */
+    color: #000 !important;
+    font-weight: bold;
+    text-align: center;
+}
+
+.estado-baja {
+    background-color: #dc3545 !important;  /* rojo */
+    color: white !important;
+    font-weight: bold;
+    text-align: center;
+}
+
+
 </style>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </head>

@@ -453,6 +453,7 @@ require_once __DIR__ . '/includes/header.php';
 <script src="vendor/datatables/i18n/es-ES.json"></script>
 
 <script>
+
 $(document).ready(function () {
 
     var tabla = $('#tablaEquipos').DataTable({
@@ -473,52 +474,65 @@ $(document).ready(function () {
         // Botones de exportación
         dom: 'Bfrtip',
         buttons: [
-        {
-            extend: 'copy',
-            text: 'Copiar'
-        },
-        {
-            extend: 'excel',
-            text: 'Excel (página actual)'
-        },
-        {
-            extend: 'csv',
-            text: 'CSV (página actual)'
-        },
-        {
-            extend: 'print',
-            text: 'Imprimir'
-        },
-        {
-            // NUEVO: exportar TODO a CSV (respetando filtros/búsqueda)
-            text: 'CSV (todos los registros)',
-            action: function (e, dt, button, config) {
-                // Cogemos los mismos parámetros que DataTables envía al servidor
-                var params = dt.ajax.params();
-                params.export = 'csv';
-
-                // Construimos la querystring
-                var query = $.param(params);
-
-                // Abrimos la descarga
-                window.location = 'equipos_export.php?' + query;
+            {
+                extend: 'copy',
+                text: 'Copiar'
+            },
+            {
+                extend: 'excel',
+                text: 'Excel (página actual)'
+            },
+            {
+                extend: 'csv',
+                text: 'CSV (página actual)'
+            },
+            {
+                extend: 'print',
+                text: 'Imprimir'
+            },
+            {
+                text: 'CSV (todos los registros)',
+                action: function (e, dt, button, config) {
+                    var params = dt.ajax.params();
+                    params.export = 'csv';
+                    var query = $.param(params);
+                    window.location = 'equipos_export.php?' + query;
+                }
+            },
+            {
+                text: 'Excel (todos los registros)',
+                action: function (e, dt, button, config) {
+                    var params = dt.ajax.params();
+                    var query = $.param(params);
+                    window.location = 'equipos_export_excel.php?' + query;
+                }
             }
-        },
-        {
-            text: 'Excel (todos los registros)',
-            action: function (e, dt, button, config) {
-                var params = dt.ajax.params();
-                var query = $.param(params);
-                window.location = 'equipos_export_excel.php?' + query;
-            }
-        }
-
-    ],
+        ],
 
         order: [[0, 'desc']],
         columnDefs: [
             { orderable: false, searchable: false, targets: [1, 11] } // imagen y acciones
         ],
+
+        // 👇 AÑADIMOS ESTO
+        createdRow: function (row, data, dataIndex) {
+            // Índice de la columna "Estado"
+            // ID(0), Imagen(1), Nº serie(2), Tipo(3), Marca(4),
+            // Usuario(5), Servicio(6), Ubicación(7),
+            // IP principal(8), Red(9), Estado(10), Acciones(11)
+            var indiceEstado = 10;
+
+            var $celda = $('td:eq(' + indiceEstado + ')', row);
+            var estado = $celda.text().toLowerCase().trim();
+
+            if (estado === 'activo') {
+                $celda.addClass('estado-activo');
+            } else if (estado === 'averiado') {
+                $celda.addClass('estado-averiado');
+            } else if (estado === 'baja') {
+                $celda.addClass('estado-baja');
+            }
+        },
 
         // Traducción al castellano
         language: {
@@ -528,9 +542,10 @@ $(document).ready(function () {
         }
     });
 
-    // (opcional) si usaramos formulario de búsqueda manual, aquí iría el .search()...
-
 });
+</script>
+
+
 
 </script>
 
