@@ -407,7 +407,7 @@ require_once __DIR__ . '/includes/header.php';
     <?php endif; ?> -->
 
     <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
+        <table class="table table-hover align-middle">
            <table id="tablaEquipos" class="table table-striped table-sm align-middle">
     <thead>
         <tr>
