@@ -15,6 +15,10 @@ $stmtEq = $pdo->prepare("SELECT * FROM equipos WHERE id = :id");
 $stmtEq->execute([':id' => $id]);
 $equipo = $stmtEq->fetch(PDO::FETCH_ASSOC);
 
+// Imagen actual del equipo
+$imagenActual = isset($equipo['imagen']) ? $equipo['imagen'] : '';
+
+
 if (!$equipo) {
     echo '<div class="alert alert-danger">Equipo no encontrado.</div>';
     require_once __DIR__ . '/includes/footer.php';
@@ -557,9 +561,24 @@ require_once __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
         </select>
     </div>
-    <?php
-$imagenes_existentes = glob(__DIR__ . '/uploads/equipos/*.{jpg,jpeg,png,gif,webp}', GLOB_BRACE);
+<?php
+$imagenes_existentes = glob(
+    __DIR__ . '/uploads/equipos/*.{jpg,jpeg,png,gif,webp,JPG,JPEG,PNG,GIF,WEBP}',
+    GLOB_BRACE
+);
+
+if (!is_array($imagenes_existentes)) {
+    $imagenes_existentes = [];
+}
+
+// Ordenar alfabéticamente por nombre SIN timestamp
+usort($imagenes_existentes, function ($a, $b) {
+    $na = preg_replace('/^\d+_/', '', basename($a));
+    $nb = preg_replace('/^\d+_/', '', basename($b));
+    return strcasecmp($na, $nb);
+});
 ?>
+
 
     <!-- <div class="mb-3">
         <label for="imagen" class="form-label">Imagen del equipo</label>
@@ -578,42 +597,59 @@ $imagenes_existentes = glob(__DIR__ . '/uploads/equipos/*.{jpg,jpeg,png,gif,webp
     <!-- Imagen actual (oculta para el POST) -->
 <input type="hidden" name="imagen_actual" 
        value="<?= htmlspecialchars($equipo['imagen'] ?? '') ?>">
-
 <div class="mb-3">
     <label class="form-label"><b>Banco de imágenes en Base de Datos</b></label>
-    <select name="imagen_existente" id="imagen_existente" class="form-control">
-        <option value="">-- Mantener / elegir otra imagen --</option>
-        <?php foreach ($imagenes_existentes as $img): ?>
-            <?php $file = basename($img); ?>
-            <option value="<?= htmlspecialchars($file) ?>">
-                <?= htmlspecialchars($file) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
+
+    <div class="d-flex align-items-center gap-3">
+
+        <select name="imagen_existente" id="imagen_existente" class="form-control" style="max-width: 350px;">
+            <option value="">-- Mantener / elegir otra imagen --</option>
+
+            <?php foreach ($imagenes_existentes as $img): ?>
+                <?php 
+                    $file  = basename($img);
+                    $label = preg_replace('/^\d+_/', '', $file);
+                ?>
+                <option value="<?= htmlspecialchars($file) ?>">
+                    <?= htmlspecialchars($label) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <!-- Miniatura al cargar -->
+        <!-- Miniatura de la imagen elegida -->
+<img
+    id="preview_img_editar"
+    <?php if (!empty($equipo['imagen'])): ?>
+        src="<?= htmlspecialchars($equipo['imagen']) ?>"
+        style="max-width:120px;border:1px solid #ccc;margin-left:12px;"
+    <?php else: ?>
+        style="display:none;max-width:120px;border:1px solid #ccc;margin-left:12px;"
+    <?php endif; ?>
+>
+
+
+    </div>
+
     <small class="form-text text-muted">
-        Si eliges una de la lista, se usará esa.  
-        Si la dejas vacía y subes una nueva, se usará la nueva.  
-        Si no haces nada, se mantiene la imagen actual.
+        Si eliges una imagen, se usará esa.
+        Si subes una nueva, tendrá prioridad.
+        Si no haces nada, se mantiene la actual.
     </small>
 </div>
 
 <div class="mb-3">
-    <label class="form-label">Subir imagen nueva</label>
-    <input type="file" name="imagen" class="form-control">
+    <label class="form-label"><b>Subir imagen nueva</b></label>
+    <input type="file" name="imagen_nueva" id="imagen_nueva" accept="image/*" class="form-control">
+
+    <img id="preview_img_nueva"
+         style="display:none;max-width:120px;border:1px solid #ccc;margin-top:8px;">
+
+    <small class="text-muted">
+        Si seleccionas una imagen nueva, tendrá prioridad sobre la imagen existente.
+    </small>
 </div>
 
-<div class="mb-3">
-    <?php if (!empty($equipo['imagen'])): ?>
-        <p>Imagen actual:</p>
-        <img src="<?= htmlspecialchars($equipo['imagen']) ?>"
-             style="max-width:180px;border:1px solid #ccc;margin-top:8px;">
-    <?php else: ?>
-        <p><em>Este equipo no tiene imagen asignada.</em></p>
-    <?php endif; ?>
-
-    <img id="preview_img_editar"
-         style="display:none;max-width:180px;border:1px solid #ccc;margin-top:8px;">
-</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -839,6 +875,46 @@ document.addEventListener('DOMContentLoaded', function () {
     if (tipoSelect && bloqueMonitores) {
         tipoSelect.addEventListener('change', actualizarBloqueMonitores);
         actualizarBloqueMonitores();
+    }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const select  = document.getElementById('imagen_existente');
+    const preview = document.getElementById('preview_img_editar');
+    const fileInput = document.getElementById('imagen_nueva');
+    const previewNueva = document.getElementById('preview_img_nueva');
+
+    if (select) {
+        select.addEventListener('change', function () {
+            if (this.value) {
+                preview.src = 'uploads/equipos/' + this.value;
+                preview.style.display = 'block';
+            } else {
+                // Si quitas la selección, podrías volver a la imagen actual
+                // o esconder la miniatura; de momento la escondemos:
+                preview.src = '';
+                preview.style.display = 'none';
+            }
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    previewNueva.src = e.target.result;
+                    previewNueva.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewNueva.src = '';
+                previewNueva.style.display = 'none';
+            }
+        });
     }
 });
 </script>

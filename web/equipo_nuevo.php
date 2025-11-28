@@ -206,6 +206,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <?php
 // Carpeta FÍSICA donde guarda las imágenes de equipos
+// Carpeta FÍSICA donde guarda las imágenes de equipos
 $uploadDirFs = __DIR__ . '/uploads/equipos/';
 
 $imagenes_existentes = [];
@@ -215,6 +216,18 @@ if (is_dir($uploadDirFs)) {
         GLOB_BRACE
     );
 }
+
+if (!is_array($imagenes_existentes)) {
+    $imagenes_existentes = [];
+}
+
+// Ordenar alfabéticamente por nombre de archivo SIN el timestamp inicial
+usort($imagenes_existentes, function ($a, $b) {
+    $na = preg_replace('/^\d+_/', '', basename($a));
+    $nb = preg_replace('/^\d+_/', '', basename($b));
+    return strcasecmp($na, $nb);
+});
+
 ?>
 
 
@@ -329,22 +342,29 @@ if (is_dir($uploadDirFs)) {
             
     
 <div class="mb-3">
-    <label class="form-label"><b>Imagenes existente en Base de Datos</b></label>
-    <select name="imagen_existente" id="imagen_existente" class="form-control">
-        <option value="">-- Seleccionar una imagen ya subida --</option>
-        <?php foreach ($imagenes_existentes as $rutaFs): ?>
-            <?php $file = basename($rutaFs); ?>
-            <option value="<?= htmlspecialchars($file) ?>">
-                <?= htmlspecialchars($file) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
+    <label class="form-label"><b>Imágenes existentes en Base de Datos</b></label>
+
+    <div class="d-flex align-items-center gap-3">
+        <select name="imagen_existente" id="imagen_existente" class="form-control" style="max-width: 350px;">
+            <option value="">-- Seleccionar una imagen ya subida --</option>
+            <?php foreach ($imagenes_existentes as $rutaFs): ?>
+                <?php 
+                    $file  = basename($rutaFs);
+                    // Quitar el timestamp inicial: 1764317850_NOMBRE.jpg -> NOMBRE.jpg
+                    $label = preg_replace('/^\d+_/', '', $file);
+                ?>
+                <option value="<?= htmlspecialchars($file) ?>">
+                    <?= htmlspecialchars($label) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <!-- Miniatura al lado del select -->
+        <img id="preview_img_nuevo"
+             style="display:none;max-width:120px;border:1px solid #ccc;margin-left:12px;">
+    </div>
 </div>
 
-<div class="mb-3">
-    <img id="preview_img_nuevo"
-         style="display:none;max-width:180px;border:1px solid #ccc;margin-top:8px;">
-</div>
 
 <div class="mb-3">
     <label for="imagen" class="form-label"><b>Subir imagen nueva para este equipo</b>(Suba una imagen si no hay ninguna disponible)</label>
