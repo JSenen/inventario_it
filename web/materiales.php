@@ -55,11 +55,70 @@ $materiales = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </tbody>
     </table>
 </div>
+<!-- DataTables (puedes pasar a local más adelante si quieres) -->
+<!-- jQuery local -->
+<script src="vendor/jquery/jquery-3.7.1.min.js"></script>
 
+<!-- DataTables núcleo -->
+<script src="vendor/datatables/js/dataTables.min.js"></script>
+
+<!-- Extensión Buttons -->
+<script src="vendor/datatables/js/dataTables.buttons.min.js"></script>
+<script src="vendor/datatables/js/jszip.min.js"></script>
+<script src="vendor/datatables/js/pdfmake.min.js"></script>
+<script src="vendor/datatables/js/vfs_fonts.js"></script>
+<script src="vendor/datatables/js/buttons.html5.min.js"></script>
+<script src="vendor/datatables/js/buttons.print.min.js"></script>
+
+<!-- Idioma español -->
+<script src="vendor/datatables/i18n/es-ES.json"></script>
 <script>
 $(document).ready(function () {
-    $('#tablaMateriales').DataTable();
+    $('#tablaMateriales').DataTable({
+        // Tamaño de página por defecto y opciones
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+
+        // Botones de exportación (como en index, pero sin scripts extra)
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'copy',
+                text: 'Copiar'
+            },
+            {
+                extend: 'excel',
+                text: 'Excel'
+            },
+            {
+                extend: 'csv',
+                text: 'CSV'
+            },
+            {
+                extend: 'print',
+                text: 'Imprimir'
+            }
+        ],
+
+        // Orden por defecto (ajusta el índice de columna si quieres otra)
+        order: [[0, 'asc']],
+
+        // La última columna (Acciones) sin ordenar ni buscar
+        columnDefs: [
+            {
+                orderable: false,
+                searchable: false,
+                targets: -1   // última columna
+            }
+        ],
+
+        // Idioma español, igual que en index
+        language: {
+            url: 'vendor/datatables/i18n/es-ES.json'
+        }
+    });
 });
 </script>
+
 
 <?php include 'includes/footer.php'; ?>

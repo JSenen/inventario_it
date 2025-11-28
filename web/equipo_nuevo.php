@@ -46,10 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($tipo === '') {
         $errores[] = "El campo Tipo es obligatorio.";
     }
-    // Por defecto, sin imagen
-$imagenRuta = null;
 
-// Procesar imagen si se ha enviado
+
+/* // Procesar imagen si se ha enviado
 if (!empty($_FILES['imagen']['name'])) {
     $uploadDir = __DIR__ . '/uploads/equipos/';
 
@@ -71,7 +70,39 @@ if (!empty($_FILES['imagen']['name'])) {
     } else {
         $errores[] = "No se pudo guardar la imagen del equipo.";
     }
+} */
+
+   
+$imagenRuta = null;
+
+// 1) Si ha seleccionado una imagen ya existente
+if (!empty($_POST['imagen_existente'])) {
+    $file = basename($_POST['imagen_existente']);
+    $imagenRuta = 'uploads/equipos/' . $file;
+
+// 2) Si no hay existente pero sube una nueva
+} elseif (!empty($_FILES['imagen']['name'])) {
+    $uploadDir = __DIR__ . '/uploads/equipos/';
+
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0775, true);
+    }
+
+    $nombreOriginal = basename($_FILES['imagen']['name']);
+    $nombreLimpio   = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
+    $nombreFinal    = time() . '_' . $nombreLimpio;
+
+    $rutaRelativa = 'uploads/equipos/' . $nombreFinal;
+    $rutaFisica   = $uploadDir . $nombreFinal;
+
+    if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaFisica)) {
+        $imagenRuta = $rutaRelativa;
+    } else {
+        $errores[] = "No se pudo guardar la imagen del equipo.";
+    }
 }
+
+
 
 // Comprobar si el número de serie ya existe
 if ($numero_serie !== '') {
@@ -172,6 +203,20 @@ require_once __DIR__ . '/includes/header.php';
         </ul>
     </div>
 <?php endif; ?>
+
+<?php
+// Carpeta FÍSICA donde guarda las imágenes de equipos
+$uploadDirFs = __DIR__ . '/uploads/equipos/';
+
+$imagenes_existentes = [];
+if (is_dir($uploadDirFs)) {
+    $imagenes_existentes = glob(
+        $uploadDirFs . '*.{jpg,jpeg,png,gif,webp,JPG,JPEG,PNG,GIF,WEBP}',
+        GLOB_BRACE
+    );
+}
+?>
+
 
 <form method="post" class="row g-3" enctype="multipart/form-data">
     <div class="col-md-4">
@@ -281,11 +326,51 @@ require_once __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
         </select>
     </div>
+            
+    
+<div class="mb-3">
+    <label class="form-label"><b>Imagenes existente en Base de Datos</b></label>
+    <select name="imagen_existente" id="imagen_existente" class="form-control">
+        <option value="">-- Seleccionar una imagen ya subida --</option>
+        <?php foreach ($imagenes_existentes as $rutaFs): ?>
+            <?php $file = basename($rutaFs); ?>
+            <option value="<?= htmlspecialchars($file) ?>">
+                <?= htmlspecialchars($file) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+</div>
 
-    <div class="mb-3">
-        <label for="imagen" class="form-label">Imagen del equipo</label>
-        <input type="file" class="form-control" name="imagen" accept="image/*">
-    </div>
+<div class="mb-3">
+    <img id="preview_img_nuevo"
+         style="display:none;max-width:180px;border:1px solid #ccc;margin-top:8px;">
+</div>
+
+<div class="mb-3">
+    <label for="imagen" class="form-label"><b>Subir imagen nueva para este equipo</b>(Suba una imagen si no hay ninguna disponible)</label>
+    <input type="file" class="form-control" name="imagen" accept="image/*">
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const select  = document.getElementById('imagen_existente');
+    const preview = document.getElementById('preview_img_nuevo');
+
+    if (select) {
+        select.addEventListener('change', function () {
+            if (this.value) {
+                // Ruta WEB, no uses __DIR__ aquí
+                preview.src = 'uploads/equipos/' + this.value;
+                preview.style.display = 'block';
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+
 
 
     <div class="col-12">

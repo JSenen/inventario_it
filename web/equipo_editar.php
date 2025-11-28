@@ -71,7 +71,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
     // Si se sube una nueva imagen, sustituirla
-if (!empty($_FILES['imagen']['name'])) {
+// if (!empty($_FILES['imagen']['name'])) {
+//     $uploadDir = __DIR__ . '/uploads/equipos/';
+
+//     if (!is_dir($uploadDir)) {
+//         mkdir($uploadDir, 0775, true);
+//     }
+
+//     $nombreOriginal = basename($_FILES['imagen']['name']);
+//     $nombreLimpio   = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
+//     $nombreFinal    = time() . '_' . $nombreLimpio;
+
+//     $rutaRelativa = 'uploads/equipos/' . $nombreFinal;
+//     $rutaFisica   = $uploadDir . $nombreFinal;
+
+//     if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaFisica)) {
+
+//         // Borrar la imagen anterior si existe
+//         if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {
+//             @unlink(__DIR__ . '/' . $imagenRuta);
+//         }
+
+//         $imagenRuta = $rutaRelativa;
+//     } else {
+//         $errores[] = "No se pudo guardar la nueva imagen del equipo.";
+//     }
+// }
+// Imagen actual desde la BD (puede ser null o cadena vacía)
+$imagenRuta = $equipo['imagen'] ?? null;
+// 1) Si ha elegido una imagen existente en el desplegable
+if (!empty($_POST['imagen_existente'])) {
+
+    // Borrar la imagen anterior si existe en disco
+    if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {
+        @unlink(__DIR__ . '/' . $imagenRuta);
+    }
+
+    $file = basename($_POST['imagen_existente']); // seguridad básica
+    $imagenRuta = 'uploads/equipos/' . $file;
+
+// 2) Si no ha elegido existente, pero ha subido una nueva imagen
+} elseif (!empty($_FILES['imagen']['name'])) {
+
     $uploadDir = __DIR__ . '/uploads/equipos/';
 
     if (!is_dir($uploadDir)) {
@@ -97,6 +138,10 @@ if (!empty($_FILES['imagen']['name'])) {
         $errores[] = "No se pudo guardar la nueva imagen del equipo.";
     }
 }
+
+// 3) Si no hay ni imagen_existente ni archivo nuevo
+//    -> $imagenRuta se queda igual que venía de la BD
+
 
     // Campos principales
     $tipo             = strtoupper(trim($_POST['tipo'] ?? ''));
@@ -512,8 +557,11 @@ require_once __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
         </select>
     </div>
+    <?php
+$imagenes_existentes = glob(__DIR__ . '/uploads/equipos/*.{jpg,jpeg,png,gif,webp}', GLOB_BRACE);
+?>
 
-    <div class="mb-3">
+    <!-- <div class="mb-3">
         <label for="imagen" class="form-label">Imagen del equipo</label>
             <?php if (!empty($equipo['imagen'])): ?>
                 <div class="mb-3">
@@ -525,7 +573,67 @@ require_once __DIR__ . '/includes/header.php';
             <?php endif; ?>
 
         <input type="file" class="form-control" name="imagen" accept="image/*">
-    </div>
+    </div> -->
+
+    <!-- Imagen actual (oculta para el POST) -->
+<input type="hidden" name="imagen_actual" 
+       value="<?= htmlspecialchars($equipo['imagen'] ?? '') ?>">
+
+<div class="mb-3">
+    <label class="form-label"><b>Banco de imágenes en Base de Datos</b></label>
+    <select name="imagen_existente" id="imagen_existente" class="form-control">
+        <option value="">-- Mantener / elegir otra imagen --</option>
+        <?php foreach ($imagenes_existentes as $img): ?>
+            <?php $file = basename($img); ?>
+            <option value="<?= htmlspecialchars($file) ?>">
+                <?= htmlspecialchars($file) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <small class="form-text text-muted">
+        Si eliges una de la lista, se usará esa.  
+        Si la dejas vacía y subes una nueva, se usará la nueva.  
+        Si no haces nada, se mantiene la imagen actual.
+    </small>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Subir imagen nueva</label>
+    <input type="file" name="imagen" class="form-control">
+</div>
+
+<div class="mb-3">
+    <?php if (!empty($equipo['imagen'])): ?>
+        <p>Imagen actual:</p>
+        <img src="<?= htmlspecialchars($equipo['imagen']) ?>"
+             style="max-width:180px;border:1px solid #ccc;margin-top:8px;">
+    <?php else: ?>
+        <p><em>Este equipo no tiene imagen asignada.</em></p>
+    <?php endif; ?>
+
+    <img id="preview_img_editar"
+         style="display:none;max-width:180px;border:1px solid #ccc;margin-top:8px;">
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const select  = document.getElementById('imagen_existente');
+    const preview = document.getElementById('preview_img_editar');
+
+    if (select) {
+        select.addEventListener('change', function () {
+            if (this.value) {
+                preview.src = 'uploads/equipos/' + this.value;
+                preview.style.display = 'block';
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+
 
 
     <div class="col-12">
