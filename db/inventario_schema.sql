@@ -221,7 +221,7 @@ ALTER TABLE materiales_movimientos
     ON DELETE SET NULL;
 
 
-
+-- ADDED 29-11-2025
 
 
 -- Departamentos
@@ -231,6 +231,24 @@ CREATE TABLE departamentos (
     descripcion VARCHAR(255) DEFAULT NULL
 );
 
+CREATE TABLE secciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255) DEFAULT NULL
+);
+
+INSERT INTO `secciones` (`id`, `nombre`, `descripcion`) VALUES
+(1, 'GATI', 'Oficina'),
+(2, 'Almacén GATI', 'Almacén GATI'),
+(3, 'Deposito Armas', 'Deposito Armas IAE Especial Barcelona'),
+(4, 'Secretaría', 'Secretaría');
+
+ALTER TABLE equipos
+ADD COLUMN seccion_id INT DEFAULT NULL,
+ADD CONSTRAINT fk_equipos_seccion
+    FOREIGN KEY (seccion_id) REFERENCES secciones(id);
+
+
 -- Ubicaciones (edificios, sedes, plantas…)
 CREATE TABLE ubicaciones (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -238,9 +256,58 @@ CREATE TABLE ubicaciones (
     descripcion VARCHAR(255) DEFAULT NULL
 );
 
+INSERT INTO `ubicaciones` (`id`, `nombre`, `descripcion`) VALUES
+(1, 'Zona', 'Travessera de Gracia 291, Barcelona'),
+(2, 'Aeropuerto', 'Avenida Pepa Colomer, El Prat de Llobregat, Barcelona'),
+(3, 'Puerto', 'MuelleÁlvarez de la Campa, 08039,Barcelona'),
+(5, 'Sala Coordinacion Policial', NULL);
+
 -- Tipos de equipo (PC, Portátil, Impresora, Monitor…)
 CREATE TABLE tipos_equipo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     descripcion VARCHAR(255) DEFAULT NULL
 );
+
+INSERT INTO `tipos_equipo` (`id`, `nombre`, `descripcion`) VALUES
+(1, 'PC', NULL),
+(2, 'Portatil', NULL),
+(3, 'Impresora', NULL),
+(4, 'Monitor', NULL),
+(5, 'Escaner', NULL),
+(6, 'Switch', NULL),
+(7, 'Router', NULL),
+(8, 'Video Conferencia', NULL),
+(9, 'Movil', NULL),
+(10, 'Tablet', NULL),
+(11, 'Otro', NULL),
+(12, 'Impresora Guias', NULL),
+(13, 'Impresora Multifuncion', NULL);
+
+
+-- Tipos de Servicio (Intranet, Internet, ...)
+CREATE TABLE tipos_servicio (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL
+);
+
+INSERT INTO `tipos_servicio` (`id`, `nombre`) VALUES
+(1, 'Intranet'),
+(2, 'Internet'),
+(3, 'Otro'),
+(4, '-----'),
+(5, 'SITEL');
+
+CREATE TABLE estados_equipo (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) DEFAULT NULL
+);
+INSERT INTO estados_equipo (nombre) VALUES
+('Activo'),
+('Averiado'),
+('Baja'),
+('Almacén'),
+('Prestado');
+CREATE INDEX idx_equipos_seccion ON equipos (seccion_id);
+CREATE INDEX idx_equipos_estado ON equipos (estado);

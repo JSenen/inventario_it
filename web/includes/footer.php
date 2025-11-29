@@ -3,7 +3,7 @@
 ?>
 </div> <!-- .container -->
 <footer class="bg-light text-center text-muted py-3 mt-4 border-top">
-    <small>Inventario Informático — By JSenen </small>
+    <small>Inventario Informático — &copy; By JSenen -- 2025 --</small>
 </footer>
 
 <!-- Bootstrap local JS -->

@@ -3,9 +3,27 @@ require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . "/includes/logger.php";
 
+// Cargar tipos de equipos para los select
+$tiposStmt = $pdo->query("SELECT nombre FROM tipos_equipo ORDER BY nombre ASC");
+$tipos = $tiposStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Cargar tipos de servicio para los select
+$serviciosStmt = $pdo->query("SELECT nombre FROM tipos_servicio ORDER BY nombre ASC");
+$servicios = $serviciosStmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+// Cargar ubicaciones desde la tabla ubicaciones
+$ubicacionesStmt = $pdo->query("SELECT nombre FROM ubicaciones ORDER BY nombre ASC");
+$ubicaciones = $ubicacionesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+
 // Cargar redes para el select
 $redesStmt = $pdo->query("SELECT id, nombre, direccion_red FROM redes ORDER BY id ASC");
 $redes = $redesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Cargar secciones para el select
+$seccionesStmt = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC");   
+$secciones = $seccionesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Monitores libres (no asignados todavía)
 $monitoresStmt = $pdo->query("
@@ -30,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $departamento    = strtoupper(trim($_POST['departamento'] ?? ''));
     $ubicacion       = strtoupper(trim($_POST['ubicacion'] ?? ''));
     $fecha_compra    = $_POST['fecha_compra'] ?? null;
-    $proveedor       = strtoupper(trim($_POST['proveedor'] ?? ''));
+    $proveedor       = strtoupper(trim($_POST['proveedor'] ?? 'GC'));
     $coste           = $_POST['coste'] ?? null;
-    $estado          = trim($_POST['estado'] ?? 'En uso');
+    $estado          = trim($_POST['estado'] ?? 'Activo');
     $notas           = trim($_POST['notas'] ?? '');
 
     $ip              = trim($_POST['ip'] ?? '');
@@ -46,33 +64,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($tipo === '') {
         $errores[] = "El campo Tipo es obligatorio.";
     }
+    $seccion_id = isset($_POST['seccion_id']) && $_POST['seccion_id'] !== ''
+    ? (int) $_POST['seccion_id']
+    : null;
 
-
-/* // Procesar imagen si se ha enviado
-if (!empty($_FILES['imagen']['name'])) {
-    $uploadDir = __DIR__ . '/uploads/equipos/';
-
-    // Crear carpeta si no existe
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0775, true);
-    }
-
-    // Nombre de archivo limpio
-    $nombreOriginal = basename($_FILES['imagen']['name']);
-    $nombreLimpio = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
-    $nombreFinal = time() . '_' . $nombreLimpio;
-
-    $rutaRelativa = 'uploads/equipos/' . $nombreFinal;     // Lo que guardas en BD
-    $rutaFisica   = $uploadDir . $nombreFinal;             // Ruta en el disco
-
-    if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaFisica)) {
-        $imagenRuta = $rutaRelativa;
-    } else {
-        $errores[] = "No se pudo guardar la imagen del equipo.";
-    }
-} */
-
-   
+    // Manejo de la imagen del equipo
 $imagenRuta = null;
 
 // 1) Si ha seleccionado una imagen ya existente
@@ -114,15 +110,20 @@ if ($numero_serie !== '') {
     }
 }
     // Si no hay errores, proceder a guardar
+    
+    // Justo arriba del if (empty($errores))
+    $seccion_id = isset($_POST['seccion_id']) && $_POST['seccion_id'] !== ''
+    ? (int) $_POST['seccion_id']
+    : null;
 
     if (empty($errores)) {
         try {
             $pdo->beginTransaction();
 
             $sqlEquipo = "INSERT INTO equipos 
-                (tipo, marca, modelo, numero_serie, hostname, usuario_asignado, departamento, ubicacion, fecha_compra, proveedor, coste, estado, notas, imagen)
+                (tipo, marca, modelo, numero_serie, hostname, usuario_asignado, departamento, ubicacion, fecha_compra, proveedor, coste, estado, notas, imagen, seccion_id)
                 VALUES 
-                (:tipo, :marca, :modelo, :numero_serie, :hostname, :usuario_asignado, :departamento, :ubicacion, :fecha_compra, :proveedor, :coste, :estado, :notas, :imagen)";
+                (:tipo, :marca, :modelo, :numero_serie, :hostname, :usuario_asignado, :departamento, :ubicacion, :fecha_compra, :proveedor, :coste, :estado, :notas, :imagen, :seccion_id)";
             $stmtEq = $pdo->prepare($sqlEquipo);
             $stmtEq->execute([
                 ':tipo'            => $tipo,
@@ -139,6 +140,7 @@ if ($numero_serie !== '') {
                 ':estado'          => $estado,
                 ':notas'           => $notas,
                 ':imagen'          => $imagenRuta,
+                ':seccion_id'      => $seccion_id,
             ]);
 
             $equipoId = (int)$pdo->lastInsertId();
@@ -159,7 +161,7 @@ if ($numero_serie !== '') {
             }
         }
 
-
+            // Si se proporcionó IP y red, guardarla
             if ($ip !== '' && $red_id !== '') {
                 $sqlIp = "INSERT INTO ips_equipos (equipo_id, red_id, ip, mac, es_principal, notas)
                           VALUES (:equipo_id, :red_id, :ip, :mac, 1, NULL)";
@@ -232,20 +234,23 @@ usort($imagenes_existentes, function ($a, $b) {
 
 
 <form method="post" class="row g-3" enctype="multipart/form-data">
-    <div class="col-md-4">
-        <label class="form-label">Tipo *</label>
-        <select name="tipo" class="form-select" required>
-            <option value="">-- Selecciona --</option>
+    <div class="mb-3">
+    <label class="form-label"><b>Tipo de equipo</b></label>
+    <select name="tipo" class="form-control" required>
+        <option value="">-- Selecciona Tipo --</option>
+        <?php foreach ($tipos as $t): ?>
             <?php
-            $tipos = ['PC', 'PORTÁTIL', 'MONITOR', 'IMPRESORA', 'ESCÁNER', 'SWITCH', 'ROUTER', 'MOVIL', 'TABLET', 'VIDEO', 'OTRO'];
-            foreach ($tipos as $t):
+                $nnombreTipos = $t['nombre'];
+                $valorPost  = $_POST['tipo'] ?? '';
+                $selected   = (strtoupper($valorPost) === strtoupper($nnombreTipos)) ? 'selected' : '';
             ?>
-                <option value="<?= $t ?>" <?= (($_POST['tipo'] ?? '') === $t) ? 'selected' : '' ?>>
-                    <?= $t ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+            <option value="<?= htmlspecialchars(strtoupper($nnombreTipos)) ?>" <?= $selected ?>>
+                <?= htmlspecialchars($nnombreTipos) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+</div>
+
     <div class="col-md-8" id="bloque-monitores" style="display:none;">
     <label class="form-label">Monitores libres para asociar</label>
         <select name="monitores[]" class="form-select" multiple size="5">
@@ -286,32 +291,64 @@ usort($imagenes_existentes, function ($a, $b) {
     </div>
     <div class="col-md-4">
         <label class="form-label">Servicio</label>
-        <select name="estado" class="form-select">
-            <?php
-            $hostnames = ['-----','Intranet', 'Internet', 'SITEL', 'VPN', 'Otro'];
-            $hostname = $_POST['hostname'] ?? '';
-            foreach ($hostnames as $hostname):
-            ?>
-                <option value="<?= $hostname ?>" <?= ($hostnames === $hostname) ? 'selected' : '' ?>>
-                    <?= $hostname ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        
+            <select name="hostname" class="form-select">
+                <option value="">-- Selecciona Servicio --</option>
+                <?php foreach ($servicios as $s): ?>
+                    <?php
+                        $nombreServicio = $s['nombre'];
+                        $valorPost  = $_POST['hostname'] ?? '';
+                        $selected   = (strtoupper($valorPost) === strtoupper($nombreServicio)) ? 'selected' : '';
+                    ?>
+                    <option value="<?= htmlspecialchars(strtoupper($nombreServicio)) ?>" <?= $selected ?>>
+                        <?= htmlspecialchars($nombreServicio) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>        
     </div>
+    
     <div class="col-md-4">
         <label class="form-label">Usuario asignado</label>
         <input type="text" name="usuario_asignado" class="form-control" value="<?= htmlspecialchars($_POST['usuario_asignado'] ?? '') ?>">
     </div>
-
+    <div class="col-md-4">
+        <label class="form-label">Ubicación</label>
+        <select name="ubicacion" class="form-select">
+            <option value="">-- Selecciona ubicación --</option>
+            <?php foreach ($ubicaciones as $u): ?>
+                <?php
+                    $nombreUbic = $u['nombre'];
+                    $valorPost  = $_POST['ubicacion'] ?? '';
+                    $selected   = (strtoupper($valorPost) === strtoupper($nombreUbic)) ? 'selected' : '';
+                ?>
+                <option value="<?= htmlspecialchars(strtoupper($nombreUbic)) ?>" <?= $selected ?>>
+                    <?= htmlspecialchars($nombreUbic) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
     <div class="col-md-4">
         <label class="form-label">Departamento</label>
         <input type="text" name="departamento" class="form-control" value="<?= htmlspecialchars($_POST['departamento'] ?? '') ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label">Ubicación</label>
-        <input type="text" name="ubicacion" class="form-control" value="<?= htmlspecialchars($_POST['ubicacion'] ?? '') ?>">
+        <label class="form-label">Sección</label>
+        <select name="seccion_id" class="form-control" required>
+            <option value="">-- Selecciona sección --</option>
+
+            <?php
+            $seccionPost = $_POST['seccion_id'] ?? '';
+            foreach ($secciones as $sec):
+                $selected = ($seccionPost !== '' && (int)$seccionPost === (int)$sec['id']) ? 'selected' : '';
+            ?>
+                <option value="<?= $sec['id'] ?>" <?= $selected ?>>
+                    <?= htmlspecialchars($sec['nombre']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
     </div>
+
+
+
     <div class="col-md-4">
         <label class="form-label">Fecha Alta</label>
         <input type="date" name="fecha_compra" class="form-control" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">

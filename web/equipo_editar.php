@@ -15,6 +15,22 @@ $stmtEq = $pdo->prepare("SELECT * FROM equipos WHERE id = :id");
 $stmtEq->execute([':id' => $id]);
 $equipo = $stmtEq->fetch(PDO::FETCH_ASSOC);
 
+// Cargar listas tipos equipo para los selects
+$tiposStmt = $pdo->query("SELECT nombre FROM tipos_equipo ORDER BY nombre ASC");
+$tipos = $tiposStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Cargar listas de servicios para los selects
+$serviciosStmt = $pdo->query("SELECT nombre FROM tipos_servicio ORDER BY nombre ASC");
+$servicios = $serviciosStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Cargar ubicaciones desde la tabla ubicaciones
+$ubicacionesStmt = $pdo->query("SELECT nombre FROM ubicaciones ORDER BY nombre ASC");
+$ubicaciones = $ubicacionesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Cargar secciones desde la tabla secciones
+$seccionesStmt = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC");
+$secciones = $seccionesStmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Imagen actual del equipo
 $imagenActual = isset($equipo['imagen']) ? $equipo['imagen'] : '';
 
@@ -73,34 +89,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ? array_map('intval', $_POST['monitores'])
     : [];
 
-
-    // Si se sube una nueva imagen, sustituirla
-// if (!empty($_FILES['imagen']['name'])) {
-//     $uploadDir = __DIR__ . '/uploads/equipos/';
-
-//     if (!is_dir($uploadDir)) {
-//         mkdir($uploadDir, 0775, true);
-//     }
-
-//     $nombreOriginal = basename($_FILES['imagen']['name']);
-//     $nombreLimpio   = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
-//     $nombreFinal    = time() . '_' . $nombreLimpio;
-
-//     $rutaRelativa = 'uploads/equipos/' . $nombreFinal;
-//     $rutaFisica   = $uploadDir . $nombreFinal;
-
-//     if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaFisica)) {
-
-//         // Borrar la imagen anterior si existe
-//         if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {
-//             @unlink(__DIR__ . '/' . $imagenRuta);
-//         }
-
-//         $imagenRuta = $rutaRelativa;
-//     } else {
-//         $errores[] = "No se pudo guardar la nueva imagen del equipo.";
-//     }
-// }
 // Imagen actual desde la BD (puede ser null o cadena vacía)
 $imagenRuta = $equipo['imagen'] ?? null;
 // 1) Si ha elegido una imagen existente en el desplegable
@@ -161,6 +149,7 @@ if (!empty($_POST['imagen_existente'])) {
     $coste            = $_POST['coste'] ?? null;
     $estado           = trim($_POST['estado'] ?? 'En uso');
     $notas            = strtoupper(trim($_POST['notas'] ?? ''));
+    
 
     // Red / IP
     $ip     = strtoupper(trim($_POST['ip'] ?? ''));
@@ -223,7 +212,12 @@ if ($numero_serie !== '') {
         $errores[] = "El número de serie $numero_serie ya está asignado a otro equipo.";
     }
 }
+    // Obtener seccion_id
+    $seccion_id = isset($_POST['seccion_id']) && $_POST['seccion_id'] !== ''
+    ? (int) $_POST['seccion_id']
+    : null;
 
+    // Si no hay errores, proceder a actualizar
     if (empty($errores)) {
         try {
             $pdo->beginTransaction();
@@ -243,7 +237,8 @@ if ($numero_serie !== '') {
                 coste = :coste,
                 estado = :estado,
                 notas = :notas,
-                imagen = :imagen
+                imagen = :imagen,
+                seccion_id = :seccion_id
               WHERE id = :id";
 
             $stmtUp = $pdo->prepare($sqlEquipo);
@@ -263,6 +258,7 @@ if ($numero_serie !== '') {
                 ':notas'            => $notas,
                 ':imagen'           => $imagenRuta,   
                 ':id'               => $id,
+                ':seccion_id'       => $seccion_id,
             ]);
 
             // Gestionar IP principal
@@ -398,6 +394,7 @@ if ($numero_serie !== '') {
         'coste'            => $coste,
         'estado'           => $estado,
         'notas'            => $notas,
+        'seccion_id'       => $seccion_id,
     ]);
 
     $ipRow = [
@@ -437,23 +434,26 @@ require_once __DIR__ . '/includes/header.php';
 <?php endif; ?>
 
 <form method="post" class="row g-3" enctype="multipart/form-data">
-    <div class="col-md-4">
-    <label class="form-label">Tipo *</label>
-        <select name="tipo" class="form-select" required>
-            <option value="">-- Selecciona --</option>
+    <div class="mb-3">
+    <label class="form-label"><b>Tipo de equipo</b></label>
+    <select name="tipo" class="form-control" required>
+        <option value="">-- Selecciona tipo --</option>
+        <?php foreach ($tipos as $t): ?>
             <?php
-            // Valores en MAYÚSCULAS para que coincidan con lo que guardas con strtoupper()
-            $tipos = ['PC', 'PORTÁTIL', 'MONITOR', 'IMPRESORA', 'ESCANER', 'SWITCH', 'ROUTER', 'MOVIL', 'TABLET', 'VIDEO', 'OTRO'];
-            foreach ($tipos as $t):
+                // Nombre tal y como está en la tabla ubicaciones
+                $nombreTipo = $t['nombre'];
+                // Lo que hay ahora guardado en el equipo
+                $tipoEquipo = $equipo['tipo'] ?? '';
+                // Comparamos en mayúsculas porque tú guardas con strtoupper()
+                $selected = (strtoupper($tipoEquipo) === strtoupper($nombreTipo)) ? 'selected' : '';
             ?>
-                <option
-                    value="<?= $t ?>"
-                    <?= (strcasecmp($equipo['tipo'] ?? '', $t) === 0) ? 'selected' : '' ?>>
-                    <?= ucfirst(strtolower($t)) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+            <option value="<?= htmlspecialchars(strtoupper($nombreTipo)) ?>" <?= $selected ?>>
+                <?= htmlspecialchars($nombreTipo) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+</div>
+
 
     <div class="col-md-8" id="bloque-monitores" style="display:none;">
     <label class="form-label">Monitores asociados</label>
@@ -498,25 +498,18 @@ require_once __DIR__ . '/includes/header.php';
     <div class="col-md-4">
     <label class="form-label">Servicio</label>
         <select name="hostname" class="form-select">
-            <?php
-            // Clave = lo que se guarda en BD (MAYÚSCULAS)
-            // Valor = cómo se muestra en pantalla
-            $hostnames = [
-                '-----'    => '-----',
-                'INTRANET' => 'Intranet',
-                'INTERNET' => 'Internet',
-                'SITEL'    => 'SITEL',
-                'VPN'      => 'VPN',
-                'OTRO'     => 'Otro',
-            ];
-
-            $hostnameActual = $equipo['hostname'] ?? '';
-            foreach ($hostnames as $value => $label):
-            ?>
-                <option
-                    value="<?= $value ?>"
-                    <?= (strcasecmp($hostnameActual, $value) === 0) ? 'selected' : '' ?>>
-                    <?= $label ?>
+            <option value="">-- Selecciona Servicio --</option>
+            <?php foreach ($servicios as $s): ?>
+                <?php
+                    // Nombre tal y como está en la tabla ubicaciones
+                    $nombreServicio = $s['nombre'];
+                    // Lo que hay ahora guardado en el equipo
+                    $tipoEquipo = $equipo['hostname'] ?? '';
+                    // Comparamos en mayúsculas porque tú guardas con strtoupper()
+                    $selected = (strtoupper($tipoEquipo) === strtoupper($nombreServicio)) ? 'selected' : '';
+                ?>
+                <option value="<?= htmlspecialchars(strtoupper($nombreServicio)) ?>" <?= $selected ?>>
+                    <?= htmlspecialchars($nombreServicio) ?>
                 </option>
             <?php endforeach; ?>
         </select>
@@ -526,15 +519,50 @@ require_once __DIR__ . '/includes/header.php';
         <label class="form-label">Usuario asignado</label>
         <input type="text" name="usuario_asignado" class="form-control" value="<?= htmlspecialchars($equipo['usuario_asignado'] ?? '') ?>">
     </div>
-
+ <div class="col-md-4">
+    <label class="form-label">Ubicación</label>
+    <select name="ubicacion" class="form-select">
+        <option value="">-- Selecciona ubicación --</option>
+        <?php foreach ($ubicaciones as $u): ?>
+            <?php
+                // Nombre tal y como está en la tabla ubicaciones
+                $nombreUbic = $u['nombre'];
+                // Lo que hay ahora guardado en el equipo
+                $ubicEquipo = $equipo['ubicacion'] ?? '';
+                // Comparamos en mayúsculas porque tú guardas con strtoupper()
+                $selected = (strtoupper($ubicEquipo) === strtoupper($nombreUbic)) ? 'selected' : '';
+            ?>
+            <option value="<?= htmlspecialchars(strtoupper($nombreUbic)) ?>" <?= $selected ?>>
+                <?= htmlspecialchars($nombreUbic) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+</div>
     <div class="col-md-4">
         <label class="form-label">Departamento</label>
         <input type="text" name="departamento" class="form-control" value="<?= htmlspecialchars($equipo['departamento'] ?? '') ?>">
     </div>
-    <div class="col-md-4">
-        <label class="form-label">Ubicación</label>
-        <input type="text" name="ubicacion" class="form-control" value="<?= htmlspecialchars($equipo['ubicacion'] ?? '') ?>">
-    </div>
+
+    <?php $seccion_actual = $equipo['seccion_id'] ?? null; ?>
+ <div class="col-md-4">
+    <label class="form-label">Sección</label>
+    <select name="seccion_id" class="form-control">
+
+        <option value="">-- Sin sección --</option>
+
+        <?php foreach ($secciones as $sec): ?>
+            <option 
+                value="<?= $sec['id'] ?>"
+                <?= ($sec['id'] == $seccion_actual) ? 'selected' : '' ?>
+            >
+                <?= htmlspecialchars($sec['nombre']) ?>
+            </option>
+        <?php endforeach; ?>
+
+    </select>
+</div>
+
+
     <div class="col-md-4">
         <label class="form-label">Fecha Alta</label>
         <input type="date" name="fecha_compra" class="form-control" value="<?= htmlspecialchars($equipo['fecha_compra'] ?? '') ?>">

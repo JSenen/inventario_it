@@ -215,9 +215,12 @@
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="adminDropdown">
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=usuarios">Usuarios</a></li>
+                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=Puestos">Puestos</a></li>
+                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=ubicaciones">Ubicaciones</a></li>
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=departamentos">Departamentos</a></li>
-                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=ubicaciones">Ubicaciones</a></li>
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=tipos">Tipos de equipo</a></li>
+                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=servicio">Servicio</a></li>
+                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=secciones">Secciones</a></li>
                     </ul>
                 </li>
 
