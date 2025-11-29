@@ -117,6 +117,35 @@
     text-align: center;
 }
 
+.custom-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 220px;
+    display: none;
+    padding: 0.25rem 0;
+    z-index: 1050;
+}
+
+.custom-dropdown-menu .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.25rem 1.0rem;
+    clear: both;
+    text-align: left;
+    white-space: nowrap;
+    text-decoration: none;
+    background-color: transparent;
+}
+
+.custom-dropdown-menu .dropdown-item:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+/* Clase que muestra el menú */
+.custom-dropdown-menu.show {
+    display: block;
+}
 
 </style>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
@@ -133,46 +162,86 @@
         <img src="assets/logo_departamento.png" 
              alt="Logo" 
              style="height:80px; margin-right:15px;">
+        
         <a class="navbar-brand" href="index.php">Inventario IT</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target="#navbarNav" aria-controls="navbarNav"
-                aria-expanded="false" aria-label="Alternar navegación">
+
+        <!-- Bootstrap 5: data-bs-toggle / data-bs-target -->
+        <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav"
+                aria-controls="navbarNav"
+                aria-expanded="false"
+                aria-label="Alternar navegación">
             <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
+            <!-- Menú principal -->
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <!-- Equipos -->
                 <li class="nav-item">
                     <a class="nav-link" href="index.php">👨🏽‍💻 Equipos</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="redes.php">🌐 Control de IPs</a>
+
+                <!-- Redes (submenu) -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                        Redes
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                        <li><a class="dropdown-item" href="redes.php">Control IPs</a></li>
+                        <li><a class="dropdown-item" href="redes_gestion.php">Gestion Redes</a></li>
+                       
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="redes_gestion.php">🌐 Gestión de redes</a>
-                </li>
+
+                <!-- Material / Fungibles -->
                 <li class="nav-item">
                     <a class="nav-link" href="materiales.php">
                         📦 Material / Fungibles
                     </a>
                 </li>
 
+                <!-- Averías -->
                 <li class="nav-item">
                     <a class="nav-link" href="averias_list.php">⚠️ Gestión de averías</a>
                 </li>
-                <?php if ($_SESSION['rol'] === 'admin'): ?>
-    <a class="nav-link" href="actividad_logs.php">logs</a>
-<?php endif; ?>
-                <?php if (!empty($_SESSION['tip'])): ?>
-    <span class="navbar-text me-3">
-        <?= htmlspecialchars($_SESSION['tip']) ?> (<?= htmlspecialchars($_SESSION['rol']) ?>)
-    </span>
-    <a href="logout.php" class="btn btn-outline-light btn-sm">Salir</a>
-<?php endif; ?>
+                <!-- Administración (submenu) -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                        Administración
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=usuarios">Usuarios</a></li>
+                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=departamentos">Departamentos</a></li>
+                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=ubicaciones">Ubicaciones</a></li>
+                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=tipos">Tipos de equipo</a></li>
+                    </ul>
+                </li>
 
+                <!-- Logs solo para admin -->   
+                <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="actividad_logs.php">📝 Logs</a>
+                    </li>
+                <?php endif; ?>
             </ul>
+
+            <!-- Info de usuario + botón Salir -->
+            <?php if (!empty($_SESSION['tip'])): ?>
+                <span class="navbar-text me-3">
+                    <?= htmlspecialchars($_SESSION['tip']) ?> (<?= htmlspecialchars($_SESSION['rol']) ?>)
+                </span>
+                <a href="logout.php" class="btn btn-outline-light btn-sm">
+                    Salir
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 </nav>
+
+
 
 <div class="container mb-5">

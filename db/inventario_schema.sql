@@ -220,3 +220,27 @@ ALTER TABLE materiales_movimientos
     FOREIGN KEY (equipo_id) REFERENCES equipos(id)
     ON DELETE SET NULL;
 
+
+
+
+
+-- Departamentos
+CREATE TABLE departamentos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255) DEFAULT NULL
+);
+
+-- Ubicaciones (edificios, sedes, plantas…)
+CREATE TABLE ubicaciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255) DEFAULT NULL
+);
+
+-- Tipos de equipo (PC, Portátil, Impresora, Monitor…)
+CREATE TABLE tipos_equipo (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255) DEFAULT NULL
+);

@@ -206,24 +206,24 @@ require_once __DIR__ . '/includes/header.php';
             $finLong     = null;
         }
 
-
+        
         // Marcar últimos octetos usados
-        foreach ($listaUsadas as $row) {
-            $ip = $row['ip'];
-            if ($prefix && strpos($ip, $prefix) === 0) {
-                $lastOctet = (int)substr($ip, strrpos($ip, '.') + 1);
-                if ($lastOctet >= $inicio && $lastOctet <= $fin) {
-                    $usadas[$lastOctet] = true;
-                }
-            }
-        }
+        // foreach ($listaUsadas as $row) {
+        //     $ip = $row['ip'];
+        //     if ($prefix && strpos($ip, $prefix) === 0) {
+        //         $lastOctet = (int)substr($ip, strrpos($ip, '.') + 1);
+        //         if ($lastOctet >= $inicio && $lastOctet <= $fin) {
+        //             $usadas[$lastOctet] = true;
+        //         }
+        //     }
+        // }
 
         //$totalPosibles = ($fin - $inicio + 1);
         $totalUsadas   = count($usadas);
         $totalLibres   = $totalPosibles - $totalUsadas;
 
         // Generar una pequeña muestra de IPs libres
-        $muestraLibres = [];
+        //$muestraLibres = [];
         // if ($prefix) {
         //     for ($i = $inicio; $i <= $fin && count($muestraLibres) < 10; $i++) {
         //         if (!isset($usadas[$i])) {
