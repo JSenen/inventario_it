@@ -2,6 +2,9 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . "/includes/logger.php";
 
+
+
+
 // Obtenemos todas las redes
 $stmtRedes = $pdo->query("SELECT id, nombre, direccion_red, mascara FROM redes ORDER BY id ASC");
 
@@ -104,11 +107,28 @@ function calcularPrefix($direccionRed) {
 }
 
 // Cargamos todas las IPs usadas agrupadas por red_id
+// $stmtIps = $pdo->query("
+//     SELECT 
+//         ip.red_id,
+//         ip.ip,
+//         ip.mac,
+//         e.id        AS equipo_id,
+//         e.hostname  AS equipo_hostname,
+//         e.usuario_asignado AS equipo_usuario,
+//         e.tipo      AS equipo_tipo,
+//         e.departamento AS equipo_departamento
+//     FROM ips_equipos ip
+//     LEFT JOIN equipos e ON e.id = ip.equipo_id
+//     ORDER BY ip.red_id ASC, ip.ip ASC
+// ");
+
 $stmtIps = $pdo->query("
     SELECT 
+        ip.id,
         ip.red_id,
         ip.ip,
         ip.mac,
+        ip.estado,
         e.id        AS equipo_id,
         e.hostname  AS equipo_hostname,
         e.usuario_asignado AS equipo_usuario,
@@ -118,6 +138,9 @@ $stmtIps = $pdo->query("
     LEFT JOIN equipos e ON e.id = ip.equipo_id
     ORDER BY ip.red_id ASC, ip.ip ASC
 ");
+
+
+
 
 $ipsPorRed = [];
 while ($row = $stmtIps->fetch(PDO::FETCH_ASSOC)) {
@@ -160,7 +183,9 @@ require_once __DIR__ . '/includes/header.php';
    <div class="accordion" id="accordionRedes">
 
 <?php foreach ($redes as $red): ?>
-<?php
+    <?php
+   
+
     $redId        = (int)$red['id'];
     $direccionRed = trim((string)$red['direccion_red']);
     $mascaraDb    = isset($red['mascara']) ? trim((string)$red['mascara']) : '';
@@ -253,19 +278,54 @@ require_once __DIR__ . '/includes/header.php';
     // 3) Contar IPs usadas
     // ============================
 
-    $usadas = [];
-    foreach ($listaUsadas as $row) {
-        $ipU = $row['ip'] ?? null;
-        $ipLongU = $ipU !== null ? ip2long($ipU) : false;
-        if ($ipLongU === false) continue;
+    // $usadas = [];
+    // foreach ($listaUsadas as $row) {
+    //     $ipU = $row['ip'] ?? null;
+    //     $ipLongU = $ipU !== null ? ip2long($ipU) : false;
+    //     if ($ipLongU === false) continue;
 
-        if ($ipLongU >= $firstHostLong && $ipLongU <= $lastHostLong) {
-            $usadas[$ipLongU] = true;
-        }
+    //     if ($ipLongU >= $firstHostLong && $ipLongU <= $lastHostLong) {
+    //         $usadas[$ipLongU] = true;
+    //     }
+    // }
+
+    // $totalUsadas = count($usadas);
+    // $totalLibres = max(0, $totalPosibles - $totalUsadas);
+
+    // ============================
+// 3) Contar IPs usadas y reservadas
+// ============================
+
+$usadas         = [];   // para calcular IPs libres
+$totalUsadas    = 0;    // IPs en uso (equipos)
+$totalReservadas = 0;   // IPs marcadas como reservadas
+
+foreach ($listaUsadas as $row) {
+    $ipU = $row['ip'] ?? null;
+    $ipLongU = $ipU !== null ? ip2long($ipU) : false;
+    if ($ipLongU === false) {
+        continue;
     }
 
-    $totalUsadas = count($usadas);
-    $totalLibres = max(0, $totalPosibles - $totalUsadas);
+    if ($ipLongU >= $firstHostLong && $ipLongU <= $lastHostLong) {
+        // Esta IP está dentro del rango de la red
+        $usadas[$ipLongU] = true;
+
+        // Miramos el estado (USADA / RESERVADA)
+        $estadoFila = $row['estado'] ?? 'USADA';
+
+        if ($estadoFila === 'RESERVADA') {
+            $totalReservadas++;
+        } else {
+            // Todo lo que no sea RESERVADA lo contamos como USADA
+            $totalUsadas++;
+        }
+    }
+}
+
+// Libres = total posibles - usadas - reservadas
+$totalLibres = max(0, $totalPosibles - $totalUsadas - $totalReservadas);
+
 
     // ============================
     // 4) Primeras IPs libres
@@ -296,11 +356,13 @@ require_once __DIR__ . '/includes/header.php';
                 <?= htmlspecialchars($red['nombre']) ?>
                 &nbsp; (<?= htmlspecialchars($ipNetworkStr) ?>/<?= $cidr ?>)
 
-                <span class="ms-auto">
+               <span class="ms-auto">
                     <span class="badge bg-secondary">Total: <?= $totalPosibles ?> IPs</span>
                     <span class="badge bg-success ms-1">Libres: <?= $totalLibres ?></span>
                     <span class="badge bg-danger ms-1">Usadas: <?= $totalUsadas ?></span>
-                </span>
+                    <span class="badge bg-warning text-dark ms-1">Reservadas: <?= $totalReservadas ?></span>
+               </span>
+
             </button>
         </h2>
 
@@ -312,20 +374,28 @@ require_once __DIR__ . '/includes/header.php';
             <div class="accordion-body">
 
                 <?php if (!empty($ipsLibres)): ?>
-                    <div class="mb-2">
-                        <strong>Primeras IPs libres sugeridas:</strong>
-                        <?php foreach ($ipsLibres as $ipLibre): ?>
-                            <span class="badge bg-light text-muted border">
-                                <?= htmlspecialchars($ipLibre) ?>
-                            </span>
-                        <?php endforeach; ?>
-                        <?php if ($totalLibres > count($ipsLibres)): ?>
-                            <span class="text-muted">… (hay más)</span>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; 
+    <div class="mb-2">
+        <strong>Primeras IPs libres sugeridas:</strong>
+        <?php foreach ($ipsLibres as $ipLibre): ?>
+            <span class="badge bg-light text-muted border me-1">
+                <?= htmlspecialchars($ipLibre) ?>
+            </span>
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-warning reservar-ip me-2"
+                data-red-id="<?= (int)$redId ?>"
+                data-ip="<?= htmlspecialchars($ipLibre) ?>"
+            >
+                Reservar
+            </button>
+        <?php endforeach; ?>
+        <?php if ($totalLibres > count($ipsLibres)): ?>
+            <span class="text-muted">… (hay más)</span>
+        <?php endif; ?>
+    </div>
+<?php endif; 
 
-                $listaUsadas  = $ipsPorRed[$redId] ?? [];
+$listaUsadas  = $ipsPorRed[$redId] ?? [];
 
 // ORDENAR IPs ASCENDENTE
 usort($listaUsadas, function ($a, $b) {
@@ -334,39 +404,60 @@ usort($listaUsadas, function ($a, $b) {
     return $ipA <=> $ipB;
 }); ?>
 
-                <table class="table table-sm table-hover align-middle mb-0 tabla-ips-red">
-                    <thead class="table-light">
-                        <tr>
-                            <th>IP</th>
-                            <th>MAC</th>
-                            <th>Equipo / Hostname</th>
-                            <th>Usuario / Depto.</th>
-                            <th>Tipo</th>
-                        </tr>
-                    </thead>
-                  <tbody>
+               <table class="table table-sm table-hover align-middle mb-0 tabla-ips-red">
+    <thead class="table-light">
+        <tr>
+            <th>IP</th>
+            <th>MAC</th>
+            <th>Equipo / Hostname</th>
+            <th>Estado</th>
+            <th>Usuario / Depto.</th>
+            <th>Tipo</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
     <?php foreach ($listaUsadas as $row): ?>
         <tr>
+            <!-- IP -->
             <td>
                 <span class="badge bg-secondary">
                     <?= htmlspecialchars($row['ip']) ?>
                 </span>
             </td>
 
-            <td>
-                <small><?= htmlspecialchars($row['mac'] ?? '') ?></small>
-            </td>
+            <!-- MAC -->
+            <td><?= htmlspecialchars($row['mac'] ?? '') ?></td>
 
+            <!-- Equipo / Hostname -->
             <td>
                 <?php if (!empty($row['equipo_id'])): ?>
-                    <a href="equipo_editar.php?id=<?= (int)$row['equipo_id'] ?>">
-                        <?= htmlspecialchars($row['equipo_hostname'] ?? 'Sin hostname') ?>
+                    <a href="equipos_ver.php?id=<?= (int)$row['equipo_id'] ?>">
+                        <?= htmlspecialchars($row['equipo_hostname'] ?? 'Ver equipo') ?>
                     </a>
                 <?php else: ?>
                     <span class="text-muted">Sin equipo vinculado</span>
                 <?php endif; ?>
             </td>
 
+            <!-- ESTADO USADA / RESERVADA -->
+            <td>
+                <?php
+                    $estadoActual = $row['estado'] ?? 'USADA';
+                    if ($estadoActual !== 'RESERVADA') {
+                        $estadoActual = 'USADA';
+                    }
+                ?>
+                <select
+                    class="form-select form-select-sm cambiar-estado-ip"
+                    data-id-ip="<?= (int)$row['id'] ?>"
+                >
+                    <option value="USADA"     <?= $estadoActual === 'USADA' ? 'selected' : '' ?>>USADA</option>
+                    <option value="RESERVADA" <?= $estadoActual === 'RESERVADA' ? 'selected' : '' ?>>RESERVADA</option>
+                </select>
+            </td>
+
+            <!-- Usuario / Depto. -->
             <td>
                 <?= htmlspecialchars($row['equipo_usuario'] ?? '') ?><br>
                 <small class="text-muted">
@@ -374,14 +465,25 @@ usort($listaUsadas, function ($a, $b) {
                 </small>
             </td>
 
+            <!-- Tipo -->
+            <td><?= htmlspecialchars($row['equipo_tipo'] ?? '') ?></td>
+
+            <!-- Acciones: LIBERAR -->
             <td>
-                <?= htmlspecialchars($row['equipo_tipo'] ?? '') ?>
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger liberar-ip"
+                    data-id-ip="<?= (int)$row['id'] ?>"
+                    data-ip="<?= htmlspecialchars($row['ip']) ?>"
+                >
+                    Liberar
+                </button>
             </td>
         </tr>
     <?php endforeach; ?>
-</tbody>
+    </tbody>
+</table>
 
-                </table>
 
             </div>
         </div>
@@ -392,38 +494,94 @@ usort($listaUsadas, function ($a, $b) {
 </div> <!-- /accordionRedes -->
 
 <?php endif; ?>
+<script src="vendor/jquery/jquery-3.7.1.min.js"></script>
 
 <script>
-
 document.addEventListener('DOMContentLoaded', function () {
-    if (window.jQuery && $.fn.DataTable) {
 
-        var opciones = {
-            pageLength: 10,
-            lengthMenu: [5, 10, 25, 50, 100],
-            order: [],          // respeta el orden de las filas del HTML
-            searching: true,    // necesitamos el motor de búsqueda activo
-            language: {
-                url: 'vendor/datatables/i18n/es-ES.json'
-            }
-        };
-
-        // Inicializar TODAS las tablas de IPs de golpe
-        var tablasIps = $('.tabla-ips-red').DataTable(opciones);
-        // ↑ Importante: esto devuelve un API que apunta a TODAS las tablas coincidentes
-
-        // Buscador global por IP
-        $('#buscarIp').on('keyup', function () {
-            var valor = this.value;
-            tablasIps.search(valor).draw();   // aplica el filtro a todas las tablas
-        });
+    // Comprobamos que jQuery está cargado
+    if (typeof $ === 'undefined') {
+        console.error('jQuery no está cargado en redes.php');
+        return;
     }
+
+    // Cambiar USADA <-> RESERVADA
+    $(document).on('change', '.cambiar-estado-ip', function (e) {
+        e.preventDefault();
+
+        var select   = $(this);
+        var idIp     = parseInt(select.data('id-ip'), 10);
+        var nuevoEst = select.val();
+
+        console.log('cambiar-estado-ip click', { idIp, nuevoEst });
+
+        if (!idIp) return;
+
+        $.post('ip_cambiar_estado.php', {
+            id_ip: idIp,
+            estado: nuevoEst
+        }, function (respuesta) {
+            console.log('Respuesta cambiar estado:', respuesta);
+        }).fail(function (xhr) {
+            console.error('Error cambiar estado:', xhr.responseText);
+            alert('Error al cambiar el estado de la IP.');
+        });
+    });
+
+    // Reservar IP libre desde las sugeridas
+    $(document).on('click', '.reservar-ip', function (e) {
+        e.preventDefault();
+
+        var btn   = $(this);
+        var redId = parseInt(btn.data('red-id'), 10);
+        var ip    = btn.data('ip');
+
+        console.log('reservar-ip click', { redId, ip });
+
+        if (!redId || !ip) return;
+
+        if (!confirm('¿Reservar la IP ' + ip + ' para pruebas?')) return;
+
+        $.post('ip_reservar.php', {
+            red_id: redId,
+            ip: ip
+        }, function (respuesta) {
+            console.log('Respuesta reservar:', respuesta);
+            location.reload();
+        }).fail(function (xhr) {
+            console.error('Error reservar:', xhr.responseText);
+            alert('Error al reservar la IP.');
+        });
+    });
+
+    // Liberar IP (borrar de ips_equipos)
+    $(document).on('click', '.liberar-ip', function (e) {
+        e.preventDefault();
+
+        var btn   = $(this);
+        var idIp  = parseInt(btn.data('id-ip'), 10);
+        var ip    = btn.data('ip');
+
+        console.log('liberar-ip click', { idIp, ip });
+
+        if (!idIp) return;
+
+        if (!confirm('¿Liberar la IP ' + ip + '?\nDejará de estar asociada a equipo o reserva.')) return;
+
+        $.post('ip_liberar.php', {
+            id_ip: idIp
+        }, function (respuesta) {
+            console.log('Respuesta liberar:', respuesta);
+            location.reload();
+        }).fail(function (xhr) {
+            console.error('Error liberar:', xhr.responseText);
+            alert('Error al liberar la IP.');
+        });
+    });
+
 });
-
-
-
-
 </script>
+
 
 <?php
 require_once __DIR__ . '/includes/footer.php';

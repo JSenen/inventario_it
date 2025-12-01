@@ -398,3 +398,22 @@ CREATE TABLE partes_telefono (
     observaciones TEXT,
     FOREIGN KEY (telefono_id) REFERENCES telefonos(id)
 );
+
+
+-- 01-12-2025 Añadido campo estado a las ips
+ALTER TABLE ips_equipos
+ADD COLUMN estado ENUM('LIBRE','USADA','RESERVADA')
+    NOT NULL
+    DEFAULT 'USADA'
+    AFTER ip;
+
+
+-- El resto quedarán LIBRE (por el DEFAULT)
+
+-- Marcar como RESERVADA las IPs específicas en red_id = 3
+--UPDATE ips_equipos
+--SET estado = 'RESERVADA'
+--WHERE red_id = 3 AND ip IN ('192.168.8.1', '192.168.8.2');
+
+ALTER TABLE ips_equipos
+MODIFY COLUMN equipo_id INT NULL;

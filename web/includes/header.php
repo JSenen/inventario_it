@@ -192,7 +192,8 @@
                     <ul class="dropdown-menu" aria-labelledby="adminDropdown">
                         <li><a class="dropdown-item" href="redes.php">Control IPs</a></li>
                         <li><a class="dropdown-item" href="redes_gestion.php">Gestion Redes</a></li>
-                       
+                        <li><a class="dropdown-item" href="buscar_ip.php">Buscar IP</a></li> 
+
                     </ul>
                 </li>
 
