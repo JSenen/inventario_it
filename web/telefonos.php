@@ -11,11 +11,13 @@ $totalTelefonos = (int)$pdo->query("SELECT COUNT(*) FROM telefonos")->fetchColum
 // Teléfonos activos
 $totalTelefonosActivos = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Activo'")->fetchColumn();
 
-// Total SIMs
-$totalSims = (int)$pdo->query("SELECT COUNT(*) FROM sims")->fetchColumn();
+// Telefonos Averiados
+$totalTelefonosAveriados = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Averiado'")->fetchColumn();
 
-// SIMs disponibles
-$totalSimsDisponibles = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado = 'Disponible'")->fetchColumn();
+// Telefonos en baja
+$totalTelefonosBaja = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Baja'")->fetchColumn();
+
+
 
 // ------ SIMs asignadas por operador ------
 $sqlOperador = "
@@ -62,24 +64,23 @@ $telPorDept = $pdo->query($sqlDept)->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
-
-        <div class="col-md-2 col-sm-4 mb-2">
-            <div class="card text-bg-success h-100">
-                <div class="card-body">
-                    <h5 class="card-title">SIMs totales</h5>
-                    <p class="fs-3"><?= $totalSims ?></p>
-                </div>
-            </div>
-        </div>
-
         <div class="col-md-2 col-sm-4 mb-2">
             <div class="card text-bg-warning h-100">
                 <div class="card-body">
-                    <h5 class="card-title">SIMs disponibles</h5>
-                    <p class="fs-3"><?= $totalSimsDisponibles ?></p>
+                    <h5 class="card-title">Teléfonos averiados</h5>
+                    <p class="fs-3"><?= $totalTelefonosAveriados ?></p>
                 </div>
             </div>
-        </div>
+        </div>      
+        <div class="col-md-2 col-sm-4 mb-2">
+            <div class="card text-bg-danger h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Teléfonos baja</h5>
+                    <p class="fs-3"><?= $totalTelefonosBaja ?></p>
+                </div>
+            </div>
+        </div>  
+       
     </div>
 
     <!-- DOS COLUMNAS -->
