@@ -16,6 +16,9 @@ $servicios = $serviciosStmt->fetchAll(PDO::FETCH_ASSOC);
 $ubicacionesStmt = $pdo->query("SELECT nombre FROM ubicaciones ORDER BY nombre ASC");
 $ubicaciones = $ubicacionesStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Cargar departamentos desde la tabla departamentos
+$departamentosStmt = $pdo->query("SELECT nombre FROM departamentos ORDER BY nombre ASC");
+$departamentos = $departamentosStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Cargar redes para el select
 $redesStmt = $pdo->query("SELECT id, nombre, direccion_red FROM redes ORDER BY id ASC");
@@ -328,8 +331,21 @@ usort($imagenes_existentes, function ($a, $b) {
     </div>
     <div class="col-md-4">
         <label class="form-label">Departamento</label>
-        <input type="text" name="departamento" class="form-control" value="<?= htmlspecialchars($_POST['departamento'] ?? '') ?>">
+        <select name="departamento" class="form-select">
+            <option value="">-- Selecciona departamento --</option>
+            <?php foreach ($departamentos as $d): ?>
+                <?php
+                    $nombreDep  = $d['nombre'];
+                    $valorPost  = $_POST['departamento'] ?? '';
+                    $selected   = (strtoupper($valorPost) === strtoupper($nombreDep)) ? 'selected' : '';
+                ?>
+                <option value="<?= htmlspecialchars(strtoupper($nombreDep)) ?>" <?= $selected ?>>
+                    <?= htmlspecialchars($nombreDep) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>   
     </div>
+
     <div class="col-md-4">
         <label class="form-label">Sección</label>
         <select name="seccion_id" class="form-control" required>

@@ -187,11 +187,24 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
                     data-bs-toggle="dropdown" aria-expanded="false">
-                        Redes
+                        🛜 Redes
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="adminDropdown">
                         <li><a class="dropdown-item" href="redes.php">Control IPs</a></li>
                         <li><a class="dropdown-item" href="redes_gestion.php">Gestion Redes</a></li>
+                       
+                    </ul>
+                </li>
+
+                 <!-- Moviles / SIMS -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                     📱 Móviles / SIMS
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                        <li><a class="dropdown-item" href="telefonos.php">Teléfonos</a></li>
+                        <li><a class="dropdown-item" href="sims.php">Tarjetas SIM</a></li>
                        
                     </ul>
                 </li>

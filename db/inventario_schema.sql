@@ -311,3 +311,90 @@ INSERT INTO estados_equipo (nombre) VALUES
 ('Prestado');
 CREATE INDEX idx_equipos_seccion ON equipos (seccion_id);
 CREATE INDEX idx_equipos_estado ON equipos (estado);
+
+
+-- 29-11-2025 CONTROL DE MOVILES / SIM
+
+--  Tabla para gestionar teléfonos móviles
+CREATE TABLE telefonos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    marca VARCHAR(100) NOT NULL,
+    modelo VARCHAR(100) NOT NULL,
+    imei VARCHAR(20) NOT NULL UNIQUE,
+    numero_serie VARCHAR(100) UNIQUE,
+    
+    -- Relación lógica con tu inventario
+    departamento VARCHAR(100) DEFAULT NULL,
+    ubicacion VARCHAR(100) DEFAULT NULL,
+    seccion VARCHAR(100) DEFAULT NULL,         -- opcional, si quieres usar tus secciones aquí
+    usuario_asignado VARCHAR(150) DEFAULT NULL, -- nombre o TIP del usuario
+
+    estado VARCHAR(30) DEFAULT 'Activo',       -- Activo, Baja, Almacén, Prestado, Averiado...
+    fecha_alta DATE DEFAULT (CURRENT_DATE),
+    fecha_baja DATE DEFAULT NULL,
+    proveedor VARCHAR(100) DEFAULT NULL,
+    coste DECIMAL(10,2) DEFAULT NULL,
+
+    observaciones TEXT,
+    imagen VARCHAR(255) DEFAULT NULL,          -- como en equipos (logo, foto del móvil, etc.)
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+ALTER TABLE telefonos
+ADD usuario_receptor VARCHAR(150) DEFAULT NULL,
+ADD fecha_entrega DATE DEFAULT NULL;
+
+
+--  Tabla para gestionar SIMs
+CREATE TABLE sims (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    numero VARCHAR(20) NOT NULL UNIQUE,         -- número de teléfono
+    iccid VARCHAR(30) NOT NULL UNIQUE,          -- código único de la SIM
+    operador VARCHAR(50) NOT NULL,              -- Movistar, Orange, Vodafone...
+    tarifa VARCHAR(100) DEFAULT NULL,
+
+    pin VARCHAR(10) DEFAULT NULL,
+    puk VARCHAR(20) DEFAULT NULL,
+
+    estado VARCHAR(30) DEFAULT 'Disponible',    -- Disponible, Asignada, Baja, Averiada
+    fecha_alta DATE DEFAULT (CURRENT_DATE),
+    fecha_baja DATE DEFAULT NULL,
+
+    observaciones TEXT,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Tabla intermedia para asignar SIMs a teléfonos
+CREATE TABLE telefono_sim (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    telefono_id INT NOT NULL,
+    sim_id INT NOT NULL,
+
+    fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_liberacion DATETIME DEFAULT NULL,
+
+    observaciones TEXT,
+
+    -- Índices para búsquedas rápidas
+    INDEX idx_tel (telefono_id),
+    INDEX idx_sim (sim_id),
+
+    FOREIGN KEY (telefono_id) REFERENCES telefonos(id),
+    FOREIGN KEY (sim_id) REFERENCES sims(id)
+);
+
+
+-- 21 Tabla para partes de entrega / recepción de teléfonos
+CREATE TABLE partes_telefono (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    telefono_id INT NOT NULL,
+    usuario_receptor VARCHAR(150) NOT NULL,
+    usuario_entrega VARCHAR(150) NOT NULL,
+    fecha_entrega DATE NOT NULL,
+    observaciones TEXT,
+    FOREIGN KEY (telefono_id) REFERENCES telefonos(id)
+);

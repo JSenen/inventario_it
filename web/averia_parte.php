@@ -67,6 +67,44 @@ if (!$averia) {
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
+            @page {
+        size: A4;
+        margin: 8mm;
+    }
+
+    .logo-empresa {
+    width: 90px;
+}
+
+
+    /* Reducir tamaño general */
+    body, table, td, th {
+        font-size: 12px;
+    }
+
+    /* Ajustar contenedor */
+    .parte-container {
+        max-width: 750px; /* más estrecho */
+        padding: 15px; 
+    }
+
+    /* Títulos y espaciados más compactos */
+    .titulo-parte {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+
+    h4 {
+        font-size: 14px;
+        margin-top: 14px;
+        margin-bottom: 6px;
+    }
+
+    table th,
+    table td {
+        padding: 4px !important;
+    }
     </style>
 </head>
 <body>
@@ -85,6 +123,10 @@ if (!$averia) {
     <div class="parte-container">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1 class="h4 titulo-parte mb-0">Parte de avería</h1>
+            <div class="text-center">
+       
+        <img src="assets/logo_departamento.png" class="logo-empresa" alt="Logo">
+    </div>
             <div class="text-end">
                 <div><strong>Nº Parte:</strong> <?= sprintf('%06d', $averia['id']) ?></div>
                 <div><strong>Fecha:</strong> <?= htmlspecialchars($averia['fecha_creacion']) ?></div>

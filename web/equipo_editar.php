@@ -30,6 +30,9 @@ $ubicaciones = $ubicacionesStmt->fetchAll(PDO::FETCH_ASSOC);
 // Cargar secciones desde la tabla secciones
 $seccionesStmt = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC");
 $secciones = $seccionesStmt->fetchAll(PDO::FETCH_ASSOC);
+// Cargar departamentos desde la tabla departamentos
+$departamentosStmt = $pdo->query("SELECT nombre FROM departamentos ORDER BY nombre ASC");       
+$departamentos = $departamentosStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Imagen actual del equipo
 $imagenActual = isset($equipo['imagen']) ? $equipo['imagen'] : '';
@@ -525,12 +528,9 @@ require_once __DIR__ . '/includes/header.php';
         <option value="">-- Selecciona ubicación --</option>
         <?php foreach ($ubicaciones as $u): ?>
             <?php
-                // Nombre tal y como está en la tabla ubicaciones
                 $nombreUbic = $u['nombre'];
-                // Lo que hay ahora guardado en el equipo
                 $ubicEquipo = $equipo['ubicacion'] ?? '';
-                // Comparamos en mayúsculas porque tú guardas con strtoupper()
-                $selected = (strtoupper($ubicEquipo) === strtoupper($nombreUbic)) ? 'selected' : '';
+                $selected   = (strtoupper($ubicEquipo) === strtoupper($nombreUbic)) ? 'selected' : '';
             ?>
             <option value="<?= htmlspecialchars(strtoupper($nombreUbic)) ?>" <?= $selected ?>>
                 <?= htmlspecialchars($nombreUbic) ?>
@@ -538,29 +538,42 @@ require_once __DIR__ . '/includes/header.php';
         <?php endforeach; ?>
     </select>
 </div>
-    <div class="col-md-4">
-        <label class="form-label">Departamento</label>
-        <input type="text" name="departamento" class="form-control" value="<?= htmlspecialchars($equipo['departamento'] ?? '') ?>">
-    </div>
 
-    <?php $seccion_actual = $equipo['seccion_id'] ?? null; ?>
- <div class="col-md-4">
-    <label class="form-label">Sección</label>
-    <select name="seccion_id" class="form-control">
-
-        <option value="">-- Sin sección --</option>
-
-        <?php foreach ($secciones as $sec): ?>
-            <option 
-                value="<?= $sec['id'] ?>"
-                <?= ($sec['id'] == $seccion_actual) ? 'selected' : '' ?>
-            >
-                <?= htmlspecialchars($sec['nombre']) ?>
+<div class="col-md-4">
+    <label class="form-label">Departamento</label>
+    <select name="departamento" class="form-select">
+        <option value="">-- Selecciona departamento --</option>
+        <?php foreach ($departamentos as $d): ?>
+            <?php
+                $nombreDep = $d['nombre'];
+                $depEquipo = $equipo['departamento'] ?? '';
+                $selected  = (strtoupper($depEquipo) === strtoupper($nombreDep)) ? 'selected' : '';
+            ?>
+            <option value="<?= htmlspecialchars(strtoupper($nombreDep)) ?>" <?= $selected ?>>
+                <?= htmlspecialchars($nombreDep) ?>
             </option>
         <?php endforeach; ?>
-
     </select>
 </div>
+
+<div class="col-md-4">
+    <label class="form-label">Sección</label>
+    <select name="seccion_id" class="form-select">
+        <option value="">-- Selecciona sección --</option>
+        <?php foreach ($secciones as $sec): ?>
+            <?php
+                $idSec         = (int)$sec['id'];
+                $nombreSec     = $sec['nombre'];
+                $seccionEquipo = isset($equipo['seccion_id']) ? (int)$equipo['seccion_id'] : null;
+                $selected      = ($seccionEquipo === $idSec) ? 'selected' : '';
+            ?>
+            <option value="<?= htmlspecialchars($idSec) ?>" <?= $selected ?>>
+                <?= htmlspecialchars($nombreSec) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+</div>
+
 
 
     <div class="col-md-4">
