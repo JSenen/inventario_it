@@ -149,6 +149,18 @@ $statsStmt = $pdo->query("
 ");
 $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 
+// Stats movimientos de hoy
+$movStmt = $pdo->query("
+    SELECT
+        COUNT(*) AS total_hoy,
+        SUM(tipo = 'entrega')  AS entregas_hoy,
+        SUM(tipo = 'recogida') AS recogidas_hoy
+    FROM equipos_movimientos
+    WHERE DATE(fecha) = CURDATE()
+");
+$movStatsHoy = $movStmt->fetch(PDO::FETCH_ASSOC);
+
+
 // Top tipos
 $tiposStmt = $pdo->query("
     SELECT tipo, COUNT(*) AS total
@@ -241,6 +253,22 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         </div>
     </div>
+
+        <div class="col-md-2 col-sm-4 mb-2">
+        <div class="card text-bg-info h-100">
+            <div class="card-body py-2">
+                <div class="small text-uppercase">Movimientos hoy</div>
+                <div class="fs-6">
+                    Entregas: <strong><?= (int)($movStatsHoy['entregas_hoy'] ?? 0) ?></strong><br>
+                    Recogidas: <strong><?= (int)($movStatsHoy['recogidas_hoy'] ?? 0) ?></strong>
+                </div>
+            </div>
+            <div class="card-footer p-1 text-end">
+                <a href="movimientos.php" class="small text-white">Ver detalle</a>
+            </div>
+        </div>
+    </div>
+
 
 </div>
 

@@ -2,6 +2,8 @@
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . "/includes/logger.php";
+require_once __DIR__ . "/includes/movimientos_helper.php";
+
 
 // Cargar tipos de equipos para los select
 $tiposStmt = $pdo->query("SELECT nombre FROM tipos_equipo ORDER BY nombre ASC");
@@ -42,6 +44,19 @@ $monitores = $monitoresStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $errores = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $estado           = $_POST['estado'] ?? '';
+    $usuario_asignado = trim($_POST['usuario_asignado'] ?? '');
+
+    $estadosRequierenUsuario = ['Activo', 'Prestado'];
+
+    if (in_array($estado, $estadosRequierenUsuario, true) && $usuario_asignado === '') {
+        $_SESSION['error'] = "Para crear un equipo en estado '{$estado}' debes indicar un usuario asignado.";
+        header('Location: equipo_nuevo.php');
+        exit;
+    }
+
+
     $tipo            = trim($_POST['tipo'] ?? '');
     $marca           = strtoupper(trim($_POST['marca'] ?? ''));
     $modelo          = strtoupper(trim($_POST['modelo'] ?? ''));
@@ -177,11 +192,34 @@ if ($numero_serie !== '') {
                 ]);
             }
 
-            logActividad($pdo, 'CREAR_EQUIPO', 'Nuevo equipo creado: ID=' . $equipoId);
+                        logActividad($pdo, 'CREAR_EQUIPO', 'Nuevo equipo creado: ID=' . $equipoId);
 
             $pdo->commit();
-             // 🔴 Redirección ANTES de sacar NADA de HTML
+
+            // 👇 Si se crea ya como Activo/Prestado con usuario, consideramos salida desde almacén
+            try {
+                $idMov = registrarMovimientoEquipo(
+                    $pdo,
+                    $equipoId,
+                    'Almacén',        // origen lógico
+                    null,             // sin usuario anterior
+                    $estado,
+                    $usuario_asignado
+                );
+            } catch (Exception $eMov) {
+                $idMov = null;
+                // logActividad($pdo, 'ERROR_MOVIMIENTO', $eMov->getMessage());
+            }
+
+            if (!empty($idMov)) {
+                header('Location: equipo_ver.php?id=' . $equipoId . '&mov=last');
+                exit;
+            }
+
+            // 🔴 Si no hay movimiento (por ejemplo se crea en Almacén), volvemos al index
             header('Location: index.php?msg=ok');
+            exit;
+
         } catch (Exception $e) {
             $pdo->rollBack();
             $errores[] = "Error al guardar el equipo: " . $e->getMessage();
@@ -210,7 +248,6 @@ require_once __DIR__ . '/includes/header.php';
 <?php endif; ?>
 
 <?php
-// Carpeta FÍSICA donde guarda las imágenes de equipos
 // Carpeta FÍSICA donde guarda las imágenes de equipos
 $uploadDirFs = __DIR__ . '/uploads/equipos/';
 

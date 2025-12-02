@@ -3,6 +3,8 @@
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . "/includes/logger.php";
+require_once __DIR__ . "/includes/movimientos_helper.php";
+
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
@@ -14,6 +16,10 @@ $id_equipo = $id;
 $stmtEq = $pdo->prepare("SELECT * FROM equipos WHERE id = :id");
 $stmtEq->execute([':id' => $id]);
 $equipo = $stmtEq->fetch(PDO::FETCH_ASSOC);
+
+// Guardamos el estado original para saber si sale / entra de almacén
+$estadoOriginal   = $equipo['estado'] ?? null;
+$usuarioOriginal  = $equipo['usuario_asignado'] ?? null;
 
 // Cargar listas tipos equipo para los selects
 $tiposStmt = $pdo->query("SELECT nombre FROM tipos_equipo ORDER BY nombre ASC");
@@ -84,6 +90,23 @@ $monitoresSeleccionados = $stmtMonSel->fetchAll(PDO::FETCH_COLUMN);
 
 $errores = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // ID del equipo: primero miro POST, si no, cojo el de GET
+    $id_equipo = isset($_POST['id_equipo'])
+        ? (int)$_POST['id_equipo']
+        : (int)($_GET['id'] ?? 0);
+    $estado           = $_POST['estado'] ?? '';
+    $usuario_asignado = trim($_POST['usuario_asignado'] ?? '');
+
+    // ESTADOS que requieren usuario sí o sí
+    $estadosRequierenUsuario = ['Activo', 'Prestado'];
+
+    if (in_array($estado, $estadosRequierenUsuario, true) && $usuario_asignado === '') {
+        // Mensaje de error muy simple. Puedes usar tu sistema de flasheo si ya tienes.
+        $_SESSION['error'] = "Para poner el equipo en estado '{$estado}' debes indicar un usuario asignado.";
+        header('Location: equipo_editar.php?id=' . $id_equipo);
+        exit;
+    }
 
     // Mantener la imagen actual por defecto
     $imagenRuta = $equipo['imagen'] ?? null;
@@ -364,17 +387,40 @@ if ($numero_serie !== '') {
                 }
                 */
             }
-            logActividad($pdo, 'EDITAR_EQUIPO', 'Equipo editado: ID=' . $id);
+                        logActividad($pdo, 'EDITAR_EQUIPO', 'Equipo editado: ID=' . $id);
 
             $pdo->commit();
 
-            // 🔴 Redirección según haya avería o no
+            // 👇 Registrar movimiento (si procede: Almacén <-> Activo/Prestado)
+            try {
+                $idMov = registrarMovimientoEquipo(
+                    $pdo,
+                    $id_equipo,      // o $id según cómo lo llames
+                    $estadoOriginal,
+                    $usuarioOriginal,
+                    $estado,
+                    $usuario_asignado
+                );
+            } catch (Exception $eMov) {
+                $idMov = null;
+                // logActividad($pdo, 'ERROR_MOVIMIENTO', $eMov->getMessage());
+            }
+
+            // 🔁 Si se ha generado un movimiento, vamos a la ficha del equipo con aviso
+            if (!empty($idMov)) {
+                header('Location: equipo_ver.php?id=' . $id_equipo . '&mov=last');
+                exit;
+            }
+
+            // 🔴 Si no hay movimiento, seguimos con tu lógica normal
             if ($averiaId) {
                 header('Location: averia_parte.php?id=' . $averiaId);
             } else {
                 header('Location: index.php?msg=ok');
             }
             exit;
+
+
 
         } catch (Exception $e) {
             $pdo->rollBack();
@@ -591,6 +637,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
     <div class="col-md-4">
         <label class="form-label">Estado</label>
+        <input type="hidden" name="id_equipo" value="<?= (int)$equipo['id'] ?>">
         <select name="estado" class="form-select">
             <?php
             $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado'];

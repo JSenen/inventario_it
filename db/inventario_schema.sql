@@ -417,3 +417,24 @@ ADD COLUMN estado ENUM('LIBRE','USADA','RESERVADA')
 
 ALTER TABLE ips_equipos
 MODIFY COLUMN equipo_id INT NULL;
+
+-- EQUIPOS MOVIMIENTOS (ENTREGA, RECOGIDA, PRÉSTAMO, DEVOLUCIÓN)
+CREATE TABLE equipos_movimientos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_equipo INT NOT NULL,
+    tipo ENUM('entrega','recogida','prestamo','devolucion') NOT NULL,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario_destino VARCHAR(150) NOT NULL,
+    tecnico VARCHAR(150) DEFAULT NULL,
+    estado_origen VARCHAR(50),
+    estado_destino VARCHAR(50),
+    observaciones VARCHAR(255) DEFAULT NULL,
+    pdf_path VARCHAR(255) DEFAULT NULL,
+    firma_token VARCHAR(80) DEFAULT NULL,
+    firma_path VARCHAR(255) DEFAULT NULL,
+    firmado TINYINT(1) DEFAULT 0,
+    firmado_fecha DATETIME DEFAULT NULL,
+    FOREIGN KEY (id_equipo) REFERENCES equipos(id)
+);
+
+

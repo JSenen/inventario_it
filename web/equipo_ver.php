@@ -4,21 +4,22 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . "/includes/logger.php";
 
-
-if (!isset($_GET['id'])) {
-    die("ID de equipo no especificado.");
+// 👇 AÑADE ESTO
+$id_equipo = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($id_equipo <= 0) {
+    die('ID de equipo no válido');
 }
 
-$id = intval($_GET['id']);
+// Si quieres compatibilidad rápida con código antiguo que usa $id:
+$id = $id_equipo;
 
 // Obtener datos del equipo
-$sql = "SELECT * FROM equipos WHERE id = :id";
-$stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $id]);
+$stmt = $pdo->prepare("SELECT * FROM equipos WHERE id = :id");
+$stmt->execute([':id' => $id_equipo]);
 $equipo = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$equipo) {
-    die("Equipo no encontrado.");
+    die('Equipo no encontrado');
 }
 
 // Inicializar variables para monitores o PC asociado
@@ -82,6 +83,17 @@ $stmtMat = $pdo->prepare($sqlMat);
 $stmtMat->execute([':equipo_id' => $equipo['id']]);
 $materiales_instalados = $stmtMat->fetchAll(PDO::FETCH_ASSOC);
 
+$ultimoMov = null;
+if (isset($_GET['mov']) && $_GET['mov'] === 'last') {
+    $stmtMov = $pdo->prepare("
+        SELECT * FROM equipos_movimientos
+        WHERE id_equipo = :id
+        ORDER BY fecha DESC
+        LIMIT 1
+    ");
+    $stmtMov->execute([':id' => $id_equipo]);
+    $ultimoMov = $stmtMov->fetch(PDO::FETCH_ASSOC);
+}
 
 logActividad($pdo, 'VER_EQUIPO', 'Detalle del equipo visualizado: ID=' . $id);
 
@@ -100,6 +112,29 @@ $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
 <div class="container mt-4">
     <h2>Detalle del Equipo</h2>
     <hr>
+<?php if ($ultimoMov): ?>
+    <div class="alert alert-info d-flex justify-content-between align-items-center">
+        <div>
+            Se ha generado un recibo de <strong><?= htmlspecialchars($ultimoMov['tipo']) ?></strong>
+            para este equipo (<?= htmlspecialchars($ultimoMov['fecha']) ?>).
+        </div>
+        <div class="btn-group btn-group-sm">
+            <a href="recibo_movimiento.php?id=<?= (int)$ultimoMov['id'] ?>"
+            target="_blank"
+            class="btn btn-outline-secondary">
+                Ver recibo
+            </a>
+
+            <?php if (!empty($ultimoMov['firma_token'])): ?>
+                <a href="firma.php?token=<?= urlencode($ultimoMov['firma_token']) ?>"
+                   class="btn btn-primary">
+                    Firmar digitalmente
+                </a>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php endif; ?>
+
 
     <div class="mb-3">
         <a href="index.php" class="btn btn-secondary">Volver al listado</a>
