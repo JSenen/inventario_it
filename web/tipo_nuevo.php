@@ -1,6 +1,5 @@
 <?php
 require_once 'config.php';
-require_once 'includes/header.php';
 
 $errores = [];
 
@@ -23,6 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+
+   // SOLO si NO hubo redirección, cargamos el HTML
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container mt-4">

@@ -166,7 +166,7 @@ $sqlData = "
         $colMonitores = '';
 $numMon = (int)($row['num_monitores'] ?? 0);
 
-if (in_array($row['tipo'], ['PC', 'PORTÁTIL'])) {
+if (in_array($row['tipo'], ['PC', 'PORTÁTIL', 'PORTATIL'])) {
     if ($numMon === 0) {
         $colMonitores = '<span class="badge bg-secondary">0</span>';
     } elseif ($numMon === 1) {

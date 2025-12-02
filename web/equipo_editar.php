@@ -295,7 +295,7 @@ if ($numero_serie !== '') {
             }
             
             // Gestionar monitores asociados
-            if (in_array($tipo, ['PC','PORTÁTIL'])) {
+            if (in_array($tipo, ['PC','PORTATIL'])) {
                 // Borrar relaciones actuales y crear nuevas
                 $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :id_pc");
                 $stmtDel->execute([':id_pc' => $id_equipo]);
@@ -906,7 +906,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function actualizarBloqueMonitores() {
         if (!tipoSelect) return;
         const valor = (tipoSelect.value || '').toUpperCase();
-        if (valor === 'PC' || valor === 'PORTÁTIL') {
+        if (valor === 'PC' || valor === 'PORTATIL' || valor === 'PORTÁTIL') {
             bloqueMonitores.style.display = 'block';
         } else {
             bloqueMonitores.style.display = 'none';

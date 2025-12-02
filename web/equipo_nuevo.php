@@ -149,7 +149,7 @@ if ($numero_serie !== '') {
             $equipoId = (int)$pdo->lastInsertId();
 
             // Si es PC o PORTÁTIL, guardar monitores asociados
-        if (in_array($tipo, ['PC','PORTÁTIL']) && !empty($monitoresSeleccionados)) {
+        if (in_array($tipo, ['PC','PORTATIL'.'PORTÁTIL']) && !empty($monitoresSeleccionados)) {
             $sqlRel = "INSERT INTO pc_monitores (id_pc, id_monitor)
                     VALUES (:id_pc, :id_monitor)";
             $stmtRel = $pdo->prepare($sqlRel);
@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function actualizarBloqueMonitores() {
         if (!tipoSelect) return;
         const valor = (tipoSelect.value || '').toUpperCase();
-        if (valor === 'PC' || valor === 'PORTÁTIL') {
+        if (valor === 'PC' || valor === 'PORTATIL') {
             bloqueMonitores.style.display = 'block';
         } else {
             bloqueMonitores.style.display = 'none';
