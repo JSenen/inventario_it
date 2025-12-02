@@ -104,7 +104,36 @@ $(document).ready(function () {
             { data: 'tarifa' },
             { data: 'estado' },
             { data: 'acciones', orderable: false, searchable: false }
-        ]
+        ],
+           // 👇 AÑADIMOS ESTO
+        createdRow: function (row, data, dataIndex) {
+            // Índice de la columna "Estado"
+            // ID(0), Imagen(1), Nº serie(2), Tipo(3), Marca(4),
+            // Usuario(5), Servicio(6), Ubicación(7),
+            // IP principal(8), Red(9), Estado(10), Acciones(11)
+            var indiceEstado = 5;
+
+            var $celda = $('td:eq(' + indiceEstado + ')', row);
+            var estado = $celda.text().toLowerCase().trim();
+
+            if (estado === 'asignada') {
+                $celda.addClass('estado-activo');
+            } else if (estado === 'averiada') {
+                $celda.addClass('estado-averiado');
+            } else if (estado === 'baja') {
+                $celda.addClass('estado-baja');
+            } else if ( estado === 'disponible') {
+                $celda.addClass('estado-almacen');
+             
+        }
+        },
+
+        // Traducción al castellano
+        language: {
+            search: "Buscar:",
+            searchPlaceholder: "Buscar en la tabla...",
+            url: 'vendor/datatables/i18n/es-ES.json'
+        }
     });
 
 });
