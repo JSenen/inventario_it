@@ -147,6 +147,25 @@
     display: block;
 }
 
+.monitor-actual {
+    background-color: #e8ec9dff !important;  /* verde */
+    color: #414141 !important;
+    font-weight: bold;
+    text-align: center;
+}
+
+.campo-destacado {
+    background-color: #fff9c4 !important;
+}
+
+.campo-averia {
+    background-color: #ffbcbcff !important;
+}
+#tablaEquipos td {
+    padding: 4px 6px !important;
+    font-size: 14px !important;
+}
+
 </style>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </head>

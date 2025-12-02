@@ -485,7 +485,7 @@ require_once __DIR__ . '/includes/header.php';
 <form method="post" class="row g-3" enctype="multipart/form-data">
     <div class="mb-3">
     <label class="form-label"><b>Tipo de equipo</b></label>
-    <select name="tipo" class="form-control" required>
+    <select name="tipo" class="form-control campo-destacado" required>
         <option value="">-- Selecciona tipo --</option>
         <?php foreach ($tipos as $t): ?>
             <?php
@@ -506,7 +506,7 @@ require_once __DIR__ . '/includes/header.php';
 
     <div class="col-md-8" id="bloque-monitores" style="display:none;">
     <label class="form-label">Monitores asociados</label>
-    <select name="monitores[]" class="form-select" multiple size="5">
+    <select name="monitores[]" class="form-select campo-destacado" multiple size="5">
         <?php
         $seleccionActual = $_POST['monitores'] ?? $monitoresSeleccionados;
         if (!is_array($seleccionActual)) {
@@ -533,20 +533,20 @@ require_once __DIR__ . '/includes/header.php';
 
     <div class="col-md-4">
         <label class="form-label">Marca</label>
-        <input type="text" name="marca" class="form-control" value="<?= htmlspecialchars($equipo['marca'] ?? '') ?>">
+        <input type="text" name="marca" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['marca'] ?? '') ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label">Modelo</label>
-        <input type="text" name="modelo" class="form-control" value="<?= htmlspecialchars($equipo['modelo'] ?? '') ?>">
+        <input type="text" name="modelo" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['modelo'] ?? '') ?>">
     </div>
 
     <div class="col-md-4">
         <label class="form-label">Número de serie</label>
-        <input type="text" name="numero_serie" class="form-control" value="<?= htmlspecialchars($equipo['numero_serie'] ?? '') ?>">
+        <input type="text" name="numero_serie" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['numero_serie'] ?? '') ?>">
     </div>
     <div class="col-md-4">
     <label class="form-label">Servicio</label>
-        <select name="hostname" class="form-select">
+        <select name="hostname" class="form-select campo-destacado">
             <option value="">-- Selecciona Servicio --</option>
             <?php foreach ($servicios as $s): ?>
                 <?php
@@ -566,11 +566,11 @@ require_once __DIR__ . '/includes/header.php';
 
     <div class="col-md-4">
         <label class="form-label">Usuario asignado</label>
-        <input type="text" name="usuario_asignado" class="form-control" value="<?= htmlspecialchars($equipo['usuario_asignado'] ?? '') ?>">
+        <input type="text" name="usuario_asignado" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['usuario_asignado'] ?? '') ?>">
     </div>
  <div class="col-md-4">
     <label class="form-label">Ubicación</label>
-    <select name="ubicacion" class="form-select">
+    <select name="ubicacion" class="form-select campo-destacado">
         <option value="">-- Selecciona ubicación --</option>
         <?php foreach ($ubicaciones as $u): ?>
             <?php
@@ -587,7 +587,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="col-md-4">
     <label class="form-label">Departamento</label>
-    <select name="departamento" class="form-select">
+    <select name="departamento" class="form-select campo-destacado">
         <option value="">-- Selecciona departamento --</option>
         <?php foreach ($departamentos as $d): ?>
             <?php
@@ -604,7 +604,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="col-md-4">
     <label class="form-label">Sección</label>
-    <select name="seccion_id" class="form-select">
+    <select name="seccion_id" class="form-select campo-destacado">
         <option value="">-- Selecciona sección --</option>
         <?php foreach ($secciones as $sec): ?>
             <?php
@@ -624,21 +624,21 @@ require_once __DIR__ . '/includes/header.php';
 
     <div class="col-md-4">
         <label class="form-label">Fecha Alta</label>
-        <input type="date" name="fecha_compra" class="form-control" value="<?= htmlspecialchars($equipo['fecha_compra'] ?? '') ?>">
+        <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['fecha_compra'] ?? '') ?>">
     </div>
 
     <div class="col-md-4">
         <label class="form-label">Proveedor</label>
-        <input type="text" name="proveedor" class="form-control" value="<?= htmlspecialchars($equipo['proveedor'] ?? '') ?>">
+        <input type="text" name="proveedor" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['proveedor'] ?? '') ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label">Coste (€)</label>
-        <input type="number" step="0.01" name="coste" class="form-control" value="<?= htmlspecialchars($equipo['coste'] ?? '') ?>">
+        <input type="number" step="0.01" name="coste" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['coste'] ?? '') ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label">Estado</label>
         <input type="hidden" name="id_equipo" value="<?= (int)$equipo['id'] ?>">
-        <select name="estado" class="form-select">
+        <select name="estado" class="form-select campo-destacado">
             <?php
             $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado'];
             foreach ($estados as $est):
@@ -690,7 +690,7 @@ usort($imagenes_existentes, function ($a, $b) {
 
     <div class="d-flex align-items-center gap-3">
 
-        <select name="imagen_existente" id="imagen_existente" class="form-control" style="max-width: 350px;">
+        <select name="imagen_existente" id="imagen_existente" class="form-control campo-destacado" style="max-width: 350px;">
             <option value="">-- Mantener / elegir otra imagen --</option>
 
             <?php foreach ($imagenes_existentes as $img): ?>
@@ -719,7 +719,7 @@ usort($imagenes_existentes, function ($a, $b) {
 
     </div>
 
-    <small class="form-text text-muted">
+    <small class="form-text">
         Si eliges una imagen, se usará esa.
         Si subes una nueva, tendrá prioridad.
         Si no haces nada, se mantiene la actual.
@@ -728,12 +728,12 @@ usort($imagenes_existentes, function ($a, $b) {
 
 <div class="mb-3">
     <label class="form-label"><b>Subir imagen nueva</b></label>
-    <input type="file" name="imagen_nueva" id="imagen_nueva" accept="image/*" class="form-control">
+    <input type="file" name="imagen_nueva" id="imagen_nueva" accept="image/*" class="form-control campo-destacado">
 
     <img id="preview_img_nueva"
          style="display:none;max-width:120px;border:1px solid #ccc;margin-top:8px;">
 
-    <small class="text-muted">
+    <small class="form-text">
         Si seleccionas una imagen nueva, tendrá prioridad sobre la imagen existente.
     </small>
 </div>
@@ -762,7 +762,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <div class="col-12">
         <label class="form-label">Notas</label>
-        <textarea name="notas" class="form-control" rows="3"><?= htmlspecialchars($equipo['notas'] ?? '') ?></textarea>
+        <textarea name="notas" class="form-control campo-destacado" rows="3"><?= htmlspecialchars($equipo['notas'] ?? '') ?></textarea>
     </div>
 
     <hr class="mt-4">
@@ -778,7 +778,7 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 
 <hr class="mt-4">
 <h2 class="h5">Datos de avería</h2>
-<p class="text-muted">
+<p class="form-text mb-3">
     Rellenar estos campos si el estado del equipo pasa a  <strong>Averiado</strong>.
 </p>
 
@@ -786,25 +786,32 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
     <div class="row g-3">
         <div class="col-md-4">
             <label class="form-label">Tipo de avería *</label>
-            <input type="text" name="tipo_averia" class="form-control"
+            <input type="text" name="tipo_averia" class="form-control campo-averia"
                    value="<?= htmlspecialchars($tipo_averia_val) ?>"
                    placeholder="Ej: No enciende, Pantalla rota, Disco defectuoso...">
         </div>
         <div class="col-md-4">
             <label class="form-label">Nº de asunto (empresa externa) *</label>
-            <input type="text" name="num_asunto" class="form-control"
+            <input type="text" name="num_asunto" class="form-control campo-averia"
                    value="<?= htmlspecialchars($num_asunto_val) ?>"
                    placeholder="Referencia del ticket de la empresa externa">
+                           <p class="form-text mb-3">
+    Este número lo asigna RAU una vez el GATI envia incidencia  <strong>Averiado</strong>.
+</p>
         </div>
+
         <div class="col-md-4">
             <label class="form-label">Empresa externa</label>
-            <input type="text" name="empresa_ext" class="form-control"
+            <input type="text" name="empresa_ext" class="form-control campo-averia"
                    value="<?= htmlspecialchars($empresa_ext_val) ?>"
                    placeholder="Nombre de la empresa de soporte">
+                               <p class="form-text mb-3">
+    La empresa externa la notifica RAU con el número de asunto  .
+</p>
         </div>
         <div class="col-12">
             <label class="form-label">Descripción de la avería</label>
-            <textarea name="desc_averia" class="form-control" rows="3"
+            <textarea name="desc_averia" class="form-control campo-averia" rows="3"
                       placeholder="Describe brevemente el problema, pruebas realizadas, etc."><?= htmlspecialchars($desc_averia_val) ?></textarea>
         </div>
     </div>
@@ -815,7 +822,7 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 
 <div class="col-md-4">
     <label class="form-label">Red</label>
-    <select name="red_id" class="form-select" id="redSelect">
+    <select name="red_id" class="form-select campo-destacado" id="redSelect">
         <option value="">-- Sin red --</option>
         <?php foreach ($redes as $r): ?>
             <option value="<?= $r['id'] ?>" <?= ($red_sel == $r['id']) ? 'selected' : '' ?>>
@@ -827,7 +834,7 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 
 <div class="col-md-4">
     <label class="form-label">IP principal</label>
-    <select name="ip" id="ipSelect" class="form-select">
+    <select name="ip" id="ipSelect" class="form-select campo-destacado">
         <?php if ($ip_val): ?>
             <option value="<?= htmlspecialchars($ip_val) ?>" selected>
                 <?= htmlspecialchars($ip_val) ?>
@@ -840,7 +847,7 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 
 <div class="col-md-4">
     <label class="form-label">MAC</label>
-    <input type="text" name="mac" class="form-control" value="<?= htmlspecialchars($mac_val) ?>">
+    <input type="text" name="mac" class="form-control campo-destacado" placeholder="AA:BB:CC:DD:EE:FF"value="<?= htmlspecialchars($mac_val) ?>">
 </div>
 
 

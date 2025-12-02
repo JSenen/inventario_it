@@ -276,7 +276,7 @@ usort($imagenes_existentes, function ($a, $b) {
 <form method="post" class="row g-3" enctype="multipart/form-data">
     <div class="mb-3">
     <label class="form-label"><b>Tipo de equipo</b></label>
-    <select name="tipo" class="form-control" required>
+    <select name="tipo" class="form-control campo-destacado" required>
         <option value="">-- Selecciona Tipo --</option>
         <?php foreach ($tipos as $t): ?>
             <?php
@@ -302,7 +302,7 @@ usort($imagenes_existentes, function ($a, $b) {
                 $idMon = (int)$m['id'];
                 $selected = in_array($idMon, $postMonitores) ? 'selected' : '';
             ?>
-                <option value="<?= $idMon ?>" <?= $selected ?>>
+                <option class="campo-destacado" value="<?= $idMon ?>" <?= $selected ?>>
                     <?= htmlspecialchars(trim(
                         ($m['marca'] ?? '') . ' ' .
                         ($m['modelo'] ?? '') .
@@ -311,27 +311,27 @@ usort($imagenes_existentes, function ($a, $b) {
                 </option>
             <?php endforeach; ?>
         </select>
-        <small class="form-text text-muted">
+        <small class="form-text ">
             Mantén Ctrl (o Cmd en Mac) para seleccionar varios monitores.
         </small>
     </div>
 
     <div class="col-md-4">
         <label class="form-label">Marca</label>
-        <input type="text" name="marca" class="form-control" value="<?= htmlspecialchars($_POST['marca'] ?? '') ?>">
+        <input type="text" name="marca" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['marca'] ?? '') ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label">Modelo</label>
-        <input type="text" name="modelo" class="form-control" value="<?= htmlspecialchars($_POST['modelo'] ?? '') ?>">
+        <input type="text" name="modelo" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['modelo'] ?? '') ?>">
     </div>
 
     <div class="col-md-4">
         <label class="form-label">Número de serie</label>
-        <input type="text" name="numero_serie" class="form-control" value="<?= htmlspecialchars($_POST['numero_serie'] ?? '') ?>">
+        <input type="text" name="numero_serie" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['numero_serie'] ?? '') ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label">Servicio</label>
-            <select name="hostname" class="form-select">
+            <select name="hostname" class="form-select campo-destacado ">
                 <option value="">-- Selecciona Servicio --</option>
                 <?php foreach ($servicios as $s): ?>
                     <?php
@@ -348,11 +348,11 @@ usort($imagenes_existentes, function ($a, $b) {
     
     <div class="col-md-4">
         <label class="form-label">Usuario asignado</label>
-        <input type="text" name="usuario_asignado" class="form-control" value="<?= htmlspecialchars($_POST['usuario_asignado'] ?? '') ?>">
+        <input type="text" name="usuario_asignado" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['usuario_asignado'] ?? '') ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label">Ubicación</label>
-        <select name="ubicacion" class="form-select">
+        <select name="ubicacion" class="form-select campo-destacado">
             <option value="">-- Selecciona ubicación --</option>
             <?php foreach ($ubicaciones as $u): ?>
                 <?php
@@ -368,7 +368,7 @@ usort($imagenes_existentes, function ($a, $b) {
     </div>
     <div class="col-md-4">
         <label class="form-label">Departamento</label>
-        <select name="departamento" class="form-select">
+        <select name="departamento" class="form-select campo-destacado">
             <option value="">-- Selecciona departamento --</option>
             <?php foreach ($departamentos as $d): ?>
                 <?php
@@ -385,7 +385,7 @@ usort($imagenes_existentes, function ($a, $b) {
 
     <div class="col-md-4">
         <label class="form-label">Sección</label>
-        <select name="seccion_id" class="form-control" required>
+        <select name="seccion_id" class="form-control campo-destacado" required>
             <option value="">-- Selecciona sección --</option>
 
             <?php
@@ -404,20 +404,20 @@ usort($imagenes_existentes, function ($a, $b) {
 
     <div class="col-md-4">
         <label class="form-label">Fecha Alta</label>
-        <input type="date" name="fecha_compra" class="form-control" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">
+        <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">
     </div>
 
     <div class="col-md-4">
         <label class="form-label">Proveedor</label>
-        <input type="text" name="proveedor" class="form-control" value="<?= htmlspecialchars($_POST['proveedor'] ?? '') ?>">
+        <input type="text" name="proveedor" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['proveedor'] ?? '') ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label">Coste (€)</label>
-        <input type="number" step="0.01" name="coste" class="form-control" value="<?= htmlspecialchars($_POST['coste'] ?? '') ?>">
+        <input type="number" step="0.01" name="coste" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['coste'] ?? '') ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label">Estado</label>
-        <select name="estado" class="form-select">
+        <select name="estado" class="form-select campo-destacado">
             <?php
             $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado'];
             $estadoSel = $_POST['estado'] ?? 'Activo';
@@ -435,7 +435,7 @@ usort($imagenes_existentes, function ($a, $b) {
     <label class="form-label"><b>Imágenes existentes en Base de Datos</b></label>
 
     <div class="d-flex align-items-center gap-3">
-        <select name="imagen_existente" id="imagen_existente" class="form-control" style="max-width: 350px;">
+        <select name="imagen_existente" id="imagen_existente" class="form-control campo-destacado" style="max-width: 350px;">
             <option value="">-- Seleccionar una imagen ya subida --</option>
             <?php foreach ($imagenes_existentes as $rutaFs): ?>
                 <?php 
@@ -458,7 +458,7 @@ usort($imagenes_existentes, function ($a, $b) {
 
 <div class="mb-3">
     <label for="imagen" class="form-label"><b>Subir imagen nueva para este equipo</b>(Suba una imagen si no hay ninguna disponible)</label>
-    <input type="file" class="form-control" name="imagen" accept="image/*">
+    <input type="file" class="form-control campo-destacado" name="imagen" accept="image/*">
 </div>
 
 <script>
@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <div class="col-12">
         <label class="form-label">Notas</label>
-        <textarea name="notas" class="form-control" rows="3"><?= htmlspecialchars($_POST['notas'] ?? '') ?></textarea>
+        <textarea name="notas" class="form-control campo-destacado" rows="3"><?= htmlspecialchars($_POST['notas'] ?? '') ?></textarea>
     </div>
 
     <hr class="mt-4">
@@ -494,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <div class="col-md-4">
     <label class="form-label">Red</label>
-    <select name="red_id" class="form-select" id="redSelect">
+    <select name="red_id" class="form-select campo-destacado" id="redSelect">
         <option value="">-- Sin red --</option>
         <?php foreach ($redes as $r): ?>
             <option value="<?= $r['id'] ?>" <?= (($_POST['red_id'] ?? '') == $r['id']) ? 'selected' : '' ?>>
@@ -506,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <div class="col-md-4">
     <label class="form-label">IP principal</label>
-    <select name="ip" id="ipSelect" class="form-select">
+    <select name="ip" id="ipSelect" class="form-select campo-destacado">
         <option value="">Selecciona una red primero</option>
         <?php
         // Si hubo error y el usuario ya había elegido una IP, la mostramos seleccionada
@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <div class="col-md-4">
     <label class="form-label">MAC</label>
-    <input type="text" name="mac" class="form-control" placeholder="AA:BB:CC:DD:EE:FF" value="<?= htmlspecialchars($_POST['mac'] ?? '') ?>">
+    <input type="text" name="mac" class="form-control campo-destacado" placeholder="AA:BB:CC:DD:EE:FF" value="<?= htmlspecialchars($_POST['mac'] ?? '') ?>">
 </div>
 
 

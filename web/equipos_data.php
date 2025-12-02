@@ -157,7 +157,8 @@ $sqlData = "
 
         $colUsuarioDepto =
             htmlspecialchars($row['usuario_asignado'] ?? '') . '<br>' .
-            '<small class="text-muted">' . htmlspecialchars($row['departamento'] ?? '') . '</small>';
+            '<small class="text-muted">' . htmlspecialchars($row['departamento'] ?? '') . '</small>'. '<br>' .
+            '<small class="text-muted">' . htmlspecialchars($row['seccion'] ?? '') . '</small>';
 
         $colServicio  = htmlspecialchars($row['hostname'] ?? '');
         $colUbicacion = htmlspecialchars($row['ubicacion'] ?? '');

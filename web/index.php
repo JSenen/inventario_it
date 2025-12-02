@@ -374,10 +374,10 @@ require_once __DIR__ . '/includes/header.php';
             <th>Nº serie</th>
             <th>Tipo</th>
             <th>Marca / Modelo</th>
-            <th>Usuario / Depto.</th>
+            <th>Usuario / Depto / Sección</th>
             <th>Servicio</th>
             <th>Ubicación</th>
-            <th>IP principal</th>
+            <th>IP Asignada</th>
             <th>Red</th>
             <th>Monitores</th>
             <th>Estado</th>
@@ -416,8 +416,11 @@ require_once __DIR__ . '/includes/header.php';
 $(document).ready(function () {
 
     var tabla = $('#tablaEquipos').DataTable({
+
         processing: true,
         serverSide: true,
+         pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
         ajax: {
             url: 'equipos_data.php',
             type: 'GET',
@@ -427,8 +430,7 @@ $(document).ready(function () {
             }
         },
 
-        pageLength: 10,
-        lengthMenu: [10, 25, 50, 100],
+       
 
         // Botones de exportación
         dom: 'Bfrtip',
@@ -469,6 +471,8 @@ $(document).ready(function () {
         ],
 
         order: [[0, 'desc']],
+        autoWidth: false,          // 🔹 que no recalule él los anchos
+        scrollX: true,           // 🔹 para tablas anchas
         columnDefs: [
             { orderable: false, searchable: false, targets: [1, 12] } // imagen y acciones
         ],
