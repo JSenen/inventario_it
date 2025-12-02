@@ -6,7 +6,7 @@ require_once 'includes/header.php';     // Cabecera HTML + menú
 
 // Pestaña activa
 $tab = $_GET['tab'] ?? 'usuarios';
-$validTabs = ['usuarios', 'departamentos', 'ubicaciones', 'tipos','servicio','secciones'];
+$validTabs = ['usuarios', 'departamentos', 'ubicaciones', 'tipos','servicio','secciones','recibo'];
 if (!in_array($tab, $validTabs)) {
     $tab = 'usuarios';
 }
@@ -45,6 +45,11 @@ if (!in_array($tab, $validTabs)) {
             <a class="nav-link <?= $tab === 'servicio' ? 'active' : '' ?>"
                href="admin_catalogos.php?tab=servicio">Tipos de Servicio</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $tab === 'recibo' ? 'active' : '' ?>"
+               href="admin_catalogos.php?tab=recibo">Recibos</a>
+        </li>
+    
     
     </ul>
     
@@ -346,10 +351,7 @@ if (!in_array($tab, $validTabs)) {
                 </table>
             <?php endif; ?>
         <?php endif; ?>
-      
 
-    
-        
     </div>
 </div>
 

@@ -254,6 +254,7 @@
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=tipos">Tipos de equipo</a></li>
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=servicio">Servicio</a></li>
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=secciones">Secciones</a></li>
+                        <li><a class="dropdown-item" href="movimientos.php">Recibos Movimiento</a></li>
                     </ul>
                 </li>
 

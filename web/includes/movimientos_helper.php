@@ -52,8 +52,12 @@ function registrarMovimientoEquipo(
 
     $firmaToken = bin2hex(random_bytes(32));
 
-    // Ajusta el nombre del técnico según tu auth.php
-    $tecnico = $_SESSION['usuario'] ?? ($_SESSION['user_name'] ?? 'SISTEMA');
+// Técnico: intentamos usar la TIP de la sesión, si existe
+    $tecnico = $_SESSION['tip'] 
+    ?? $_SESSION['usuario'] 
+    ?? ($_SESSION['user_name'] ?? 'Tecnico');
+
+
 
     $stmt = $pdo->prepare("
         INSERT INTO equipos_movimientos

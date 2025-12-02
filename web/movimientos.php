@@ -40,7 +40,7 @@ include __DIR__ . '/includes/header.php';
                             <th>Tipo</th>
                             <th>Equipo</th>
                             <th>Nº Serie</th>
-                            <th>Hostname</th>
+                            <th>Servicio</th>
                             <th>Usuario destino</th>
                             <th>Técnico</th>
                             <th>Estado origen</th>

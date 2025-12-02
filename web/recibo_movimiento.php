@@ -7,116 +7,285 @@ if ($idMov <= 0) {
     die('Movimiento no válido');
 }
 
+// 🔹 Cargamos movimiento + datos principales del equipo + sección
 $stmt = $pdo->prepare("
     SELECT 
         m.*,
+        e.tipo        AS tipo_equipo,
         e.marca,
         e.modelo,
         e.numero_serie,
-        e.hostname
+        e.hostname,
+        e.usuario_asignado,
+        e.departamento,
+        e.ubicacion,
+        e.proveedor,
+        e.coste,
+        e.estado      AS estado_equipo,
+        s.nombre      AS seccion_nombre
     FROM equipos_movimientos m
     JOIN equipos e ON e.id = m.id_equipo
+    LEFT JOIN secciones s ON s.id = e.seccion_id
     WHERE m.id = :id
 ");
+
 $stmt->execute([':id' => $idMov]);
 $mov = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$mov) {
-    die('Movimiento no encontrado');
-}
+if (!$mov) { die('Movimiento no encontrado'); }
 
+// Texto resumen de equipo
 $equipoTxt = trim(($mov['marca'] ?? '') . ' ' . ($mov['modelo'] ?? ''));
 $equipoTxt .= ' (S/N: ' . ($mov['numero_serie'] ?? '-') . ', HOST: ' . ($mov['hostname'] ?? '-') . ')';
 
 $firmaPath = $mov['firma_path'] ?? null;
+
+// Logo: pon aquí la ruta de tu logo dentro de /web
+$logoRel = 'assets/logo_departamento.png'; // por ej: assets/logo_inventario.png
+$logoFs  = __DIR__ . '/' . $logoRel;
+$tieneLogo = is_file($logoFs);
+
+// URL para firma digital (para enviarla al usuario)
+$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://')
+         . $_SERVER['HTTP_HOST'];
+$urlFirma = $baseUrl . '/firma.php?token=' . urlencode($mov['firma_token']);
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Recibo movimiento #<?= htmlspecialchars($mov['id']) ?></title>
-    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-    <style>
-        body {
-            font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-            font-size: 12px;
-            padding: 20px;
-        }
-        h1 {
-            font-size: 20px;
-            margin-bottom: 10px;
-        }
-        .bloque { margin-bottom: 10px; }
-        .label { font-weight: bold; }
-        .firma {
-            margin-top: 40px;
-        }
-        .firma img {
-            max-width: 320px;
-            max-height: 180px;
-            border: 1px solid #ccc;
-        }
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-            body {
-                padding: 10mm;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Recibo de movimiento #<?= htmlspecialchars($mov['id']) ?></title>
+<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+
+<style>
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+    padding: 25px;
+    background: #f8f9fa;
+}
+h1 {
+    font-size: 22px;
+    margin-bottom: 15px;
+}
+.section-title {
+    font-size: 15px;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    border-bottom: 2px solid #000;
+}
+.table td {
+    padding: 4px 8px;
+}
+.firma-panel {
+    margin-top: 25px;
+    padding: 15px;
+    border: 1px solid #555;
+    background: white;
+}
+.firma-panel img {
+    max-width: 350px;
+    max-height: 180px;
+    border: 1px solid #aaa;
+}
+.small-text {
+    font-size: 11px;
+    color: #555;
+}
+.instrucciones {
+    background: #fffbea;
+    border: 1px solid #ffe58f;
+    padding: 10px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+.no-print { display: block; }
+@media print {
+    .no-print { display: none !important; }
+    body { padding: 10mm; }
+}
+.header-doc {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.header-doc-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.header-doc-title {
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Marco general estilo "hoja" centrada */
+.documento {
+    max-width: 900px;        /* Ancho total de la hoja */
+    margin: 0 auto;          /* CENTRADO */
+    background: white;       /* Fondo blanco */
+    padding: 30px 40px;      /* Márgenes internos */
+    border: 1px solid #ddd;  /* Borde suave */
+    border-radius: 6px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.08);
+}
+
+/* En impresión quitamos el borde y la sombra */
+@media print {
+    .documento {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+    }
+}
+
+</style>
 </head>
+
 <body>
-
-<div class="no-print mb-3 text-end">
-    <button class="btn btn-sm btn-secondary" onclick="window.print()">Imprimir / Guardar como PDF</button>
+<div class="documento">
+<div class="no-print text-end mb-3">
+    <button onclick="window.print()" class="btn btn-secondary btn-sm">
+        Imprimir / Guardar como PDF
+    </button>
 </div>
 
-<h1>Recibo de <?= strtoupper(htmlspecialchars($mov['tipo'])) ?> de equipo informático</h1>
-
-<div class="bloque">
-    <span class="label">Fecha del movimiento:</span>
-    <?= htmlspecialchars($mov['fecha']) ?>
+<div class="header-doc">
+    <div class="header-doc-left">
+        <?php if ($tieneLogo): ?>
+            <img src="<?= htmlspecialchars($logoRel) ?>" alt="Logo" style="max-height:60px;">
+        <?php endif; ?>
+        <div>
+            <div class="header-doc-title">Recibo de movimiento de equipo informático</div>
+            <div class="small-text">
+                ID movimiento: #<?= (int)$mov['id'] ?> · Generado: <?= htmlspecialchars($mov['fecha']) ?>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="bloque">
-    <span class="label">Equipo:</span> <?= htmlspecialchars($equipoTxt) ?><br>
-    <span class="label">Estado origen:</span> <?= htmlspecialchars($mov['estado_origen'] ?? '-') ?><br>
-    <span class="label">Estado destino:</span> <?= htmlspecialchars($mov['estado_destino'] ?? '-') ?><br>
+<div class="instrucciones mb-3">
+    <strong>INSTRUCCIONES PARA EL USUARIO:</strong><br>
+    1. Revise que los datos del equipo y del movimiento son correctos.<br>
+    2. Si está conforme con la entrega o recogida, firme en el recuadro de abajo.<br>
+    3. Puede firmar:
+    <ul class="mb-1">
+        <li>Digitalmente, al pulsar sobre formulario firma digital podrá firmar con el ratón o el dedo.</li>
+        <li>Manuscrita, si este documento se ha impreso.</li>
+    </ul>
+    4. Para cualquier duda, contacte con el Departamento de Informática.
 </div>
 
-<div class="bloque">
-    <span class="label">Usuario destino:</span> <?= htmlspecialchars($mov['usuario_destino'] ?? '-') ?><br>
-    <span class="label">Técnico:</span> <?= htmlspecialchars($mov['tecnico'] ?? '-') ?><br>
+<!-- DATOS DEL MOVIMIENTO -->
+<div class="section-title">Datos del Movimiento</div>
+<table class="table table-bordered">
+    <tr><td><strong>Tipo de movimiento:</strong></td><td><?= strtoupper(htmlspecialchars($mov['tipo'])) ?></td></tr>
+    <tr><td><strong>Fecha:</strong></td><td><?= htmlspecialchars($mov['fecha']) ?></td></tr>
+    <tr><td><strong>Técnico (TIP):</strong></td><td><?= htmlspecialchars($mov['tecnico']) ?></td></tr>
+    <tr><td><strong>Observaciones:</strong></td>
+        <td><?= nl2br(htmlspecialchars($mov['observaciones'] ?: "Ninguna")) ?></td>
+    </tr>
+</table>
+
+<!-- DATOS DEL EQUIPO -->
+<div class="section-title">Datos del Equipo</div>
+<table class="table table-bordered">
+    <tr><td><strong>Tipo de equipo:</strong></td><td><?= htmlspecialchars($mov['tipo_equipo'] ?? '-') ?></td></tr>
+    <tr><td><strong>Marca:</strong></td><td><?= htmlspecialchars($mov['marca'] ?? '-') ?></td></tr>
+    <tr><td><strong>Modelo:</strong></td><td><?= htmlspecialchars($mov['modelo'] ?? '-') ?></td></tr>
+    <tr><td><strong>N.º de serie:</strong></td><td><?= htmlspecialchars($mov['numero_serie'] ?? '-') ?></td></tr>
+    <tr><td><strong>Servicio:</strong></td><td><?= htmlspecialchars($mov['hostname'] ?? '-') ?></td></tr>
+    <tr><td><strong>Ubicación:</strong></td><td><?= htmlspecialchars($mov['ubicacion'] ?? '-') ?></td></tr>
+    <tr><td><strong>Departamento:</strong></td><td><?= htmlspecialchars($mov['departamento'] ?? '-') ?></td></tr>
+    <tr><td><strong>Sección:</strong></td><td><?= htmlspecialchars($mov['seccion_nombre'] ?? '-') ?></td></tr>
+    
+</table>
+
+
+<!-- DATOS DEL USUARIO -->
+<div class="section-title">Datos del Usuario</div>
+<table class="table table-bordered">
+    <tr><td><strong>Usuario destino:</strong></td><td><?= htmlspecialchars($mov['usuario_destino']) ?></td></tr>
+</table>
+
+<!-- ENLACE DE FIRMA PARA EL TÉCNICO 
+<div class="section-title no-print">Enlace de firma para enviar al usuario</div>
+<div class="no-print mb-3">
+    <div class="small-text mb-1">
+        Copia este enlace y envíaselo al usuario por correo o mensajería para que firme digitalmente:
+    </div>
+    <div class="input-group input-group-sm" style="max-width: 650px;">
+        <input type="text" id="linkFirma" class="form-control" readonly
+               value="<?= htmlspecialchars($urlFirma) ?>">
+        <button class="btn btn-outline-secondary" type="button" onclick="copiarLink()">
+            Copiar enlace
+        </button>
+    </div>
+</div>-->
+
+<div class="section-title">Normas de Uso y Responsabilidades</div>
+<div class="normas small-text" style="background:#fff0e1;padding:12px;border:1px solid #ffd9b3;border-radius:4px;">
+    <p>
+        El usuario declara haber recibido el equipo indicado en este documento y se compromete a:
+    </p>
+    <ul>
+        <li>Utilizar el equipo exclusivamente para funciones propias del puesto de trabajo.</li>
+        <li>Cumplir las políticas de seguridad, privacidad y uso aceptable de medios informáticos establecidas por la organización.</li>
+        <li>Custodiar el dispositivo y evitar cualquier situación que pueda derivar en pérdida, hurto o acceso no autorizado.</li>
+        <li>Comunicar de inmediato al Departamento de Informática cualquier incidente relacionado con el equipo o su información.</li>
+        <li>No ceder, manipular, prestar o reasignar el equipo sin autorización expresa del personal técnico.</li>
+        <li>Permitir las revisiones, mantenimientos y auditorías del equipo cuando sean necesarias.</li>
+        <li>Proceder a su devolución en el mismo estado en que fue entregado cuando así se requiera.</li>
+    </ul>
+    <p>
+        Mediante la firma del presente documento, el usuario acepta las condiciones aquí expuestas y asume la responsabilidad del uso adecuado del equipo asignado.
+    </p>
 </div>
 
-<?php if (!empty($mov['observaciones'])): ?>
-    <div class="bloque">
-        <span class="label">Observaciones:</span><br>
-        <?= nl2br(htmlspecialchars($mov['observaciones'])) ?>
+
+<!-- FIRMA -->
+<div class="section-title">Firma del Usuario</div>
+
+<div class="firma-panel">
+<?php if ($firmaPath && is_file(__DIR__ . '/' . $firmaPath)): ?>
+    <div><strong>Documento firmado electrónicamente.</strong></div>
+    <img src="<?= htmlspecialchars($firmaPath) ?>" alt="Firma del usuario">
+    <div class="small-text mt-2">Firmado el <?= htmlspecialchars($mov['firmado_fecha']) ?></div>
+<?php else: ?>
+    <div style="height:180px;">
+        ________________________________<br>
+        <span class="small-text">(firma manuscrita en caso de impresión o pendiente de firma digital)</span>
+    </div>
+
+    <div class="no-print mt-2">
+        <a href="firma.php?token=<?= urlencode($mov['firma_token']) ?>" class="btn btn-primary btn-sm">
+            Abrir formulario de firma digital
+        </a>
     </div>
 <?php endif; ?>
-
-<div class="bloque">
-    <span class="label">Identificador de movimiento:</span>
-    #<?= (int)$mov['id'] ?>
 </div>
 
-<div class="firma">
-    <span class="label">Firma del usuario:</span><br>
-    <?php if ($firmaPath && is_file(__DIR__ . '/' . $firmaPath)): ?>
-        <img src="<?= htmlspecialchars($firmaPath) ?>" alt="Firma del usuario">
-        <div class="mt-2">
-            Firmado electrónicamente el
-            <?= htmlspecialchars($mov['firmado_fecha'] ?? '') ?>
-        </div>
-    <?php else: ?>
-        <div style="margin-top: 40px;">
-            ________________________________<br>
-            (pendiente de firma)
-        </div>
-    <?php endif; ?>
+<div class="small-text mt-3">
+    Documento generado automáticamente por el Sistema de Inventario IT.  
+    Este recibo certifica que el usuario indicado ha recibido o entregado el equipo detallado en la fecha mostrada.
 </div>
 
+<script>
+function copiarLink() {
+    var input = document.getElementById('linkFirma');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    try {
+        document.execCommand('copy');
+        alert('Enlace copiado. Pégalo en un correo o chat al usuario.');
+    } catch (e) {
+        alert('No se ha podido copiar automáticamente. Selecciona el texto y cópialo manualmente.');
+    }
+}
+</script>
+</div> <!-- /.documento -->
 </body>
 </html>
