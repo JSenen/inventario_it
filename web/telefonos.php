@@ -204,7 +204,35 @@ $(document).ready(function () {
             { data: 'departamento' },
             { data: 'estado' },
             { data: 'acciones', orderable: false, searchable: false }
-        ]
+        ],
+           // 👇 AÑADIMOS ESTO
+        createdRow: function (row, data, dataIndex) {
+            // Índice de la columna "Estado"
+        
+            var indiceEstado = 6;
+
+            var $celda = $('td:eq(' + indiceEstado + ')', row);
+            var estado = $celda.text().toLowerCase().trim();
+
+            if (estado === 'activo') {
+                $celda.addClass('estado-activo');
+            } else if (estado === 'averiado') {
+                $celda.addClass('estado-averiado');
+            } else if (estado === 'baja') {
+                $celda.addClass('estado-baja');
+            } else if ( estado === 'almacen') {
+                $celda.addClass('estado-almacen');
+            } else if (estado === 'prestado') {
+                $celda.addClass('estado-prestado');
+            }   
+        },
+
+        // Traducción al castellano
+        language: {
+            search: "Buscar:",
+            searchPlaceholder: "Buscar en la tabla...",
+            url: 'vendor/datatables/i18n/es-ES.json'
+        }
     });
 });
 </script>
