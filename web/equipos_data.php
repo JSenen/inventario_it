@@ -29,9 +29,9 @@ try {
         6  => 'e.hostname',
         7  => 'e.ubicacion',
         8  => 'ip_principal',    // alias
-        9  => 'r.nombre',        // red
-        10 => 'e.estado',
-        11 => 'e.id',            // acciones
+        //9  => 'r.nombre',        // red
+        9 => 'e.estado',
+        10 => 'e.id',            // acciones
     ];
 
     // TOTAL SIN FILTROS (solo tabla equipos)
@@ -75,7 +75,7 @@ try {
             'e.notas',
             'ip.ip',
             'ip.mac',
-            'r.nombre',
+            //'r.nombre',
         ];
 
         $orParts = [];
@@ -118,6 +118,8 @@ $sqlData = "
         e.*,
         ip.ip     AS ip_principal,
         r.nombre  AS red_nombre,
+        s.nombre AS seccion_nombre,
+
         (
             SELECT COUNT(*)
             FROM pc_monitores pm
@@ -126,6 +128,7 @@ $sqlData = "
     FROM equipos e
     LEFT JOIN ips_equipos ip ON ip.equipo_id = e.id AND ip.es_principal = 1
     LEFT JOIN redes r        ON r.id = ip.red_id
+    LEFT JOIN secciones s    ON s.id = e.seccion_id
     $whereSql
     $orderSql
     LIMIT :start, :length
@@ -158,12 +161,12 @@ $sqlData = "
         $colUsuarioDepto =
             htmlspecialchars($row['usuario_asignado'] ?? '') . '<br>' .
             '<small class="text-muted">' . htmlspecialchars($row['departamento'] ?? '') . '</small>'. '<br>' .
-            '<small class="text-muted">' . htmlspecialchars($row['seccion'] ?? '') . '</small>';
+            '<small class="text-muted">' . htmlspecialchars($row['seccion_nombre'] ?? '') . '</small>';
 
         $colServicio  = htmlspecialchars($row['hostname'] ?? '');
         $colUbicacion = htmlspecialchars($row['ubicacion'] ?? '');
         $colIp        = htmlspecialchars($row['ip_principal'] ?? '');
-        $colRed       = htmlspecialchars($row['red_nombre'] ?? '');
+        //$colRed       = htmlspecialchars($row['red_nombre'] ?? '');
         $colMonitores = '';
 $numMon = (int)($row['num_monitores'] ?? 0);
 
@@ -202,7 +205,7 @@ if (in_array($row['tipo'], ['PC', 'PORTÁTIL', 'PORTATIL'])) {
             $colServicio,
             $colUbicacion,
             $colIp,
-            $colRed,
+            //$colRed,
             $colMonitores,
             $colEstado,
             $colAcciones,

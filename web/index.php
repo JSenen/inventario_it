@@ -378,7 +378,7 @@ require_once __DIR__ . '/includes/header.php';
             <th>Servicio</th>
             <th>Ubicación</th>
             <th>IP Asignada</th>
-            <th>Red</th>
+            <!--<th>Red</th>-->
             <th>Monitores</th>
             <th>Estado</th>
             <th style="width: 150px;">Acciones</th>
@@ -474,7 +474,7 @@ $(document).ready(function () {
         autoWidth: false,          // 🔹 que no recalule él los anchos
         scrollX: true,           // 🔹 para tablas anchas
         columnDefs: [
-            { orderable: false, searchable: false, targets: [1, 12] } // imagen y acciones
+            { orderable: false, searchable: false, targets: [1, 11] } // imagen y acciones
         ],
 
         // 👇 AÑADIMOS ESTO
@@ -483,7 +483,7 @@ $(document).ready(function () {
             // ID(0), Imagen(1), Nº serie(2), Tipo(3), Marca(4),
             // Usuario(5), Servicio(6), Ubicación(7),
             // IP principal(8), Red(9), Estado(10), Acciones(11)
-            var indiceEstado = 11;
+            var indiceEstado = 10;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();
