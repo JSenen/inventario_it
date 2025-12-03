@@ -434,41 +434,52 @@ $(document).ready(function () {
 
         // Botones de exportación
         dom: 'Bfrtip',
-        buttons: [
-            {
-                extend: 'copy',
-                text: 'Copiar'
-            },
-            {
-                extend: 'excel',
-                text: 'Excel (página actual)'
-            },
-            {
-                extend: 'csv',
-                text: 'CSV (página actual)'
-            },
-            {
-                extend: 'print',
-                text: 'Imprimir'
-            },
-            {
-                text: 'CSV (todos los registros)',
-                action: function (e, dt, button, config) {
-                    var params = dt.ajax.params();
-                    params.export = 'csv';
-                    var query = $.param(params);
-                    window.location = 'equipos_export.php?' + query;
-                }
-            },
-            {
-                text: 'Excel (todos los registros)',
-                action: function (e, dt, button, config) {
-                    var params = dt.ajax.params();
-                    var query = $.param(params);
-                    window.location = 'equipos_export_excel.php?' + query;
-                }
-            }
-        ],
+       buttons: [
+    {
+        extend: 'copy',
+        text: 'Copiar'
+    },
+    {
+        extend: 'excelHtml5',
+        text: 'Excel (página actual)',
+        exportOptions: {
+            // sin 1 (Imagen) ni 11 (Acciones)
+            columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        }
+    },
+    {
+        extend: 'csvHtml5',
+        text: 'CSV (página actual)',
+        exportOptions: {
+            columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        }
+    },
+    {
+        extend: 'print',
+        text: 'Imprimir',
+        exportOptions: {
+            columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        }
+    },
+    {
+        text: 'CSV (todos los registros)',
+        action: function (e, dt, button, config) {
+            var params = dt.ajax.params();
+            params.export = 'csv';
+            var query = $.param(params);
+            window.location = 'equipos_export.php?' + query;
+        }
+    },
+    {
+        text: 'Excel (todos los registros)',
+        action: function (e, dt, button, config) {
+            var params = dt.ajax.params();
+            var query = $.param(params);
+            window.location = 'equipos_export_excel.php?' + query;
+        }
+    }
+],
+
 
         order: [[0, 'desc']],
         autoWidth: false,          // 🔹 que no recalule él los anchos

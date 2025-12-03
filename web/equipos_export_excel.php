@@ -33,6 +33,7 @@ if ($searchValue !== '') {
         'e.hostname',
         'e.usuario_asignado',
         'e.departamento',
+        's.nombre',
         'e.ubicacion',
         'e.fecha_compra',
         'e.fecha_baja',
@@ -59,10 +60,13 @@ $sql = "
     SELECT
         e.*,
         ip.ip     AS ip_principal,
-        r.nombre  AS red_nombre
+        r.nombre  AS red_nombre,
+        s.nombre  AS seccion_nombre
     FROM equipos e
     LEFT JOIN ips_equipos ip ON ip.equipo_id = e.id AND ip.es_principal = 1
     LEFT JOIN redes r        ON r.id = ip.red_id
+    LEFT JOIN secciones s    ON s.id = e.seccion_id
+
     $whereSql
     ORDER BY e.id ASC
 ";
@@ -93,18 +97,19 @@ echo "\xEF\xBB\xBF";
             <th>Tipo</th>
             <th>Marca</th>
             <th>Modelo</th>
-            <th>Usuario asignado</th>
+            <th>Usuario</th>
             <th>Departamento</th>
-            <th>Hostname / Servicio</th>
+            <th>Sección</th>
+            <th>Servicio</th>
             <th>Ubicación</th>
             <th>IP principal</th>
-            <th>Red</th>
+            <!-- <th>Red</th>
             <th>Fecha compra</th>
             <th>Fecha baja</th>
             <th>Proveedor</th>
-            <th>Coste</th>
+            <th>Coste</th> -->
             <th>Estado</th>
-            <th>Notas</th>
+            <!-- <th>Notas</th> -->
         </tr>
     </thead>
     <tbody>
@@ -117,16 +122,17 @@ echo "\xEF\xBB\xBF";
                 <td><?= htmlspecialchars($row['modelo'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['usuario_asignado'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['departamento'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['seccion_nombre'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['hostname'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['ubicacion'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['ip_principal'] ?? '') ?></td>
-                <td><?= htmlspecialchars($row['red_nombre'] ?? '') ?></td>
+                <!-- <td><?= htmlspecialchars($row['red_nombre'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['fecha_compra'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['fecha_baja'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['proveedor'] ?? '') ?></td>
-                <td><?= htmlspecialchars($row['coste'] ?? '') ?></td>
+                <td><?= htmlspecialchars($row['coste'] ?? '') ?></td> -->
                 <td><?= htmlspecialchars($row['estado'] ?? '') ?></td>
-                <td><?= htmlspecialchars($row['notas'] ?? '') ?></td>
+                <!-- <td><?= htmlspecialchars($row['notas'] ?? '') ?></td> -->
             </tr>
         <?php endwhile; ?>
     </tbody>
