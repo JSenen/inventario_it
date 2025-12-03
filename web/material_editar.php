@@ -1,6 +1,6 @@
 <?php
 // material_editar.php
-require 'includes/db.php';
+require_once __DIR__ . '/config.php';
 
 // 1) Validar ID
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;

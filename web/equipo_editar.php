@@ -115,207 +115,207 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ? array_map('intval', $_POST['monitores'])
     : [];
 
-// Imagen actual desde la BD (puede ser null o cadena vacía)
-$imagenRuta = $equipo['imagen'] ?? null;
-// 1) Si ha elegido una imagen existente en el desplegable
-if (!empty($_POST['imagen_existente'])) {
+    // Imagen actual desde la BD (puede ser null o cadena vacía)
+    $imagenRuta = $equipo['imagen'] ?? null;
+    // 1) Si ha elegido una imagen existente en el desplegable
+    if (!empty($_POST['imagen_existente'])) {
 
-    // Borrar la imagen anterior si existe en disco
-    if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {
-        @unlink(__DIR__ . '/' . $imagenRuta);
-    }
-
-    $file = basename($_POST['imagen_existente']); // seguridad básica
-    $imagenRuta = 'uploads/equipos/' . $file;
-
-// 2) Si no ha elegido existente, pero ha subido una nueva imagen
-} elseif (!empty($_FILES['imagen']['name'])) {
-
-    $uploadDir = __DIR__ . '/uploads/equipos/';
-
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0775, true);
-    }
-
-    $nombreOriginal = basename($_FILES['imagen']['name']);
-    $nombreLimpio   = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
-    $nombreFinal    = time() . '_' . $nombreLimpio;
-
-    $rutaRelativa = 'uploads/equipos/' . $nombreFinal;
-    $rutaFisica   = $uploadDir . $nombreFinal;
-
-    if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaFisica)) {
-
-        // Borrar la imagen anterior si existe
+        // Borrar la imagen anterior si existe en disco
         if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {
             @unlink(__DIR__ . '/' . $imagenRuta);
         }
 
-        $imagenRuta = $rutaRelativa;
-    } else {
-        $errores[] = "No se pudo guardar la nueva imagen del equipo.";
-    }
-}
+        $file = basename($_POST['imagen_existente']); // seguridad básica
+        $imagenRuta = 'uploads/equipos/' . $file;
 
-// 3) Si no hay ni imagen_existente ni archivo nuevo
-//    -> $imagenRuta se queda igual que venía de la BD
+        // 2) Si no ha elegido existente, pero ha subido una nueva imagen
+        } elseif (!empty($_FILES['imagen']['name'])) {
+
+            $uploadDir = __DIR__ . '/uploads/equipos/';
+
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0775, true);
+            }
+
+            $nombreOriginal = basename($_FILES['imagen']['name']);
+            $nombreLimpio   = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
+            $nombreFinal    = time() . '_' . $nombreLimpio;
+
+            $rutaRelativa = 'uploads/equipos/' . $nombreFinal;
+            $rutaFisica   = $uploadDir . $nombreFinal;
+
+            if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaFisica)) {
+
+                // Borrar la imagen anterior si existe
+                if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {
+                    @unlink(__DIR__ . '/' . $imagenRuta);
+                }
+
+                $imagenRuta = $rutaRelativa;
+            } else {
+                $errores[] = "No se pudo guardar la nueva imagen del equipo.";
+            }
+        }
+
+        // 3) Si no hay ni imagen_existente ni archivo nuevo
+        //    -> $imagenRuta se queda igual que venía de la BD
 
 
-    // Campos principales
-    $tipo             = strtoupper(trim($_POST['tipo'] ?? ''));
-    $marca            = strtoupper(trim($_POST['marca'] ?? ''));
-    $modelo           = strtoupper(trim($_POST['modelo'] ?? ''));
-    $numero_serie     = strtoupper(trim($_POST['numero_serie'] ?? ''));
-    $hostname         = strtoupper(trim($_POST['hostname'] ?? ''));
-    $usuario_asignado = strtoupper(trim($_POST['usuario_asignado'] ?? ''));
-    $departamento     = strtoupper(trim($_POST['departamento'] ?? ''));
-    $ubicacion        = strtoupper(trim($_POST['ubicacion'] ?? ''));
-    $fecha_compra     = $_POST['fecha_compra'] ?? null;
-    $proveedor        = strtoupper(trim($_POST['proveedor'] ?? ''));
-    $coste            = $_POST['coste'] ?? null;
-    $estado           = trim($_POST['estado'] ?? 'En uso');
-    $notas            = strtoupper(trim($_POST['notas'] ?? ''));
+            // Campos principales
+            $tipo             = strtoupper(trim($_POST['tipo'] ?? ''));
+            $marca            = strtoupper(trim($_POST['marca'] ?? ''));
+            $modelo           = strtoupper(trim($_POST['modelo'] ?? ''));
+            $numero_serie     = strtoupper(trim($_POST['numero_serie'] ?? ''));
+            $hostname         = strtoupper(trim($_POST['hostname'] ?? ''));
+            $usuario_asignado = strtoupper(trim($_POST['usuario_asignado'] ?? ''));
+            $departamento     = strtoupper(trim($_POST['departamento'] ?? ''));
+            $ubicacion        = strtoupper(trim($_POST['ubicacion'] ?? ''));
+            $fecha_compra     = $_POST['fecha_compra'] ?? null;
+            $proveedor        = strtoupper(trim($_POST['proveedor'] ?? ''));
+            $coste            = $_POST['coste'] ?? null;
+            $estado           = trim($_POST['estado'] ?? 'En uso');
+            $notas            = strtoupper(trim($_POST['notas'] ?? ''));
     
 
-    // Red / IP
-    $ip     = strtoupper(trim($_POST['ip'] ?? ''));
-    $mac    = strtoupper(trim($_POST['mac'] ?? ''));
-    $red_id = $_POST['red_id'] ?? '';
+            // Red / IP
+            $ip     = strtoupper(trim($_POST['ip'] ?? ''));
+            $mac    = strtoupper(trim($_POST['mac'] ?? ''));
+            $red_id = $_POST['red_id'] ?? '';
 
-    // Avería
-    $tipo_averia  = strtoupper(trim($_POST['tipo_averia'] ?? ''));
-    $num_asunto   = strtoupper(trim($_POST['num_asunto'] ?? ''));
-    $desc_averia  = trim($_POST['desc_averia'] ?? '');
-    $empresa_ext  = strtoupper(trim($_POST['empresa_ext'] ?? ''));
+            // Avería
+            $tipo_averia  = strtoupper(trim($_POST['tipo_averia'] ?? ''));
+            $num_asunto   = strtoupper(trim($_POST['num_asunto'] ?? ''));
+            $desc_averia  = trim($_POST['desc_averia'] ?? '');
+            $empresa_ext  = strtoupper(trim($_POST['empresa_ext'] ?? ''));
 
-    $estadoEsAveriado = (strcasecmp($estado, 'Averiado') === 0);
+            $estadoEsAveriado = (strcasecmp($estado, 'Averiado') === 0);
 
-    if ($tipo === '') {
-        $errores[] = "El campo Tipo es obligatorio.";
-    }
+            if ($tipo === '') {
+                $errores[] = "El campo Tipo es obligatorio.";
+            }
 
-    if ($estadoEsAveriado) {
-        if ($tipo_averia === '') {
-            $errores[] = "El tipo de avería es obligatorio cuando el equipo está en estado AVERIADO.";
-        }
-        if ($num_asunto === '') {
-            $errores[] = "El número de asunto es obligatorio cuando el equipo está en estado AVERIADO.";
-        }
-    }
-
-   // Si el estado pasa a BAJA por primera vez → guardar fecha_baja
-if ($estado === 'Baja') {
-
-    $sql_check = "SELECT fecha_baja FROM equipos WHERE id = :id";
-    $stmt_check = $pdo->prepare($sql_check);
-    $stmt_check->execute([':id' => $id_equipo]);
-    $check = $stmt_check->fetch(PDO::FETCH_ASSOC);
-
-    // Solo insertar fecha_baja si está vacía (evita sobrescritura)
-    if (empty($check['fecha_baja'])) {
-        $sql_baja = "UPDATE equipos SET fecha_baja = NOW() WHERE id = :id";
-        $stmt_baja = $pdo->prepare($sql_baja);
-        $stmt_baja->execute([':id' => $id_equipo]);
-    }
-}
-
-    // Verificar número de serie único si se ha proporcionado
-    // Comprobar duplicado de número de serie (excluyendo el propio)
-if ($numero_serie !== '') {
-    $stmtCheck = $pdo->prepare("
-        SELECT id 
-        FROM equipos 
-        WHERE numero_serie = :ns 
-          AND id <> :id
-        LIMIT 1
-    ");
-    $stmtCheck->execute([
-        ':ns' => $numero_serie,
-        ':id' => $id_equipo
-    ]);
-
-    if ($stmtCheck->fetch()) {
-        $errores[] = "El número de serie $numero_serie ya está asignado a otro equipo.";
-    }
-}
-    // Obtener seccion_id
-    $seccion_id = isset($_POST['seccion_id']) && $_POST['seccion_id'] !== ''
-    ? (int) $_POST['seccion_id']
-    : null;
-
-    // Si no hay errores, proceder a actualizar
-    if (empty($errores)) {
-        try {
-            $pdo->beginTransaction();
-
-            // Actualizar equipo
-            $sqlEquipo = "UPDATE equipos SET
-                tipo = :tipo,
-                marca = :marca,
-                modelo = :modelo,
-                numero_serie = :numero_serie,
-                hostname = :hostname,
-                usuario_asignado = :usuario_asignado,
-                departamento = :departamento,
-                ubicacion = :ubicacion,
-                fecha_compra = :fecha_compra,
-                proveedor = :proveedor,
-                coste = :coste,
-                estado = :estado,
-                notas = :notas,
-                imagen = :imagen,
-                seccion_id = :seccion_id
-              WHERE id = :id";
-
-            $stmtUp = $pdo->prepare($sqlEquipo);
-            $stmtUp->execute([
-                ':tipo'             => $tipo,
-                ':marca'            => $marca,
-                ':modelo'           => $modelo,
-                ':numero_serie'     => $numero_serie,
-                ':hostname'         => $hostname,
-                ':usuario_asignado' => $usuario_asignado,
-                ':departamento'     => $departamento,
-                ':ubicacion'        => $ubicacion,
-                ':fecha_compra'     => $fecha_compra ?: null,
-                ':proveedor'        => $proveedor,
-                ':coste'            => $coste !== '' ? $coste : null,
-                ':estado'           => $estado,
-                ':notas'            => $notas,
-                ':imagen'           => $imagenRuta,   
-                ':id'               => $id,
-                ':seccion_id'       => $seccion_id,
-            ]);
-
-            // Gestionar IP principal
-            if ($ip === '' || $red_id === '') {
-                if ($ipRow) {
-                    $delIp = $pdo->prepare("DELETE FROM ips_equipos WHERE id = :id");
-                    $delIp->execute([':id' => $ipRow['id']]);
+            if ($estadoEsAveriado) {
+                if ($tipo_averia === '') {
+                    $errores[] = "El tipo de avería es obligatorio cuando el equipo está en estado AVERIADO.";
                 }
-            } else {
-                if ($ipRow) {
-                    $updIp = $pdo->prepare("UPDATE ips_equipos
-                        SET ip = :ip, mac = :mac, red_id = :red_id
-                        WHERE id = :id");
-                    $updIp->execute([
-                        ':ip'     => $ip,
-                        ':mac'    => $mac,
-                        ':red_id' => $red_id,
-                        ':id'     => $ipRow['id'],
-                    ]);
-                } else {
-                    $insIp = $pdo->prepare("INSERT INTO ips_equipos
-                        (equipo_id, red_id, ip, mac, es_principal, notas)
-                        VALUES (:equipo_id, :red_id, :ip, :mac, 1, NULL)");
-                    $insIp->execute([
-                        ':equipo_id' => $id,
-                        ':red_id'    => $red_id,
-                        ':ip'        => $ip,
-                        ':mac'       => $mac,
-                    ]);
+                if ($num_asunto === '') {
+                    $errores[] = "El número de asunto es obligatorio cuando el equipo está en estado AVERIADO.";
                 }
             }
+
+            // Si el estado pasa a BAJA por primera vez → guardar fecha_baja
+            if ($estado === 'Baja') {
+
+                $sql_check = "SELECT fecha_baja FROM equipos WHERE id = :id";
+                $stmt_check = $pdo->prepare($sql_check);
+                $stmt_check->execute([':id' => $id_equipo]);
+                $check = $stmt_check->fetch(PDO::FETCH_ASSOC);
+
+                // Solo insertar fecha_baja si está vacía (evita sobrescritura)
+                if (empty($check['fecha_baja'])) {
+                    $sql_baja = "UPDATE equipos SET fecha_baja = NOW() WHERE id = :id";
+                    $stmt_baja = $pdo->prepare($sql_baja);
+                    $stmt_baja->execute([':id' => $id_equipo]);
+                }
+            }
+
+            // Verificar número de serie único si se ha proporcionado
+            // Comprobar duplicado de número de serie (excluyendo el propio)
+            if ($numero_serie !== '') {
+                $stmtCheck = $pdo->prepare("
+                    SELECT id 
+                    FROM equipos 
+                    WHERE numero_serie = :ns 
+                    AND id <> :id
+                    LIMIT 1
+                ");
+                $stmtCheck->execute([
+                    ':ns' => $numero_serie,
+                    ':id' => $id_equipo
+                ]);
+
+                if ($stmtCheck->fetch()) {
+                    $errores[] = "El número de serie $numero_serie ya está asignado a otro equipo.";
+                }
+            }
+            // Obtener seccion_id
+            $seccion_id = isset($_POST['seccion_id']) && $_POST['seccion_id'] !== ''
+            ? (int) $_POST['seccion_id']
+            : null;
+
+            // Si no hay errores, proceder a actualizar
+            if (empty($errores)) {
+                try {
+                    $pdo->beginTransaction();
+
+                    // Actualizar equipo
+                    $sqlEquipo = "UPDATE equipos SET
+                        tipo = :tipo,
+                        marca = :marca,
+                        modelo = :modelo,
+                        numero_serie = :numero_serie,
+                        hostname = :hostname,
+                        usuario_asignado = :usuario_asignado,
+                        departamento = :departamento,
+                        ubicacion = :ubicacion,
+                        fecha_compra = :fecha_compra,
+                        proveedor = :proveedor,
+                        coste = :coste,
+                        estado = :estado,
+                        notas = :notas,
+                        imagen = :imagen,
+                        seccion_id = :seccion_id
+                    WHERE id = :id";
+
+                    $stmtUp = $pdo->prepare($sqlEquipo);
+                    $stmtUp->execute([
+                        ':tipo'             => $tipo,
+                        ':marca'            => $marca,
+                        ':modelo'           => $modelo,
+                        ':numero_serie'     => $numero_serie,
+                        ':hostname'         => $hostname,
+                        ':usuario_asignado' => $usuario_asignado,
+                        ':departamento'     => $departamento,
+                        ':ubicacion'        => $ubicacion,
+                        ':fecha_compra'     => $fecha_compra ?: null,
+                        ':proveedor'        => $proveedor,
+                        ':coste'            => $coste !== '' ? $coste : null,
+                        ':estado'           => $estado,
+                        ':notas'            => $notas,
+                        ':imagen'           => $imagenRuta,   
+                        ':id'               => $id,
+                        ':seccion_id'       => $seccion_id,
+                    ]);
+
+                    // Gestionar IP principal
+                    if ($ip === '' || $red_id === '') {
+                        if ($ipRow) {
+                            $delIp = $pdo->prepare("DELETE FROM ips_equipos WHERE id = :id");
+                            $delIp->execute([':id' => $ipRow['id']]);
+                        }
+                    } else {
+                        if ($ipRow) {
+                            $updIp = $pdo->prepare("UPDATE ips_equipos
+                                SET ip = :ip, mac = :mac, red_id = :red_id
+                                WHERE id = :id");
+                            $updIp->execute([
+                                ':ip'     => $ip,
+                                ':mac'    => $mac,
+                                ':red_id' => $red_id,
+                                ':id'     => $ipRow['id'],
+                            ]);
+                        } else {
+                            $insIp = $pdo->prepare("INSERT INTO ips_equipos
+                                (equipo_id, red_id, ip, mac, es_principal, notas)
+                                VALUES (:equipo_id, :red_id, :ip, :mac, 1, NULL)");
+                            $insIp->execute([
+                                ':equipo_id' => $id,
+                                ':red_id'    => $red_id,
+                                ':ip'        => $ip,
+                                ':mac'       => $mac,
+                            ]);
+                        }
+                    }
             
             // Gestionar monitores asociados
             if (in_array($tipo, ['PC','PORTATIL'])) {
@@ -428,36 +428,39 @@ if ($numero_serie !== '') {
         }
     }
 
-    // Si hay errores, mantenemos lo que se ha puesto en el formulario
-    $equipo = array_merge($equipo, [
-        'tipo'             => $tipo,
-        'marca'            => $marca,
-        'modelo'           => $modelo,
-        'numero_serie'     => $numero_serie,
-        'hostname'         => $hostname,
-        'usuario_asignado' => $usuario_asignado,
-        'departamento'     => $departamento,
-        'ubicacion'        => $ubicacion,
-        'fecha_compra'     => $fecha_compra,
-        'proveedor'        => $proveedor,
-        'coste'            => $coste,
-        'estado'           => $estado,
-        'notas'            => $notas,
-        'seccion_id'       => $seccion_id,
-    ]);
+            // Si hay errores, mantener lo que ha puesto el usuario
+        if (!empty($errores)) {
+            $equipo = array_merge($equipo, [
+                'tipo'             => $tipo,
+                'marca'            => $marca,
+                'modelo'           => $modelo,
+                'numero_serie'     => $numero_serie,
+                'hostname'         => $hostname,
+                'usuario_asignado' => $usuario_asignado,
+                'departamento'     => $departamento,
+                'ubicacion'        => $ubicacion,
+                'fecha_compra'     => $fecha_compra,
+                'proveedor'        => $proveedor,
+                'coste'            => $coste,
+                'estado'           => $estado,
+                'notas'            => $notas,
+                'seccion_id'       => $seccion_id,
+            ]);
 
-    $ipRow = [
-        'ip'     => $ip,
-        'mac'    => $mac,
-        'red_id' => $red_id,
-    ];
+            $ipRow = [
+                'ip'     => $ip,
+                'mac'    => $mac,
+                'red_id' => $red_id,
+            ];
 
-    $averia = [
-        'tipo_averia' => $tipo_averia,
-        'num_asunto'  => $num_asunto,
-        'descripcion' => $desc_averia,
-        'empresa_ext' => $empresa_ext,
-    ];
+            $averia = [
+                'tipo_averia' => $tipo_averia,
+                'num_asunto'  => $num_asunto,
+                'descripcion' => $desc_averia,
+                'empresa_ext' => $empresa_ext,
+            ];
+        }
+
 }
 
 
@@ -627,14 +630,14 @@ require_once __DIR__ . '/includes/header.php';
         <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['fecha_compra'] ?? '') ?>">
     </div>
 
-    <div class="col-md-4">
+    <!-- <div class="col-md-4">
         <label class="form-label">Proveedor</label>
         <input type="text" name="proveedor" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['proveedor'] ?? '') ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label">Coste (€)</label>
         <input type="number" step="0.01" name="coste" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['coste'] ?? '') ?>">
-    </div>
+    </div> -->
     <div class="col-md-4">
         <label class="form-label">Estado</label>
         <input type="hidden" name="id_equipo" value="<?= (int)$equipo['id'] ?>">
@@ -765,6 +768,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <textarea name="notas" class="form-control campo-destacado" rows="3"><?= htmlspecialchars($equipo['notas'] ?? '') ?></textarea>
     </div>
 
+
+
+    
     <hr class="mt-4">
 
     <!-- Sección de averías -->

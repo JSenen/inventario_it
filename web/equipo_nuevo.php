@@ -406,7 +406,7 @@ usort($imagenes_existentes, function ($a, $b) {
         <label class="form-label">Fecha Alta</label>
         <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">
     </div>
-
+<!--
     <div class="col-md-4">
         <label class="form-label">Proveedor</label>
         <input type="text" name="proveedor" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['proveedor'] ?? '') ?>">
@@ -415,6 +415,7 @@ usort($imagenes_existentes, function ($a, $b) {
         <label class="form-label">Coste (€)</label>
         <input type="number" step="0.01" name="coste" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['coste'] ?? '') ?>">
     </div>
+            -->
     <div class="col-md-4">
         <label class="form-label">Estado</label>
         <select name="estado" class="form-select campo-destacado">

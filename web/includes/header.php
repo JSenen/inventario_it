@@ -161,7 +161,9 @@
 .campo-averia {
     background-color: #ffbcbcff !important;
 }
-#tablaEquipos td {
+#tablaEquipos
+#tablaTelefonos
+#tablaSims td {
     padding: 4px 6px !important;
     font-size: 14px !important;
 }
