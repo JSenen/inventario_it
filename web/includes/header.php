@@ -172,6 +172,12 @@
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
+
+<?php
+// En qué página estoy (index.php, dashboard.php, etc.)
+$currentPage = basename($_SERVER['PHP_SELF']);
+?>
+
     <!--
     <div style="padding:10px 0; text-align:left;">
     <img src="assets/logo_departamento.png" 
@@ -185,6 +191,14 @@
              style="height:80px; margin-right:15px;">
         
         <a class="navbar-brand" href="index.php">Inventario IT</a>
+
+        <li class="nav-item">
+    <a class="btn btn-sm btn-outline-light <?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"
+       href="dashboard.php">
+        Dashboard
+    </a>
+</li>
+
 
         <!-- Bootstrap 5: data-bs-toggle / data-bs-target -->
         <button class="navbar-toggler" type="button"
