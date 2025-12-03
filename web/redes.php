@@ -394,6 +394,18 @@ $totalLibres = max(0, $totalPosibles - $totalUsadas - $totalReservadas);
         <?php endif; ?>
     </div>
 <?php endif; 
+?>
+<div class="mb-3">
+    <button
+        type="button"
+        class="btn btn-sm btn-outline-primary ver-ips-libres-completas"
+        data-red-id="<?= (int)$redId ?>"
+        data-red-nombre="<?= htmlspecialchars($red['nombre']) ?>"
+    >
+        Ver todas las IPs libres
+    </button>
+</div>
+<?php
 
 $listaUsadas  = $ipsPorRed[$redId] ?? [];
 
@@ -579,9 +591,166 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // ==============================
+// Ver TODAS las IPs libres (modal)
+// ==============================
+let modalIpsLibres   = null;
+let ultimaListaLibres = [];  // Para filtrar por texto
+let redIdActual       = null;
+
+$(document).on('click', '.ver-ips-libres-completas', function (e) {
+    e.preventDefault();
+
+    const btn        = $(this);
+    const redId      = parseInt(btn.data('red-id'), 10);
+    const nombreRed  = btn.data('red-nombre');
+
+    if (!redId) return;
+
+    redIdActual = redId;
+    ultimaListaLibres = [];
+
+    // Título del modal
+    $('#modalNombreRed').text(nombreRed);
+
+    // Limpiar buscador y tabla
+    $('#buscadorIpLibre').val('');
+    const $tbody = $('#tablaIpsLibres tbody');
+    $tbody.empty().append(
+        '<tr><td colspan="2" class="text-center text-muted">Cargando IPs libres…</td></tr>'
+    );
+
+    // Petición AJAX a get_ips_libres.php
+    $.getJSON('get_ips_libres.php', { red_id: redId }, function (data) {
+        // data debería ser un array de IPs ["10.52.2.10", "10.52.2.11", ...]
+        ultimaListaLibres = Array.isArray(data) ? data : [];
+        pintarTablaIpsLibres();
+    }).fail(function (xhr) {
+        console.error('Error al obtener IPs libres:', xhr.responseText);
+        $tbody.empty().append(
+            '<tr><td colspan="2" class="text-center text-danger">Error al cargar IPs libres.</td></tr>'
+        );
+    });
+
+    // Mostrar modal (Bootstrap 5)
+    if (!modalIpsLibres) {
+        modalIpsLibres = new bootstrap.Modal(
+            document.getElementById('modalIpsLibres')
+        );
+    }
+    modalIpsLibres.show();
+});
+
+// Pintar tabla de IPs libres (con posible filtro)
+function pintarTablaIpsLibres() {
+    const $tbody      = $('#tablaIpsLibres tbody');
+    const filtroTexto = ($('#buscadorIpLibre').val() || '').trim();
+
+    $tbody.empty();
+
+    let listaFiltrada = ultimaListaLibres;
+
+    if (filtroTexto !== '') {
+        const f = filtroTexto.toLowerCase();
+        listaFiltrada = ultimaListaLibres.filter(ip => ip.toLowerCase().includes(f));
+    }
+
+    if (listaFiltrada.length === 0) {
+        $tbody.append(
+            '<tr><td colspan="2" class="text-center text-muted">No hay IPs libres con ese filtro.</td></tr>'
+        );
+        return;
+    }
+
+    listaFiltrada.forEach(function (ip) {
+        const fila = `
+            <tr>
+                <td>
+                    <span class="badge bg-light text-muted border">
+                        ${ip}
+                    </span>
+                </td>
+                <td>
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-warning reservar-ip"
+                        data-red-id="${redIdActual}"
+                        data-ip="${ip}"
+                    >
+                        Reservar
+                    </button>
+                </td>
+            </tr>
+        `;
+        $tbody.append(fila);
+    });
+}
+
+// Filtro en vivo por texto
+$('#buscadorIpLibre').on('input', function () {
+    pintarTablaIpsLibres();
+});
+
+// Botón "Limpiar"
+$('#btnLimpiarBusquedaIp').on('click', function () {
+    $('#buscadorIpLibre').val('');
+    pintarTablaIpsLibres();
+});
+
+
 });
 </script>
 
+<!-- Modal IPs libres completas -->
+<div class="modal fade" id="modalIpsLibres" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+            IPs libres en <span id="modalNombreRed"></span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2 d-flex">
+          <input
+            type="text"
+            class="form-control form-control-sm me-2"
+            id="buscadorIpLibre"
+            placeholder="Buscar IP (ej. 192.168.1.50)"
+          >
+          <button class="btn btn-sm btn-outline-secondary" id="btnLimpiarBusquedaIp">
+            Limpiar
+          </button>
+        </div>
+
+        <div class="table-responsive" style="max-height: 60vh;">
+          <table class="table table-sm align-middle mb-0" id="tablaIpsLibres">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 40%;">IP libre</th>
+                <th style="width: 60%;">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Se rellena por JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <small class="text-muted me-auto">
+          Solo se muestran IPs realmente libres (ni usadas ni reservadas).
+        </small>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <?php
 require_once __DIR__ . '/includes/footer.php';
