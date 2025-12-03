@@ -281,6 +281,18 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     </li>
                 <?php endif; ?>
             </ul>
+<form class="d-flex ms-auto" action="busqueda.php" method="get" role="search">
+    <input
+        class="form-control form-control-sm me-2"
+        type="search"
+        name="q"
+        placeholder="Buscar equipo o IP..."
+        aria-label="Buscar"
+    >
+    <button class="btn btn-sm btn-outline-light" type="submit">
+        Buscar
+    </button>
+</form>
 
             <!-- Info de usuario + botón Salir -->
             <?php if (!empty($_SESSION['tip'])): ?>
