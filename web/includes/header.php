@@ -14,6 +14,9 @@
     <link rel="stylesheet" href="vendor/datatables/css/dataTables.dataTables.min.css">
     <link rel="stylesheet" href="vendor/datatables/css/buttons.dataTables.min.css">
 
+    <!-- Iconos Bootstrap -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap-icons/bootstrap-icons.css">
+
 
     <style>
     /* Overlay de puertas del saloon */

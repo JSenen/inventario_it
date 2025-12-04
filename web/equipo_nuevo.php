@@ -351,7 +351,8 @@ usort($imagenes_existentes, function ($a, $b) {
         <input type="text" name="usuario_asignado" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['usuario_asignado'] ?? '') ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label">Ubicación</label>
+        <label class="form-label bi-geo-alt-fill"> Ubicación</label>
+
         <select name="ubicacion" class="form-select campo-destacado">
             <option value="">-- Selecciona ubicación --</option>
             <?php foreach ($ubicaciones as $u): ?>
@@ -367,7 +368,7 @@ usort($imagenes_existentes, function ($a, $b) {
         </select>
     </div>
     <div class="col-md-4">
-        <label class="form-label">Departamento</label>
+        <label class="form-label bi-diagram-3">Departamento</label>
         <select name="departamento" class="form-select campo-destacado">
             <option value="">-- Selecciona departamento --</option>
             <?php foreach ($departamentos as $d): ?>
@@ -384,7 +385,7 @@ usort($imagenes_existentes, function ($a, $b) {
     </div>
 
     <div class="col-md-4">
-        <label class="form-label">Sección</label>
+        <label class="form-label bi-grid-3x3-gap">Sección</label>
         <select name="seccion_id" class="form-control campo-destacado" required>
             <option value="">-- Selecciona sección --</option>
 
