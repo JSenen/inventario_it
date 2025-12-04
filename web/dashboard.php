@@ -123,7 +123,7 @@ $equiposEnUso = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'E
 // =======================
 
 // Total redes
-$totalRedes = (int)$pdo->query("SELECT COUNT(*) FROM redes")->fetchColumn();
+$totalRedes = (int)$pdo->query("SELECT COUNT(*) FROM redes WHERE nombre = 'RED 2' OR nombre = 'RED 3'")->fetchColumn();
 
 // Resumen IPs (LIBRE / USADA / RESERVADA) de ips_equipos
 $sqlIps = "
@@ -209,6 +209,7 @@ $redesTopUso = $pdo->query("
         SUM(CASE WHEN i.estado = 'RESERVADA' THEN 1 ELSE 0 END) AS reservadas
     FROM redes r
     LEFT JOIN ips_equipos i ON i.red_id = r.id
+    WHERE nombre = 'RED 2' OR nombre = 'RED 3'
     GROUP BY r.id, r.nombre, r.direccion_red, r.mascara
 ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -268,7 +269,7 @@ $ultimosEquipos = $pdo->query("
         <div class="col-6 col-md-3">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <h6 class="card-title text-muted">Equipos totales</h6>
+                    <h6 class="card-title text-muted">💻 Equipos totales</h6>
                     <div class="display-6 fw-bold"><?= $totalEquipos ?></div>
                     <small class="text-muted d-block">
                         Activo: <?= $equiposActivo ?> · Almacén: <?= $equiposAlmacen ?>
@@ -276,9 +277,9 @@ $ultimosEquipos = $pdo->query("
                     <small class="text-muted d-block">
                         Prestado: <?= $equiposPrestado ?> · Baja: <?= $equiposBaja ?>
                     </small>
-                    <small class="text-muted">
+                    <!-- <small class="text-muted">
                         En uso: <?= $equiposEnUso ?>
-                    </small>
+                    </small> -->
                 </div>
             </div>
         </div>
@@ -288,7 +289,7 @@ $ultimosEquipos = $pdo->query("
 <div class="col-6 col-md-3">
     <div class="card shadow-sm border-0">
         <div class="card-body">
-            <h6 class="card-title text-muted">Redes / IPs</h6>
+            <h6 class="card-title text-muted">Redes Intranet / IPs</h6>
             <div class="display-6 fw-bold"><?= $totalRedes ?></div>
 
             <small class="text-muted d-block">
@@ -309,7 +310,7 @@ $ultimosEquipos = $pdo->query("
         <div class="col-6 col-md-3">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <h6 class="card-title text-muted">Teléfonos móviles</h6>
+                    <h6 class="card-title text-muted">☎️ Teléfonos móviles</h6>
                     <div class="display-6 fw-bold"><?= $totalTelefonos ?></div>
                     <small class="text-muted d-block">
                         Activos: <?= $telActivos ?> · Almacén: <?= $telAlmacen ?>
@@ -322,7 +323,7 @@ $ultimosEquipos = $pdo->query("
         <div class="col-6 col-md-3">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <h6 class="card-title text-muted">SIM / Averías</h6>
+                    <h6 class="card-title text-muted">SIM / ⚠️ Averías</h6>
                     <div class="display-6 fw-bold"><?= $totalSims ?></div>
                     <small class="text-muted d-block">
                         SIM asignadas: <?= $simsAsignadas ?> · Disp.: <?= $simsDisponibles ?>

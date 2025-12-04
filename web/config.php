@@ -1,4 +1,14 @@
 <?php
+
+// Ruta absoluta a la carpeta raíz del proyecto (web/)
+define('BASE_PATH', dirname(__FILE__));
+
+// Rutas comunes
+define('INCLUDES_PATH', BASE_PATH . '/includes');
+define('ASSETS_PATH',   BASE_PATH . '/assets');
+define('UPLOADS_PATH',  BASE_PATH . '/uploads');
+
+// Configuración de la base de datos
 $host = "db"; // nombre del servicio docker
 $dbname = "inventario_it";
 $user = "inventario_user";

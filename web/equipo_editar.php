@@ -507,7 +507,7 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 
-    <div class="col-md-8" id="bloque-monitores" style="display:none;">
+    <!-- <div class="col-md-8" id="bloque-monitores" style="display:none;">
     <label class="form-label">Monitores asociados</label>
     <select name="monitores[]" class="form-select campo-destacado" multiple size="5">
         <?php
@@ -531,7 +531,63 @@ require_once __DIR__ . '/includes/header.php';
             </option>
         <?php endforeach; ?>
     </select>
+</div> -->
+
+<div class="col-md-8" id="bloque-monitores" style="display:none;">
+    <label class="form-label">Monitores asociados</label>
+
+    <select name="monitores[]" class="form-select campo-destacado" multiple size="5">
+        <?php
+        $seleccionActual = $_POST['monitores'] ?? $monitoresSeleccionados;
+        if (!is_array($seleccionActual)) {
+            $seleccionActual = [];
+        }
+        $seleccionActual = array_map('intval', $seleccionActual);
+
+        foreach ($monitores as $m):
+            $idMon    = (int)$m['id'];
+            $selected = in_array($idMon, $seleccionActual) ? 'selected' : '';
+        ?>
+            <option value="<?= $idMon ?>" <?= $selected ?>>
+                <?= htmlspecialchars(trim(
+                    ($m['marca'] ?? '') . ' ' .
+                    ($m['modelo'] ?? '') .
+                    ( $m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '' )
+                )) ?>
+                <?= $m['asignado_a_este'] ? ' (actual)' : '' ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+
+    <!-- AQUI APARECEN LOS BOTONES -->
+    <?php if (!empty($monitoresSeleccionados)): ?>
+        <div class="mt-2">
+            <label><b>Acciones sobre monitores asociados:</b></label>
+
+            <?php foreach ($monitores as $m): ?>
+                <?php if ($m['asignado_a_este']): ?>
+                    <div class="d-flex align-items-center mb-1">
+                        <span>
+                            <?= htmlspecialchars(trim(
+                                ($m['marca'] ?? '') . ' ' .
+                                ($m['modelo'] ?? '') .
+                                ($m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '')
+                            )) ?>
+                        </span>
+
+                        <a href="monitor_desvincular.php?id=<?= $m['id'] ?>&pc=<?= $equipo['id'] ?>"
+                           class="btn btn-warning btn-sm ms-3"
+                           onclick="return confirm('¿Desvincular este monitor y enviarlo a Almacén?');">
+                            Quitar y a Almacén
+                        </a>
+                    </div>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
 </div>
+
 
 
     <div class="col-md-4">
