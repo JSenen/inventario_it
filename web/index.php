@@ -364,6 +364,29 @@ require_once __DIR__ . '/includes/header.php';
         </p>
     <?php endif; ?> -->
 
+
+    <ul class="nav nav-tabs mb-3" id="equiposTabs">
+    <li class="nav-item">
+        <a class="nav-link active" data-tipo="">Todos</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-tipo="PC">PCs</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-tipo="PORTATIL">Portátiles</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-tipo="MONITOR">Monitores</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-tipo="IMPRESORA">Impresoras</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-tipo="DOCK">Dock / Otros</a>
+    </li>
+</ul>
+
+
     <div class="table-responsive">
         <table class="table table-hover align-middle">
            <table id="tablaEquipos" class="table table-striped table-sm align-middle">
@@ -412,90 +435,93 @@ require_once __DIR__ . '/includes/header.php';
 <script src="vendor/datatables/i18n/es-ES.json"></script>
 
 <script>
-
 $(document).ready(function () {
+
+    // 🔹 Filtro actual por TIPO desde las pestañas
+    let currentFilterTipo = "";
 
     var tabla = $('#tablaEquipos').DataTable({
 
         processing: true,
         serverSide: true,
-         pageLength: 10,
+        pageLength: 10,
         lengthMenu: [10, 25, 50, 100],
+
         ajax: {
             url: 'equipos_data.php',
             type: 'GET',
             data: function (d) {
-                d.estado = $('#filtroEstado').val();
-                d.tipo   = $('#filtroTipo').val();
+
+                // Filtro de estado (si tienes un select #filtroEstado)
+                d.estado = $('#filtroEstado').val() || '';
+
+                // Si mantienes un select #filtroTipo, que tenga prioridad
+                if ($('#filtroTipo').length && $('#filtroTipo').val()) {
+                    d.tipo = $('#filtroTipo').val();
+                } else {
+                    // Si no, usamos el tipo seleccionado en las pestañas
+                    d.tipo = currentFilterTipo;
+                }
             }
         },
 
-       
-
         // Botones de exportación
         dom: 'Bfrtip',
-       buttons: [
-    {
-        extend: 'copy',
-        text: 'Copiar'
-    },
-    {
-        extend: 'excelHtml5',
-        text: 'Excel (página actual)',
-        exportOptions: {
-            // sin 1 (Imagen) ni 11 (Acciones)
-            columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        }
-    },
-    {
-        extend: 'csvHtml5',
-        text: 'CSV (página actual)',
-        exportOptions: {
-            columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        }
-    },
-    {
-        extend: 'print',
-        text: 'Imprimir',
-        exportOptions: {
-            columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        }
-    },
-    {
-        text: 'CSV (todos los registros)',
-        action: function (e, dt, button, config) {
-            var params = dt.ajax.params();
-            params.export = 'csv';
-            var query = $.param(params);
-            window.location = 'equipos_export.php?' + query;
-        }
-    },
-    {
-        text: 'Excel (todos los registros)',
-        action: function (e, dt, button, config) {
-            var params = dt.ajax.params();
-            var query = $.param(params);
-            window.location = 'equipos_export_excel.php?' + query;
-        }
-    }
-],
-
+        buttons: [
+            {
+                extend: 'copy',
+                text: 'Copiar'
+            },
+            {
+                extend: 'excelHtml5',
+                text: 'Excel (página actual)',
+                exportOptions: {
+                    // sin 1 (Imagen) ni 11 (Acciones)
+                    columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                }
+            },
+            {
+                extend: 'csvHtml5',
+                text: 'CSV (página actual)',
+                exportOptions: {
+                    columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                }
+            },
+            {
+                extend: 'print',
+                text: 'Imprimir',
+                exportOptions: {
+                    columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                }
+            },
+            {
+                text: 'CSV (todos los registros)',
+                action: function (e, dt, button, config) {
+                    var params = dt.ajax.params();
+                    params.export = 'csv';
+                    var query = $.param(params);
+                    window.location = 'equipos_export.php?' + query;
+                }
+            },
+            {
+                text: 'Excel (todos los registros)',
+                action: function (e, dt, button, config) {
+                    var params = dt.ajax.params();
+                    var query = $.param(params);
+                    window.location = 'equipos_export_excel.php?' + query;
+                }
+            }
+        ],
 
         order: [[0, 'desc']],
-        autoWidth: false,          // 🔹 que no recalule él los anchos
-        scrollX: true,           // 🔹 para tablas anchas
+        autoWidth: false,
+        scrollX: true,
         columnDefs: [
             { orderable: false, searchable: false, targets: [1, 11] } // imagen y acciones
         ],
 
-        // 👇 AÑADIMOS ESTO
         createdRow: function (row, data, dataIndex) {
-            // Índice de la columna "Estado"
-            // ID(0), Imagen(1), Nº serie(2), Tipo(3), Marca(4),
-            // Usuario(5), Servicio(6), Ubicación(7),
-            // IP principal(8), Red(9), Estado(10), Acciones(11)
             var indiceEstado = 10;
-
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();
 
@@ -505,14 +531,13 @@ $(document).ready(function () {
                 $celda.addClass('estado-averiado');
             } else if (estado === 'baja') {
                 $celda.addClass('estado-baja');
-            } else if ( estado === 'almacen') {
+            } else if (estado === 'almacen') {
                 $celda.addClass('estado-almacen');
             } else if (estado === 'prestado') {
                 $celda.addClass('estado-prestado');
-            }   
+            }
         },
 
-        // Traducción al castellano
         language: {
             search: "Buscar:",
             searchPlaceholder: "Buscar en la tabla...",
@@ -520,11 +545,35 @@ $(document).ready(function () {
         }
     });
 
+    // 🔹 Click en pestañas (tabs)
+    $('#equiposTabs .nav-link').on('click', function (e) {
+        e.preventDefault();
+
+        $('#equiposTabs .nav-link').removeClass('active');
+        $(this).addClass('active');
+
+        currentFilterTipo = $(this).data('tipo') || "";
+        tabla.ajax.reload();
+    });
+
+    // 🔹 Opcional: activar pestaña según ?tipo= en la URL
+    const urlParams  = new URLSearchParams(window.location.search);
+    const tipoFiltro = urlParams.get('tipo') || '';
+
+    if (tipoFiltro) {
+        $('#equiposTabs .nav-link').each(function () {
+            const tipo = $(this).data('tipo') || '';
+            if (tipo === tipoFiltro) {
+                $('#equiposTabs .nav-link').removeClass('active');
+                $(this).addClass('active');
+                currentFilterTipo = tipo;
+            }
+        });
+
+        tabla.ajax.reload();
+    }
+
 });
-</script>
-
-
-
 </script>
 
 

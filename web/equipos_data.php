@@ -143,6 +143,8 @@ $sqlData = "
     $stmt->bindValue(':length', $length, PDO::PARAM_INT);
     $stmt->execute();
 
+
+
     $data = [];
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -168,20 +170,20 @@ $sqlData = "
         $colIp        = htmlspecialchars($row['ip_principal'] ?? '');
         //$colRed       = htmlspecialchars($row['red_nombre'] ?? '');
         $colMonitores = '';
-$numMon = (int)($row['num_monitores'] ?? 0);
+        $numMon = (int)($row['num_monitores'] ?? 0);
 
-if (in_array($row['tipo'], ['PC', 'PORTÁTIL', 'PORTATIL'])) {
-    if ($numMon === 0) {
-        $colMonitores = '<span class="badge bg-secondary">0</span>';
-    } elseif ($numMon === 1) {
-        $colMonitores = '<span class="badge bg-success">1</span>';
-    } else {
-        $colMonitores = '<span class="badge bg-primary">' . $numMon . '</span>';
-    }
-} else {
-    // Para monitores, impresoras, etc.
-    $colMonitores = '<span class="text-muted">-</span>';
-}
+        if (in_array($row['tipo'], ['PC', 'PORTÁTIL', 'PORTATIL'])) {
+            if ($numMon === 0) {
+                $colMonitores = '<span class="badge bg-secondary">0</span>';
+            } elseif ($numMon === 1) {
+                $colMonitores = '<span class="badge bg-success">1</span>';
+            } else {
+                $colMonitores = '<span class="badge bg-primary">' . $numMon . '</span>';
+            }
+        } else {
+            // Para monitores, impresoras, etc.
+            $colMonitores = '<span class="text-muted">-</span>';
+        }
 
         $colEstado    = htmlspecialchars($row['estado'] ?? '');
 

@@ -168,6 +168,24 @@
     font-size: 14px !important;
 }
 
+#equiposTabs .nav-link {
+    position: relative;
+    padding-bottom: 6px;
+}
+
+#equiposTabs .nav-link.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 100%;
+    height: 3px;
+    background: #0d6efd;
+    border-radius: 3px;
+}
+
+
+
 </style>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </head>
