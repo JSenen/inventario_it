@@ -548,7 +548,8 @@ require_once __DIR__ . '/includes/header.php';
             $idMon    = (int)$m['id'];
             $selected = in_array($idMon, $seleccionActual) ? 'selected' : '';
         ?>
-            <option value="<?= $idMon ?>" <?= $selected ?>>
+            <option value="<?= $idMon ?>" <?= $selected ?>
+                    <?= $m['asignado_a_este'] ? ' data-actual="1"' : '' ?>>
                 <?= htmlspecialchars(trim(
                     ($m['marca'] ?? '') . ' ' .
                     ($m['modelo'] ?? '') .
@@ -578,7 +579,7 @@ require_once __DIR__ . '/includes/header.php';
                         <a href="monitor_desvincular.php?id=<?= $m['id'] ?>&pc=<?= $equipo['id'] ?>"
                            class="btn btn-warning btn-sm ms-3"
                            onclick="return confirm('¿Desvincular este monitor y enviarlo a Almacén?');">
-                            Quitar y a Almacén
+                            Desvincular y pasar a Almacén
                         </a>
                     </div>
                 <?php endif; ?>
@@ -1073,6 +1074,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('select[name="monitores[]"] option[data-actual="1"]')
+        .forEach(function(opt) {
+            opt.style.color = "#0d6efd";      // azul Bootstrap
+            opt.style.fontWeight = "bold";
+        });
 });
 </script>
 
