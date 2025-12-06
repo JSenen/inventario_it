@@ -39,10 +39,10 @@ try {
         ':id_pc'      => $idPc
     ]);
 
-    // 3) Pasar el monitor a Almacén (y limpiar asignación)
+    // 3) Pasar el monitor Activo y limpiar asignación
     $stmtUpd = $pdo->prepare("
         UPDATE equipos
-        SET estado = 'Almacén',
+        SET estado = 'Activo',
             usuario_asignado = NULL,
             departamento     = NULL,
             ubicacion        = NULL,

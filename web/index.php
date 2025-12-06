@@ -381,6 +381,9 @@ require_once __DIR__ . '/includes/header.php';
     <li class="nav-item">
         <a class="nav-link" data-tipo="IMPRESORA">Impresoras</a>
     </li>
+     <li class="nav-item">
+        <a class="nav-link" data-tipo="ESCANER">Escaner</a>
+    </li>
     <li class="nav-item">
         <a class="nav-link" data-tipo="DOCK">Dock / Otros</a>
     </li>
