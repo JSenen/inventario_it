@@ -107,7 +107,7 @@
     text-align: center;
 }
 .estado-almacen {
-    background-color: #959797ff !important;  /* azul */
+    background-color: #939595ff !important;  /* azul */
     color: white !important;
     font-weight: bold;
     text-align: center;
@@ -115,6 +115,13 @@
 }
 .estado-prestado {
     background-color: #17a2b8 !important;  /* cyan */
+    color: white !important;
+    font-weight: bold;
+    text-align: center;
+}
+
+.etiqueta-ok {
+    background-color: #2c7ee2ff !important;  /* azul */
     color: white !important;
     font-weight: bold;
     text-align: center;

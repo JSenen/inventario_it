@@ -390,7 +390,7 @@ require_once __DIR__ . '/includes/header.php';
 </ul>
 
 
-    <div class="table-responsive">
+    <div class="table-responsive" >
         <table class="table table-hover align-middle">
            <table id="tablaEquipos" class="table table-striped table-sm align-middle">
     <thead>
@@ -480,22 +480,22 @@ $(document).ready(function () {
                 extend: 'excelHtml5',
                 text: 'Excel (página actual)',
                 exportOptions: {
-                    // sin 1 (Imagen) ni 11 (Acciones)
-                    columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                    // sin 2 (Imagen) ni 12 (Acciones)
+                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
                 }
             },
             {
                 extend: 'csvHtml5',
                 text: 'CSV (página actual)',
                 exportOptions: {
-                    columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
                 }
             },
             {
                 extend: 'print',
                 text: 'Imprimir',
                 exportOptions: {
-                    columns: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
                 }
             },
             {
@@ -525,6 +525,19 @@ $(document).ready(function () {
         ],
 
         createdRow: function (row, data, dataIndex) {
+
+
+            //  1. Obtener la celda y el valor real de la etiqueta
+            var indiceEtiqueta = 1; 
+            var $celdaEtiqueta = $('td:eq(' + indiceEtiqueta + ')', row);
+            var etiqueta = $celdaEtiqueta.text().trim();
+
+            //  2. Si tiene etiqueta -> aplicar CSS especial
+            if (etiqueta !== '') {
+                $celdaEtiqueta.addClass('etiqueta-ok'); 
+            }
+
+            // 3. Colorear celda de estado según su valor
             var indiceEstado = 11; // índice de la columna "Estado"
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();

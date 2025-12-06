@@ -459,3 +459,10 @@ WHERE (e.etiqueta IS NULL OR e.etiqueta = '')
   AND t.codigoequipo <> '';
 -- Finalmente eliminamos la tabla temporal si deseamos
 DROP TABLE IF EXISTS tblequipos;
+-- Ahora actualizamos las fechas de compra de los equipos que no las tienen -- 
+UPDATE equipos e
+JOIN tblequipos t ON e.numero_serie = t.serie
+SET e.fecha_compra = t.falta
+WHERE (e.fecha_compra IS NULL OR e.fecha_compra = '0000-00-00')
+  AND t.falta IS NOT NULL
+  AND t.falta <> '0000-00-00';
