@@ -441,3 +441,21 @@ CREATE TABLE equipos_movimientos (
 -- 06-12-2025 Añadido campo etiquetas a equipos
 ALTER TABLE equipos
 ADD COLUMN etiqueta TEXT NULL AFTER notas; 
+
+-- La columna 'etiqueta' almacenará etiquetas o códigos asociados al equipo.
+
+-- Se añade la tblequipos.sql a la base de datos
+-- Se deja la misma codificación que el resto de la base de datos
+ALTER TABLE tblequipos
+  CONVERT TO CHARACTER SET utf8mb4
+  COLLATE utf8mb4_uca1400_ai_ci;
+
+-- Buscamos los datos de etiquetas que coinciden por el numero de serie y actualziamos nuuestra tabla
+UPDATE equipos e
+JOIN tblequipos t ON e.numero_serie = t.serie
+SET e.etiqueta = t.codigoequipo
+WHERE (e.etiqueta IS NULL OR e.etiqueta = '')
+  AND t.codigoequipo IS NOT NULL
+  AND t.codigoequipo <> '';
+-- Finalmente eliminamos la tabla temporal si deseamos
+DROP TABLE IF EXISTS tblequipos;
