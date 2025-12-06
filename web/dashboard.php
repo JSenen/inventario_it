@@ -114,9 +114,12 @@ $equiposActivo   = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado =
 $equiposAlmacen  = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Almacén'")->fetchColumn();
 $equiposBaja     = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Baja'")->fetchColumn();
 $equiposPrestado = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Prestado'")->fetchColumn();
+$equiposEtiquetados = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE etiqueta IS NOT NULL AND etiqueta <> ''")->fetchColumn();
 
 // También puedes querer saber cuántos siguen en 'En uso'
 $equiposEnUso = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'En uso'")->fetchColumn();
+
+
 
 // =======================
 // 2) KPIs REDES & IPs (ips_equipos)
@@ -277,9 +280,9 @@ $ultimosEquipos = $pdo->query("
                     <small class="text-muted d-block">
                         Prestado: <?= $equiposPrestado ?> · Baja: <?= $equiposBaja ?>
                     </small>
-                    <!-- <small class="text-muted">
-                        En uso: <?= $equiposEnUso ?>
-                    </small> -->
+                    <small class="text-success">
+                        Etiquetados: <?= $equiposEtiquetados ?>
+                    </small> 
                 </div>
             </div>
         </div>

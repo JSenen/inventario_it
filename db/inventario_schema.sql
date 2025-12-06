@@ -438,3 +438,6 @@ CREATE TABLE equipos_movimientos (
 );
 
 
+-- 06-12-2025 Añadido campo etiquetas a equipos
+ALTER TABLE equipos
+ADD COLUMN etiqueta TEXT NULL AFTER notas; 

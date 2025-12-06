@@ -65,7 +65,7 @@ $redes = $redesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Monitores que se pueden elegir (libres o ya asignados a este equipo)
 $sqlMonitores = "
-    SELECT e.id, e.marca, e.modelo, e.numero_serie,
+    SELECT e.id, e.marca, e.modelo, e.numero_serie, e.etiqueta,
            CASE WHEN pm_actual.id_pc IS NULL THEN 0 ELSE 1 END AS asignado_a_este
     FROM equipos e
     LEFT JOIN pc_monitores pm_actual
@@ -175,6 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $coste            = $_POST['coste'] ?? null;
             $estado           = trim($_POST['estado'] ?? 'En uso');
             $notas            = strtoupper(trim($_POST['notas'] ?? ''));
+            $etiqueta        = strtoupper(trim($_POST['etiqueta'] ?? ''));
     
 
             // Red / IP
@@ -264,7 +265,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         estado = :estado,
                         notas = :notas,
                         imagen = :imagen,
-                        seccion_id = :seccion_id
+                        seccion_id = :seccion_id,
+                        etiqueta = :etiqueta
                     WHERE id = :id";
 
                     $stmtUp = $pdo->prepare($sqlEquipo);
@@ -285,6 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':imagen'           => $imagenRuta,   
                         ':id'               => $id,
                         ':seccion_id'       => $seccion_id,
+                        ':etiqueta'         => $etiqueta,
                     ]);
 
                     // Gestionar IP principal
@@ -445,6 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'estado'           => $estado,
                 'notas'            => $notas,
                 'seccion_id'       => $seccion_id,
+                'etiqueta'         => $etiqueta,
             ]);
 
             $ipRow = [
@@ -473,7 +477,7 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 
-<h1 class="h3 mb-3">Editar equipo #<?= htmlspecialchars($equipo['id']) ?></h1>
+<h1 class="h3 mb-3">Editar equipo <?= htmlspecialchars($equipo['etiqueta'] ?? $equipo['id']) ?></h1>
 
 <?php if ($errores): ?>
     <div class="alert alert-danger">
@@ -484,8 +488,15 @@ require_once __DIR__ . '/includes/header.php';
         </ul>
     </div>
 <?php endif; ?>
+ 
 
 <form method="post" class="row g-3" enctype="multipart/form-data">
+
+  <div class="col-md-4">
+        <label class="form-label">Etiqueta</label>
+        <input type="text" name="etiqueta" class="form-control" value="<?= htmlspecialchars($equipo['etiqueta'] ?? '') ?>">
+    </div>
+
     <div class="mb-3">
     <label class="form-label"><b>Tipo de equipo</b></label>
     <select name="tipo" class="form-control campo-destacado" required>

@@ -143,7 +143,7 @@ $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
 
     <h4>Información del equipo</h4>
     <table class="table table-bordered">
-        <tr><th>ID</th> <td><?= htmlspecialchars($equipo['id']) ?></td></tr>
+        <tr><th>ID</th> <td> (id) <?= htmlspecialchars($equipo['id']) ?> (etiqueta) <?= htmlspecialchars($equipo['etiqueta'] ?? '') ?></td></tr>
         <?php if (!empty($equipo['imagen'])): ?>
         <tr>
             <th>Imagen</th>

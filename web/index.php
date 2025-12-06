@@ -396,6 +396,7 @@ require_once __DIR__ . '/includes/header.php';
     <thead>
         <tr>
             <th>ID</th>
+            <th>Etiqueta</th>
             <th>Imagen</th>
             <th>Nº serie</th>
             <th>Tipo</th>
@@ -524,7 +525,7 @@ $(document).ready(function () {
         ],
 
         createdRow: function (row, data, dataIndex) {
-            var indiceEstado = 10;
+            var indiceEstado = 11; // índice de la columna "Estado"
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();
 

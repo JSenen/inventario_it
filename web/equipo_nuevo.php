@@ -70,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $coste           = $_POST['coste'] ?? null;
     $estado          = trim($_POST['estado'] ?? 'Activo');
     $notas           = trim($_POST['notas'] ?? '');
+    $etiqueta        = strtoupper(trim($_POST['etiqueta'] ?? ''));
 
     $ip              = trim($_POST['ip'] ?? '');
     $mac             = strtoupper(trim($_POST['mac'] ?? ''));
@@ -139,9 +140,9 @@ if ($numero_serie !== '') {
             $pdo->beginTransaction();
 
             $sqlEquipo = "INSERT INTO equipos 
-                (tipo, marca, modelo, numero_serie, hostname, usuario_asignado, departamento, ubicacion, fecha_compra, proveedor, coste, estado, notas, imagen, seccion_id)
+                (tipo, marca, modelo, numero_serie, hostname, usuario_asignado, departamento, ubicacion, fecha_compra, proveedor, coste, estado, notas, etiqueta, imagen, seccion_id)
                 VALUES 
-                (:tipo, :marca, :modelo, :numero_serie, :hostname, :usuario_asignado, :departamento, :ubicacion, :fecha_compra, :proveedor, :coste, :estado, :notas, :imagen, :seccion_id)";
+                (:tipo, :marca, :modelo, :numero_serie, :hostname, :usuario_asignado, :departamento, :ubicacion, :fecha_compra, :proveedor, :coste, :estado, :notas, :etiqueta, :imagen, :seccion_id)";
             $stmtEq = $pdo->prepare($sqlEquipo);
             $stmtEq->execute([
                 ':tipo'            => $tipo,
@@ -157,6 +158,7 @@ if ($numero_serie !== '') {
                 ':coste'           => $coste !== '' ? $coste : null,
                 ':estado'          => $estado,
                 ':notas'           => $notas,
+                ':etiqueta'        => $etiqueta,
                 ':imagen'          => $imagenRuta,
                 ':seccion_id'      => $seccion_id,
             ]);
@@ -274,6 +276,12 @@ usort($imagenes_existentes, function ($a, $b) {
 
 
 <form method="post" class="row g-3" enctype="multipart/form-data">
+
+  <div class="col-md-4">
+        <label class="form-label">Etiqueta</label>
+        <input type="text" name="etiqueta" class="form-control" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
+    </div>
+
     <div class="mb-3">
     <label class="form-label"><b>Tipo de equipo</b></label>
     <select name="tipo" class="form-control campo-destacado" required>
@@ -329,6 +337,7 @@ usort($imagenes_existentes, function ($a, $b) {
         <label class="form-label">Número de serie</label>
         <input type="text" name="numero_serie" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['numero_serie'] ?? '') ?>">
     </div>
+  
     <div class="col-md-4">
         <label class="form-label">Servicio</label>
             <select name="hostname" class="form-select campo-destacado ">

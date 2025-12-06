@@ -26,6 +26,7 @@ if ($searchValue !== '') {
 
     $searchCols = [
         'e.id',
+        'e.etiqueta',
         'e.tipo',
         'e.marca',
         'e.modelo',
@@ -93,6 +94,7 @@ echo "\xEF\xBB\xBF";
     <thead>
         <tr>
             <th>ID</th>
+            <th>Etiqueta</th>
             <th>Número serie</th>
             <th>Tipo</th>
             <th>Marca</th>
@@ -116,6 +118,7 @@ echo "\xEF\xBB\xBF";
         <?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
             <tr>
                 <td><?= htmlspecialchars($row['id']) ?></td>
+                <td><?= htmlspecialchars($row['etiqueta'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['numero_serie'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['tipo'] ?? '') ?></td>
                 <td><?= htmlspecialchars($row['marca'] ?? '') ?></td>

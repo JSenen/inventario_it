@@ -21,17 +21,18 @@ try {
     // Columnas en el mismo orden de la tabla HTML
     $columns = [
         0  => 'e.id',
-        1  => 'e.id',            // imagen → no ordenamos
-        2  => 'e.numero_serie',
-        3  => 'e.tipo',
-        4  => 'e.marca',
-        5  => 'e.usuario_asignado',
-        6  => 'e.hostname',
-        7  => 'e.ubicacion',
-        8  => 'ip_principal',    // alias
-        //9  => 'r.nombre',        // red
-        9 => 'e.estado',
-        10 => 'e.id',            // acciones
+        1  => 'e.etiqueta',
+        2  => 'e.id',            // imagen → no ordenamos
+        3  => 'e.numero_serie',
+        4  => 'e.tipo',
+        5  => 'e.marca',
+        6  => 'e.usuario_asignado',
+        7  => 'e.hostname',
+        8  => 'e.ubicacion',
+        9  => 'ip_principal',    // alias
+        //10  => 'r.nombre',        // red
+        10 => 'e.estado',
+        11 => 'e.id',            // acciones
     ];
 
     // TOTAL SIN FILTROS (solo tabla equipos)
@@ -59,6 +60,7 @@ try {
         // Lista de columnas en las que queremos buscar
         $searchCols = [
             'e.id',
+            'e.etiqueta',
             'e.tipo',
             'e.marca',
             'e.modelo',
@@ -199,6 +201,7 @@ $sqlData = "
 
         $data[] = [
             $colId,
+            $colEtiqueta = htmlspecialchars($row['etiqueta'] ?? ''),
             $colImagen,
             $colNumSerie,
             $colTipo,
