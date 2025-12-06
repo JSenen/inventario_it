@@ -277,12 +277,12 @@ usort($imagenes_existentes, function ($a, $b) {
 
 <form method="post" class="row g-3" enctype="multipart/form-data">
 
-  <div class="col-md-4">
+  <div class="col-md-3">
         <label class="form-label">Etiqueta</label>
-        <input type="text" name="etiqueta" class="form-control" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
+        <input type="text" name="etiqueta" class="form-control campo-etiqueta" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
     </div>
 
-    <div class="mb-3">
+    <div class="col-md-3">
     <label class="form-label"><b>Tipo de equipo</b></label>
     <select name="tipo" class="form-control campo-destacado" required>
         <option value="">-- Selecciona Tipo --</option>
@@ -324,21 +324,21 @@ usort($imagenes_existentes, function ($a, $b) {
         </small>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-2">
         <label class="form-label">Marca</label>
         <input type="text" name="marca" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['marca'] ?? '') ?>">
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label class="form-label">Modelo</label>
         <input type="text" name="modelo" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['modelo'] ?? '') ?>">
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label class="form-label">Número de serie</label>
         <input type="text" name="numero_serie" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['numero_serie'] ?? '') ?>">
     </div>
   
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label class="form-label">Servicio</label>
             <select name="hostname" class="form-select campo-destacado ">
                 <option value="">-- Selecciona Servicio --</option>
@@ -355,11 +355,11 @@ usort($imagenes_existentes, function ($a, $b) {
             </select>        
     </div>
     
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label class="form-label">Usuario asignado</label>
         <input type="text" name="usuario_asignado" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['usuario_asignado'] ?? '') ?>">
     </div>
-    <div class="col-md-4">
+    <div class="col-md-2">
         <label class="form-label bi-geo-alt-fill"> Ubicación</label>
 
         <select name="ubicacion" class="form-select campo-destacado">
@@ -376,8 +376,8 @@ usort($imagenes_existentes, function ($a, $b) {
             <?php endforeach; ?>
         </select>
     </div>
-    <div class="col-md-4">
-        <label class="form-label bi-diagram-3">Departamento</label>
+    <div class="col-md-3">
+        <label class="form-label bi-diagram-3"> Departamento</label>
         <select name="departamento" class="form-select campo-destacado">
             <option value="">-- Selecciona departamento --</option>
             <?php foreach ($departamentos as $d): ?>
@@ -393,8 +393,8 @@ usort($imagenes_existentes, function ($a, $b) {
         </select>   
     </div>
 
-    <div class="col-md-4">
-        <label class="form-label bi-grid-3x3-gap">Sección</label>
+    <div class="col-md-3">
+        <label class="form-label bi-grid-3x3-gap"> Sección</label>
         <select name="seccion_id" class="form-control campo-destacado" required>
             <option value="">-- Selecciona sección --</option>
 

@@ -164,6 +164,11 @@
 .campo-averia {
     background-color: #ffbcbcff !important;
 }
+
+.campo-etiqueta {
+    background-color: #2c7ee2ff !important;
+    color: white !important;
+}
 #tablaEquipos
 #tablaTelefonos
 #tablaSims td {

@@ -492,12 +492,12 @@ require_once __DIR__ . '/includes/header.php';
 
 <form method="post" class="row g-3" enctype="multipart/form-data">
 
-  <div class="col-md-4">
+  <div class="col-md-3">
         <label class="form-label">Etiqueta</label>
-        <input type="text" name="etiqueta" class="form-control" value="<?= htmlspecialchars($equipo['etiqueta'] ?? '') ?>">
+        <input type="text" name="etiqueta" class="form-control campo-etiqueta" value="<?= htmlspecialchars($equipo['etiqueta'] ?? '') ?>">
     </div>
 
-    <div class="mb-3">
+    <div class="col-md-3">
     <label class="form-label"><b>Tipo de equipo</b></label>
     <select name="tipo" class="form-control campo-destacado" required>
         <option value="">-- Selecciona tipo --</option>
@@ -602,20 +602,20 @@ require_once __DIR__ . '/includes/header.php';
 
 
 
-    <div class="col-md-4">
+    <div class="col-md-2">
         <label class="form-label">Marca</label>
         <input type="text" name="marca" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['marca'] ?? '') ?>">
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label class="form-label">Modelo</label>
         <input type="text" name="modelo" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['modelo'] ?? '') ?>">
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label class="form-label">Número de serie</label>
         <input type="text" name="numero_serie" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['numero_serie'] ?? '') ?>">
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
     <label class="form-label">Servicio</label>
         <select name="hostname" class="form-select campo-destacado">
             <option value="">-- Selecciona Servicio --</option>
@@ -635,12 +635,12 @@ require_once __DIR__ . '/includes/header.php';
         </select>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label class="form-label">Usuario asignado</label>
         <input type="text" name="usuario_asignado" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['usuario_asignado'] ?? '') ?>">
     </div>
- <div class="col-md-4">
-    <label class="form-label">Ubicación</label>
+ <div class="col-md-2">
+    <label class="form-label bi-geo-alt-fill"> Ubicación</label>
     <select name="ubicacion" class="form-select campo-destacado">
         <option value="">-- Selecciona ubicación --</option>
         <?php foreach ($ubicaciones as $u): ?>
@@ -656,8 +656,8 @@ require_once __DIR__ . '/includes/header.php';
     </select>
 </div>
 
-<div class="col-md-4">
-    <label class="form-label">Departamento</label>
+<div class="col-md-3">
+    <label class="form-label bi-diagram-3"> Departamento</label>
     <select name="departamento" class="form-select campo-destacado">
         <option value="">-- Selecciona departamento --</option>
         <?php foreach ($departamentos as $d): ?>
@@ -673,8 +673,8 @@ require_once __DIR__ . '/includes/header.php';
     </select>
 </div>
 
-<div class="col-md-4">
-    <label class="form-label">Sección</label>
+<div class="col-md-3">
+    <label class="form-label bi-grid-3x3-gap"> Sección</label>
     <select name="seccion_id" class="form-select campo-destacado">
         <option value="">-- Selecciona sección --</option>
         <?php foreach ($secciones as $sec): ?>
