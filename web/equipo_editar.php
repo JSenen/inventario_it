@@ -696,19 +696,49 @@ require_once __DIR__ . '/includes/header.php';
         <input type="number" step="0.01" name="coste" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['coste'] ?? '') ?>">
     </div> -->
     <div class="col-md-4">
-        <label class="form-label">Estado</label>
-        <input type="hidden" name="id_equipo" value="<?= (int)$equipo['id'] ?>">
-        <select name="estado" class="form-select campo-destacado">
-            <?php
-            $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado'];
-            foreach ($estados as $est):
-            ?>
-                <option value="<?= $est ?>" <?= (($equipo['estado'] ?? '') === $est) ? 'selected' : '' ?>>
-                    <?= $est ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+    <label class="form-label d-block campo-destacado" style="color: #414141; font-weight: bold;">
+        Estado
+    </label>
+
+    <!-- ID oculto del equipo -->
+    <input type="hidden" name="id_equipo" value="<?= (int)$equipo['id'] ?>">
+
+    <?php
+    // Lista de estados
+    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado'];
+
+    // Estado actual del equipo
+    $estadoSel = $equipo['estado'] ?? 'Activo';
+
+    // Colores por estado
+    $colores = [
+        'Activo'   => '#28a745', 
+        'Almacén'  => '#0d6efd', 
+        'Averiado' => '#ffc107', 
+        'Baja'     => '#dc3545', 
+        'Prestado' => '#6c757d', 
+    ];
+
+    foreach ($estados as $est):
+        $idRadio = "estado_" . strtolower(str_replace(' ', '_', $est));
+        $color   = $colores[$est] ?? '#fff';
+    ?>
+        <div class="form-check">
+            <input
+                class="form-check-input"
+                type="radio"
+                name="estado"
+                id="<?= $idRadio ?>"
+                value="<?= $est ?>"
+                <?= ($estadoSel === $est) ? 'checked' : '' ?>
+            >
+            <label class="form-check-label" for="<?= $idRadio ?>" style="color: <?= $color ?>;">
+                <?= $est ?>
+            </label>
+        </div>
+    <?php endforeach; ?>
+</div>
+
 <?php
 $imagenes_existentes = glob(
     __DIR__ . '/uploads/equipos/*.{jpg,jpeg,png,gif,webp,JPG,JPEG,PNG,GIF,WEBP}',

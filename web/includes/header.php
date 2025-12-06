@@ -158,7 +158,7 @@
 }
 
 .campo-destacado {
-    background-color: #fff9c4 !important;
+    background-color: #ffc107 !important;
 }
 
 .campo-averia {

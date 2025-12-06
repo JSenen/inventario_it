@@ -418,19 +418,44 @@ usort($imagenes_existentes, function ($a, $b) {
     </div>
             -->
     <div class="col-md-4">
-        <label class="form-label">Estado</label>
-        <select name="estado" class="form-select campo-destacado">
-            <?php
-            $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado'];
-            $estadoSel = $_POST['estado'] ?? 'Activo';
-            foreach ($estados as $est):
-            ?>
-                <option value="<?= $est ?>" <?= ($estadoSel === $est) ? 'selected' : '' ?>>
-                    <?= $est ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+    <label class="form-label d-block campo-destacado" style="color: #414141; font-weight: bold;">
+        Estado
+    </label>
+
+    <?php
+    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado'];
+    $estadoSel = $_POST['estado'] ?? 'Activo';
+
+    // Colores por estado
+    $colores = [
+        'Activo'   => '#28a745', 
+        'Almacén'  => '#0d6efd', 
+        'Averiado' => '#ffc107', 
+        'Baja'     => '#dc3545', 
+        'Prestado' => '#6c757d', 
+    ];
+
+    foreach ($estados as $est):
+        $idRadio = "estado_" . strtolower(str_replace(' ', '_', $est));
+        $color   = $colores[$est] ?? '#fff'; // fallback blanco
+    ?>
+        <div class="form-check">
+            <input 
+                class="form-check-input"
+                type="radio"
+                name="estado"
+                id="<?= $idRadio ?>"
+                value="<?= $est ?>"
+                <?= ($estadoSel === $est) ? 'checked' : '' ?>
+            >
+            <label class="form-check-label" for="<?= $idRadio ?>" style="color: <?= $color ?>;">
+                <?= $est ?>
+            </label>
+        </div>
+    <?php endforeach; ?>
+</div>
+
+
             
     
 <div class="mb-3">
