@@ -13,7 +13,8 @@ $equipo_id     = isset($_GET['equipo_id']) ? (int)$_GET['equipo_id'] : 0;
 $sql = "SELECT a.*,
                e.hostname      AS nombre_equipo,
                e.numero_serie  AS numero_serie,
-               ip.ip           AS ip_principal
+               ip.ip           AS ip_principal,
+               e.etiqueta      AS etiqueta
         FROM averias a
         JOIN equipos e ON e.id = a.equipo_id
         LEFT JOIN ips_equipos ip 
@@ -21,6 +22,9 @@ $sql = "SELECT a.*,
         WHERE 1=1";
 
 $params = [];
+
+$averiasAbiertas = (int)$pdo->query("SELECT COUNT(*) FROM averias WHERE estado = 'ABIERTA'")->fetchColumn();
+$averiasCerradas = (int)$pdo->query("SELECT COUNT(*) FROM averias WHERE estado = 'CERRADA'")->fetchColumn();
 
 // 🔹 Filtrar por equipo si viene en la URL
 if ($equipo_id > 0) {
@@ -81,6 +85,21 @@ $averias = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <option value="CERRADA" <?= $estado_filtro === 'CERRADA' ? 'selected' : '' ?>>Cerradas</option>
         </select>
     </form>
+    <div>
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <span class="badge bg-primary">
+                Abiertas: <?= $averiasAbiertas ?>
+            </span>
+            <span class="badge bg-success">
+                Cerradas: <?= $averiasCerradas ?>
+            </span>
+        </div>
+    <span class="form-text mb-1">Posicionando cursor sobre 'Tipo Averia' verá el texto completo</span>
+    <span class="form-text mb-1">Posicionando cursor sobre 'Asunto GATI' verá la solución aplicada completa</span>
+    
+
+    </div>
     <div class="row mb-3">
     <div class="col-md-4 ms-auto">
         <label for="buscarAverias" class="form-label">Buscar en averías:</label>
@@ -100,8 +119,6 @@ $averias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <tr>
     <th>Asunto GATI</th>
     <th>Equipo</th>
-    <th>IP</th>
-    <th>Nº Serie</th>
     <th>Tipo avería</th>
     <th>Nº asunto externo</th>
     <th>Empresa externa</th>
@@ -115,11 +132,19 @@ $averias = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <tbody>
         <?php foreach ($averias as $av): ?>
             <tr>
-                <td>GATI-<?= htmlspecialchars($av['id']) ?></td>
-                <td><?= htmlspecialchars($av['nombre_equipo'] ?? '') ?></td>
-                <td><?= htmlspecialchars($av['ip_equipo'] ?? '') ?></td>
-                <td><?= htmlspecialchars($av['numero_serie'] ?? '') ?></td>
-                <td><?= htmlspecialchars($av['tipo_averia']) ?></td>
+                <td>
+                    <span 
+                        title="<?= htmlspecialchars($av['solucion_aplicada'] ?? '') ?>"
+                        style="cursor: help;">
+                        GATI-<?= htmlspecialchars($av['id']) ?>
+                    </span>
+                </td>
+                <td><?= htmlspecialchars($av['etiqueta'] ?? '') ?></td>
+                <td class="col-tipo-averia"
+                    title="<?= htmlspecialchars($av['tipo_averia']) ?>">
+                    <?= htmlspecialchars($av['tipo_averia']) ?>
+                </td>
+
                 <td><?= htmlspecialchars($av['num_asunto']) ?></td>
                 <td><?= htmlspecialchars($av['empresa_ext']) ?></td>
                 <td><?= htmlspecialchars($av['fecha_creacion']) ?></td>
@@ -148,11 +173,12 @@ $averias = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <!-- Cerrar avería (solo si está abierta) -->
                     <?php if ($av['estado'] === 'ABIERTA'): ?>
                         <a class="btn btn-sm btn-success"
-                           href="averia_cerrar.php?id=<?= $av['id'] ?>"
-                           onclick="return confirm('¿Cerrar esta avería?');">
+                        href="averia_cerrar.php?id=<?= $av['id'] ?>">
                             Cerrar
                         </a>
                     <?php endif; ?>
+
+
                 </td>
             </tr>
         <?php endforeach; ?>

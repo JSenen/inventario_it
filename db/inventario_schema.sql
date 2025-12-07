@@ -466,3 +466,8 @@ SET e.fecha_compra = t.falta
 WHERE (e.fecha_compra IS NULL OR e.fecha_compra = '0000-00-00')
   AND t.falta IS NOT NULL
   AND t.falta <> '0000-00-00';
+
+
+-- 07-12-2025 Añadido campo solucion_aplicada a averias
+ALTER TABLE averias
+ADD COLUMN solucion_aplicada TEXT NULL AFTER empresa_ext;

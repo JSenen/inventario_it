@@ -199,7 +199,12 @@
     border-radius: 3px;
 }
 
-
+.col-tipo-averia {
+    max-width: 45px;        /* ajusta el tamaño que quieras */
+    white-space: nowrap;     /* evita salto de línea */
+    overflow: hidden;        /* oculta exceso */
+    text-overflow: ellipsis; /* pone "..." */
+}
 
 </style>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>

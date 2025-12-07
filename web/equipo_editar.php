@@ -900,17 +900,17 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
                    value="<?= htmlspecialchars($num_asunto_val) ?>"
                    placeholder="Referencia del ticket de la empresa externa">
                            <p class="form-text mb-3">
-    Este número lo asigna RAU una vez el GATI envia incidencia  <strong>Averiado</strong>.
+    Este número lo asigna RAU una vez el GATI envia incidencia si no se repara por el propio GATI.
 </p>
         </div>
 
         <div class="col-md-4">
-            <label class="form-label">Empresa externa</label>
+            <label class="form-label">Reparación realizada por: </label>
             <input type="text" name="empresa_ext" class="form-control campo-averia"
                    value="<?= htmlspecialchars($empresa_ext_val) ?>"
-                   placeholder="Nombre de la empresa de soporte">
+                   placeholder="Nombre de la empresa de soporte o 'Interna'">
                                <p class="form-text mb-3">
-    La empresa externa la notifica RAU con el número de asunto  .
+    La empresa externa notifcada por RAU con el número de asunto o indicar 'Interna'.
 </p>
         </div>
         <div class="col-12">
@@ -1035,25 +1035,39 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <script>
+    // Mostrar/ocultar bloque de avería según estado seleccionado
 document.addEventListener('DOMContentLoaded', function () {
-    const estadoSelect = document.querySelector('select[name="estado"]');
-    const bloqueAveria = document.getElementById('bloqueAveria');
+    const radiosEstado  = document.querySelectorAll('input[name="estado"]');
+    const bloqueAveria  = document.getElementById('bloqueAveria');
 
-    if (estadoSelect && bloqueAveria) {
+    if (radiosEstado.length > 0 && bloqueAveria) {
+
         function toggleAveria() {
-            const val = estadoSelect.value.toLowerCase();
-            if (val === 'averiado') {
-                bloqueAveria.style.display = '';
-            } else {
+            const seleccionado = document.querySelector('input[name="estado"]:checked');
+            if (!seleccionado) {
                 bloqueAveria.style.display = 'none';
+                return;
+            }
+
+            const val = seleccionado.value.toLowerCase(); // 'Activo', 'Averiado', etc.
+            if (val === 'averiado') {
+                bloqueAveria.style.display = '';   // se muestra
+            } else {
+                bloqueAveria.style.display = 'none'; // se oculta
             }
         }
 
-        estadoSelect.addEventListener('change', toggleAveria);
+        // Escuchar cambios en todos los radios
+        radiosEstado.forEach(radio => {
+            radio.addEventListener('change', toggleAveria);
+        });
+
+        // Estado inicial al cargar la página
         toggleAveria();
     }
 });
 </script>
+
 
 <!-- Mostrar/ocultar bloque de monitores según tipo de equipo -->
 <script>
