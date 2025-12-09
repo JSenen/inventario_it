@@ -344,6 +344,7 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         </div>
     </div>
+
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-3">

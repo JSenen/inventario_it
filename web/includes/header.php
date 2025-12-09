@@ -272,6 +272,8 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <li><a class="dropdown-item" href="redes.php">Control IPs</a></li>
                         <li><a class="dropdown-item" href="redes_gestion.php">Gestion Redes</a></li>
                         <li><a class="dropdown-item" href="buscar_ip.php">Buscar IP</a></li> 
+                        <li><a class="dropdown-item" href="plano_red.php"></i> Plano red</a></li>
+
 
                     </ul>
                 </li>
