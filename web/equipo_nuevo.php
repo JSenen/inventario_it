@@ -412,7 +412,7 @@ usort($imagenes_existentes, function ($a, $b) {
 
 
 
-    <div class="col-md-4">
+    <div class="col-md-2">
         <label class="form-label">Fecha Alta</label>
         <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">
     </div>
@@ -432,7 +432,7 @@ usort($imagenes_existentes, function ($a, $b) {
     </label>
 
     <?php
-    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado'];
+    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado','Privado'];
     $estadoSel = $_POST['estado'] ?? 'Activo';
 
     // Colores por estado
@@ -442,6 +442,7 @@ usort($imagenes_existentes, function ($a, $b) {
         'Averiado' => '#ffc107', 
         'Baja'     => '#dc3545', 
         'Prestado' => '#6c757d', 
+        'Privado'  => '#f90dfdff',
     ];
 
     foreach ($estados as $est):

@@ -114,6 +114,7 @@ $equiposActivo   = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado =
 $equiposAlmacen  = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Almacén'")->fetchColumn();
 $equiposBaja     = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Baja'")->fetchColumn();
 $equiposPrestado = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Prestado'")->fetchColumn();
+$equiposPrivados = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Privado'")->fetchColumn();
 $equiposEtiquetados = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE etiqueta IS NOT NULL AND etiqueta <> ''")->fetchColumn();
 
 // También puedes querer saber cuántos siguen en 'En uso'
@@ -278,8 +279,8 @@ $ultimosEquipos = $pdo->query("
                         Activo: <?= $equiposActivo ?> · Almacén: <?= $equiposAlmacen ?>
                     </small>
                     <small class="text-muted d-block">
-                        Prestado: <?= $equiposPrestado ?> · Baja: <?= $equiposBaja ?>
-                    </small>
+                        Prestado: <?= $equiposPrestado ?> · Baja: <?= $equiposBaja ?> .  Privados: <?= $equiposPrestado ?> </small>
+                    
                     <small class="text-success">
                         Etiquetados: <?= $equiposEtiquetados ?>
                     </small> 

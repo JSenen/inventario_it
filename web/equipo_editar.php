@@ -693,7 +693,7 @@ require_once __DIR__ . '/includes/header.php';
 
 
 
-    <div class="col-md-4">
+    <div class="col-md-2">
         <label class="form-label">Fecha Alta</label>
         <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['fecha_compra'] ?? '') ?>">
     </div>
@@ -716,7 +716,7 @@ require_once __DIR__ . '/includes/header.php';
 
     <?php
     // Lista de estados
-    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado'];
+    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado', 'Privado'];
 
     // Estado actual del equipo
     $estadoSel = $equipo['estado'] ?? 'Activo';
@@ -728,6 +728,7 @@ require_once __DIR__ . '/includes/header.php';
         'Averiado' => '#ffc107', 
         'Baja'     => '#dc3545', 
         'Prestado' => '#6c757d', 
+        'Privado'  => '#f90dfdff',
     ];
 
     foreach ($estados as $est):

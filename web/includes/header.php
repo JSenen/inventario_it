@@ -119,6 +119,12 @@
     font-weight: bold;
     text-align: center;
 }
+.estado-provado {
+    background-color: #d876cfff !important;  /* cyan */
+    color: white !important;
+    font-weight: bold;
+    text-align: center;
+}
 
 .etiqueta-ok {
     background-color: #2c7ee2ff !important;  /* azul */

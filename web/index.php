@@ -144,7 +144,8 @@ $statsStmt = $pdo->query("
         SUM(estado = 'Averiado')          AS averiados,
         SUM(estado = 'Baja')              AS baja,
         SUM(estado = 'Almacén')           AS almacen,
-        SUM(estado = 'Prestado')          AS prestado
+        SUM(estado = 'Prestado')          AS prestado,
+        SUM(estado = 'Privado' )          AS privado
     FROM equipos
 ");
 $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
@@ -186,7 +187,7 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <!-- DASHBOARD RESUMEN -->
-<div class="row mb-4">
+<div class="row mb-2">
 
     <div class="col-md-2 col-sm-4 mb-2">
         <div class="card text-bg-dark h-100">
@@ -249,6 +250,17 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="small text-uppercase">Prestados</div>
                 <div class="fs-4 fw-bold">
                     <?= (int)($stats['prestado'] ?? 0) ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2 col-sm-4 mb-2">
+        <div class="card text-bg-secondary h-100">
+            <div class="card-body py-2">
+                <div class="small text-uppercase">Privados</div>
+                <div class="fs-4 fw-bold">
+                    <?= (int)($stats['privado'] ?? 0) ?>
                 </div>
             </div>
         </div>
@@ -555,6 +567,8 @@ $(document).ready(function () {
                 $celda.addClass('estado-almacen');
             } else if (estado === 'prestado') {
                 $celda.addClass('estado-prestado');
+            } else if (estado === 'privado') {
+                $celda.addClass('estado-privado');
             }
         },
 
