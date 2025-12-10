@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $imagenRuta = 'uploads/equipos/' . $file;
 
         // 2) Si no ha elegido existente, pero ha subido una nueva imagen
-        } elseif (!empty($_FILES['imagen']['name'])) {
+        } elseif (!empty($_FILES['imagen_nueva']['name'])) {
 
             $uploadDir = __DIR__ . '/uploads/equipos/';
 
@@ -137,14 +137,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mkdir($uploadDir, 0775, true);
             }
 
-            $nombreOriginal = basename($_FILES['imagen']['name']);
+            $nombreOriginal = basename($_FILES['imagen_nueva']['name']);
             $nombreLimpio   = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
             $nombreFinal    = time() . '_' . $nombreLimpio;
 
             $rutaRelativa = 'uploads/equipos/' . $nombreFinal;
             $rutaFisica   = $uploadDir . $nombreFinal;
 
-            if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaFisica)) {
+            if (move_uploaded_file($_FILES['imagen_nueva']['tmp_name'], $rutaFisica)) {
 
                 // Borrar la imagen anterior si existe
                 if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {

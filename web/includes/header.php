@@ -319,7 +319,12 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <li><a class="dropdown-item" href="movimientos.php">Recibos Movimiento</a></li>
                     </ul>
                 </li>
-
+                <!-- Portátiles Formación -->
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                         Portátiles Formación
+                    </a>
+                </li>
                 <!-- Logs solo para admin -->   
                 <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
                     <li class="nav-item">

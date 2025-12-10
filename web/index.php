@@ -403,6 +403,9 @@ require_once __DIR__ . '/includes/header.php';
     <li class="nav-item">
         <a class="nav-link" data-tipo="AP">AP WiFi</a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link" data-tipo="NAS">NAS</a>
+    </li>
 </ul>
 
 
