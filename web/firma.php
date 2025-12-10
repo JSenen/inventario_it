@@ -17,8 +17,23 @@ $stmt = $pdo->prepare("
 $stmt->execute([':t' => $token]);
 $mov = $stmt->fetch(PDO::FETCH_ASSOC);
 
+$ren = null;
 if (!$mov) {
-    die('Movimiento no encontrado');
+    // Intentar con renovación
+    $stmtRen = $pdo->prepare("
+        SELECT r.*, eold.marca AS old_marca, eold.modelo AS old_modelo, eold.numero_serie AS old_sn,
+               enew.marca AS new_marca, enew.modelo AS new_modelo, enew.numero_serie AS new_sn,
+               enew.hostname AS new_host
+        FROM renovaciones r
+        JOIN equipos enew ON enew.id = r.equipo_new_id
+        JOIN equipos eold ON eold.id = r.equipo_old_id
+        WHERE r.firma_token = :t
+    ");
+    $stmtRen->execute([':t' => $token]);
+    $ren = $stmtRen->fetch(PDO::FETCH_ASSOC);
+    if (!$ren) {
+        die('Movimiento o renovación no encontrado');
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -29,15 +44,25 @@ if (!$mov) {
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
 </head>
 <body class="p-3">
-    <h1 class="h4 mb-3">Firma del recibo de <?= htmlspecialchars($mov['tipo']) ?></h1>
-
-    <p><strong>Equipo:</strong>
-        <?= htmlspecialchars($mov['marca'] . ' ' . $mov['modelo']) ?>
-        (S/N: <?= htmlspecialchars($mov['numero_serie']) ?>,
-         HOST: <?= htmlspecialchars($mov['hostname']) ?>)
-    </p>
-    <p><strong>Usuario:</strong> <?= htmlspecialchars($mov['usuario_destino']) ?></p>
-    <p><strong>Fecha:</strong> <?= htmlspecialchars($mov['fecha']) ?></p>
+    <?php if ($mov): ?>
+        <h1 class="h4 mb-3">Firma del recibo de <?= htmlspecialchars($mov['tipo']) ?></h1>
+        <p><strong>Equipo:</strong>
+            <?= htmlspecialchars($mov['marca'] . ' ' . $mov['modelo']) ?>
+            (S/N: <?= htmlspecialchars($mov['numero_serie']) ?>,
+             HOST: <?= htmlspecialchars($mov['hostname']) ?>)
+        </p>
+        <p><strong>Usuario:</strong> <?= htmlspecialchars($mov['usuario_destino']) ?></p>
+        <p><strong>Fecha:</strong> <?= htmlspecialchars($mov['fecha']) ?></p>
+    <?php else: ?>
+        <h1 class="h4 mb-3">Firma del recibo de renovación</h1>
+        <p><strong>Equipo renovado:</strong>
+            <?= htmlspecialchars($ren['old_marca'].' '.$ren['old_modelo']) ?> (S/N: <?= htmlspecialchars($ren['old_sn']) ?>)
+        </p>
+        <p><strong>Equipo nuevo:</strong>
+            <?= htmlspecialchars($ren['new_marca'].' '.$ren['new_modelo']) ?> (S/N: <?= htmlspecialchars($ren['new_sn']) ?>, HOST: <?= htmlspecialchars($ren['new_host']) ?>)
+        </p>
+        <p><strong>Fecha:</strong> <?= htmlspecialchars($ren['fecha']) ?></p>
+    <?php endif; ?>
 
     <p>Por favor, firme en el recuadro:</p>
 

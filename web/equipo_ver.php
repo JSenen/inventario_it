@@ -98,6 +98,17 @@ if (isset($_GET['mov']) && $_GET['mov'] === 'last') {
 logActividad($pdo, 'VER_EQUIPO', 'Detalle del equipo visualizado: ID=' . $id);
 
 $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
+
+// Última renovación asociada (como equipo renovado o nuevo)
+$stmtRenLast = $pdo->prepare("
+    SELECT id
+    FROM renovaciones
+    WHERE equipo_old_id = :id OR equipo_new_id = :id
+    ORDER BY fecha DESC
+    LIMIT 1
+");
+$stmtRenLast->execute([':id' => $id_equipo]);
+$ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -139,6 +150,10 @@ $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
     <div class="mb-3">
         <a href="index.php" class="btn btn-secondary">Volver al listado</a>
         <a href="averias_list.php?equipo_id=<?= $id ?>" class="btn btn-warning">Ver averías de este equipo</a>
+        <a href="equipo_renovar.php?id=<?= $id ?>" class="btn btn-primary">Renovar equipo</a>
+        <?php if (!empty($ultimaRenov['id'])): ?>
+            <a href="recibo_renovacion.php?id=<?= (int)$ultimaRenov['id'] ?>" class="btn btn-outline-secondary">Último recibo de renovación</a>
+        <?php endif; ?>
     </div>
 
     <h4>Información del equipo</h4>
