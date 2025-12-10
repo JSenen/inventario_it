@@ -171,7 +171,9 @@
 }
 
 .campo-destacado {
-    background-color: #ffc107 !important;
+    background-color: #fff !important;
+    border: 1px solid #ffe08a !important;
+    box-shadow: inset 0 0 0 1px #fff3cd;
 }
 
 .campo-averia {
@@ -210,6 +212,45 @@
     white-space: nowrap;     /* evita salto de línea */
     overflow: hidden;        /* oculta exceso */
     text-overflow: ellipsis; /* pone "..." */
+}
+
+.table-sticky thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 2;
+}
+
+.form-actions-fixed {
+    position: sticky;
+    bottom: 0;
+    z-index: 15;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(3px);
+    border-top: 1px solid #dee2e6;
+}
+
+.thumb-grid img {
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    max-height: 90px;
+    object-fit: cover;
+}
+
+.thumb-grid img:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.seleccionar-imagen.active-selection {
+    border: 1px solid #0d6efd !important;
+    box-shadow: 0 0 0 2px rgba(13,110,253,0.2);
+}
+
+.sticky-summary {
+    position: sticky;
+    top: 84px;
 }
 
 </style>

@@ -767,6 +767,9 @@ usort($imagenes_existentes, function ($a, $b) {
     $nb = preg_replace('/^\d+_/', '', basename($b));
     return strcasecmp($na, $nb);
 });
+
+$imagenSeleccionada = $_POST['imagen_existente']
+    ?? (!empty($equipo['imagen']) ? basename($equipo['imagen']) : '');
 ?>
 
 
@@ -784,81 +787,71 @@ usort($imagenes_existentes, function ($a, $b) {
         <input type="file" class="form-control" name="imagen" accept="image/*">
     </div> -->
 
-    <!-- Imagen actual (oculta para el POST) -->
-<input type="hidden" name="imagen_actual" 
-       value="<?= htmlspecialchars($equipo['imagen'] ?? '') ?>">
-<div class="mb-3">
-    <label class="form-label"><b>Banco de imágenes en Base de Datos</b></label>
+<!-- Imagen actual (oculta para el POST) -->
+<input type="hidden" name="imagen_actual" value="<?= htmlspecialchars($equipo['imagen'] ?? '') ?>">
+<input type="hidden" name="imagen_existente" id="imagen_existente" value="<?= htmlspecialchars($imagenSeleccionada) ?>">
 
-    <div class="d-flex align-items-center gap-3">
-
-        <select name="imagen_existente" id="imagen_existente" class="form-control campo-destacado" style="max-width: 350px;">
-            <option value="">-- Mantener / elegir otra imagen --</option>
-
-            <?php foreach ($imagenes_existentes as $img): ?>
-                <?php 
-                    $file  = basename($img);
-                    $label = preg_replace('/^\d+_/', '', $file);
-                ?>
-                <option value="<?= htmlspecialchars($file) ?>">
-                    <?= htmlspecialchars($label) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-
-        <!-- Miniatura al cargar -->
-        <!-- Miniatura de la imagen elegida -->
-<img
-    id="preview_img_editar"
-    <?php if (!empty($equipo['imagen'])): ?>
-        src="<?= htmlspecialchars($equipo['imagen']) ?>"
-        style="max-width:120px;border:1px solid #ccc;margin-left:12px;"
-    <?php else: ?>
-        style="display:none;max-width:120px;border:1px solid #ccc;margin-left:12px;"
-    <?php endif; ?>
->
-
-
+<div class="card mb-3 shadow-sm">
+    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+        <strong>Imagen del equipo</strong>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-link btn-sm text-decoration-none p-0" data-bs-toggle="collapse" data-bs-target="#galeriaImagenes">Cambiar imagen</button>
+            <button type="button" class="btn btn-link btn-sm text-decoration-none p-0" id="limpiarImagen">Quitar selección</button>
+        </div>
     </div>
+    <div class="card-body">
+        <div class="text-center mb-3">
+            <img
+                id="preview_img_editar"
+                <?php if (!empty($equipo['imagen'])): ?>
+                    src="<?= htmlspecialchars($equipo['imagen']) ?>"
+                    style="max-width:140px;border:1px solid #ccc;"
+                <?php else: ?>
+                    style="display:none;max-width:140px;border:1px solid #ccc;"
+                <?php endif; ?>
+            >
+            <img id="preview_img_nueva"
+                style="display:none;max-width:140px;border:1px solid #ccc;margin-top:8px;">
+            <div class="text-muted small mt-1">Vista previa actual</div>
+        </div>
 
-    <small class="form-text">
-        Si eliges una imagen, se usará esa.
-        Si subes una nueva, tendrá prioridad.
-        Si no haces nada, se mantiene la actual.
-    </small>
+        <div id="galeriaImagenes" class="collapse">
+            <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3 mt-2">
+                <?php
+                $imagenPost = $imagenSeleccionada;
+                if (!empty($imagenes_existentes)):
+                    foreach ($imagenes_existentes as $img):
+                        $file  = basename($img);
+                        $label = preg_replace('/^\d+_/', '', $file);
+                        $isSel = ($imagenPost !== '' && $imagenPost === $file);
+                ?>
+                    <div class="col">
+                        <button type="button"
+                                class="btn btn-light w-100 h-100 seleccionar-imagen <?= $isSel ? 'active-selection' : '' ?>"
+                                data-file="<?= htmlspecialchars($file) ?>"
+                                data-label="<?= htmlspecialchars($label) ?>">
+                            <img src="uploads/equipos/<?= htmlspecialchars($file) ?>" class="img-fluid" alt="<?= htmlspecialchars($label) ?>">
+                            <div class="small text-truncate mt-1"><?= htmlspecialchars($label) ?></div>
+                        </button>
+                    </div>
+                <?php
+                    endforeach;
+                else:
+                ?>
+                    <div class="col">
+                        <span class="text-muted small">No hay imágenes guardadas.</span>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <label class="form-label mb-1"><strong>Subir imagen nueva</strong></label>
+            <input type="file" name="imagen_nueva" id="imagen_nueva" accept="image/*" class="form-control campo-destacado">
+            <small class="form-text">Si subes una nueva, tendrá prioridad sobre la seleccionada.</small>
+        </div>
+    </div>
 </div>
-
-<div class="mb-3">
-    <label class="form-label"><b>Subir imagen nueva</b></label>
-    <input type="file" name="imagen_nueva" id="imagen_nueva" accept="image/*" class="form-control campo-destacado">
-
-    <img id="preview_img_nueva"
-         style="display:none;max-width:120px;border:1px solid #ccc;margin-top:8px;">
-
-    <small class="form-text">
-        Si seleccionas una imagen nueva, tendrá prioridad sobre la imagen existente.
-    </small>
-</div>
-
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const select  = document.getElementById('imagen_existente');
-    const preview = document.getElementById('preview_img_editar');
-
-    if (select) {
-        select.addEventListener('change', function () {
-            if (this.value) {
-                preview.src = 'uploads/equipos/' + this.value;
-                preview.style.display = 'block';
-            } else {
-                preview.src = '';
-                preview.style.display = 'none';
-            }
-        });
-    }
-});
-</script>
 
 
 
@@ -954,11 +947,13 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
     <label class="form-label">MAC</label>
     <input type="text" name="mac" class="form-control campo-destacado" placeholder="AA:BB:CC:DD:EE:FF"value="<?= htmlspecialchars($mac_val) ?>">
 </div>
+</div>
 
-
-    <div class="col-12 mt-4">
-        <button type="submit" class="btn btn-success">Guardar cambios</button>
-        <a href="index.php" class="btn btn-secondary">Cancelar</a>
+    <div class="form-actions-fixed mt-3">
+        <div class="container d-flex justify-content-end gap-2">
+            <a href="index.php" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+        </div>
     </div>
 </form>
 
@@ -968,6 +963,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const ipSelect  = document.getElementById('ipSelect');
     const currentIp = <?= json_encode($ip_val) ?>;
     const equipoId  = <?= (int)$equipo['id'] ?>;
+    const imagenButtons = document.querySelectorAll('.seleccionar-imagen');
+    const imagenHidden  = document.getElementById('imagen_existente');
+    const imagenNueva   = document.getElementById('imagen_nueva');
+    const previewImg    = document.getElementById('preview_img_editar');
+    const previewNueva  = document.getElementById('preview_img_nueva');
+    const limpiarBtn    = document.getElementById('limpiarImagen');
+
+    function setPreview(src) {
+        if (previewImg) {
+            previewImg.src = src || '';
+            previewImg.style.display = src ? 'block' : 'none';
+        }
+    }
 
     async function cargarIpsLibres(redId) {
         if (!redId) {
@@ -1031,6 +1039,56 @@ document.addEventListener('DOMContentLoaded', function () {
         if (redSelect.value) {
             cargarIpsLibres(redSelect.value);
         }
+    }
+
+    if (imagenButtons.length) {
+        imagenButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                imagenButtons.forEach(b => b.classList.remove('active-selection'));
+                btn.classList.add('active-selection');
+                const file = btn.dataset.file || '';
+                if (imagenHidden) imagenHidden.value = file;
+                if (imagenNueva) imagenNueva.value = '';
+                if (previewNueva) previewNueva.style.display = 'none';
+                if (file) {
+                    setPreview('uploads/equipos/' + file);
+                }
+            });
+        });
+    }
+
+    if (imagenNueva) {
+        imagenNueva.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                imagenButtons.forEach(b => b.classList.remove('active-selection'));
+                if (imagenHidden) imagenHidden.value = '';
+                const reader = new FileReader();
+                reader.onload = function (ev) {
+                    if (previewNueva) {
+                        previewNueva.src = ev.target.result;
+                        previewNueva.style.display = 'block';
+                    }
+                    if (previewImg) {
+                        previewImg.style.display = 'none';
+                    }
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+    }
+
+    if (limpiarBtn) {
+        limpiarBtn.addEventListener('click', () => {
+            imagenButtons.forEach(b => b.classList.remove('active-selection'));
+            if (imagenHidden) imagenHidden.value = '';
+            if (imagenNueva) imagenNueva.value = '';
+            if (previewNueva) previewNueva.style.display = 'none';
+            if (previewImg) previewImg.style.display = 'none';
+        });
+    }
+
+    if (imagenHidden && imagenHidden.value) {
+        setPreview('uploads/equipos/' + imagenHidden.value);
     }
 });
 </script>

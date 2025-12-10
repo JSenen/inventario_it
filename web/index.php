@@ -183,6 +183,11 @@ $deptStmt = $pdo->query("
 ");
 $deptStats = $deptStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Listas para filtros rápidos
+$tiposFiltro = $pdo->query("SELECT nombre FROM tipos_equipo ORDER BY nombre ASC")->fetchAll(PDO::FETCH_COLUMN);
+$ubicacionesFiltro = $pdo->query("SELECT nombre FROM ubicaciones ORDER BY nombre ASC")->fetchAll(PDO::FETCH_COLUMN);
+$seccionesFiltro = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC")->fetchAll(PDO::FETCH_ASSOC);
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -352,92 +357,127 @@ require_once __DIR__ . '/includes/header.php';
     <a href="equipo_nuevo.php" class="btn btn-primary">+ Nuevo equipo</a>
 </div>
 
+<div class="card mb-3 shadow-sm">
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3 col-lg-4">
+                <label class="form-label mb-0 small text-muted">Búsqueda rápida</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="busquedaGlobal" class="form-control" placeholder="Etiqueta, usuario, IP..." aria-label="Buscar">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-0 small text-muted">Estado</label>
+                <select id="filtroEstado" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <?php foreach (['Activo','Almacén','Averiado','Baja','Prestado','Privado'] as $estadoOpt): ?>
+                        <option value="<?= $estadoOpt ?>"><?= $estadoOpt ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-0 small text-muted">Tipo</label>
+                <select id="filtroTipo" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <?php foreach ($tiposFiltro as $tipoNombre): ?>
+                        <option value="<?= htmlspecialchars(strtoupper($tipoNombre)) ?>">
+                            <?= htmlspecialchars($tipoNombre) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-0 small text-muted">Ubicación</label>
+                <select id="filtroUbicacion" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    <?php foreach ($ubicacionesFiltro as $ubi): ?>
+                        <option value="<?= htmlspecialchars(strtoupper($ubi)) ?>">
+                            <?= htmlspecialchars($ubi) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-0 small text-muted">Sección</label>
+                <select id="filtroSeccion" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    <?php foreach ($seccionesFiltro as $sec): ?>
+                        <option value="<?= (int)$sec['id'] ?>"><?= htmlspecialchars($sec['nombre']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex justify-content-end">
+                <button type="button" id="limpiarFiltros" class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+            <ul class="nav nav-tabs small mb-0" id="equiposTabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-tipo="">Todos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="PC">PCs</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="PORTATIL">Portátiles</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="MONITOR">Monitores</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="IMPRESORA">Impresoras</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="ESCANER">Escáner</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="DOCK">Dock / Otros</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="AP">AP WiFi</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="NAS">NAS</a>
+                </li>
+            </ul>
+            <div id="exportButtons" class="d-flex gap-2"></div>
+        </div>
+    </div>
+</div>
+
 <?php if (isset($_GET['msg']) && $_GET['msg'] === 'ok'): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         Operación realizada correctamente.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
 <?php endif; ?> 
-<!-- 
-<?php if (empty($equipos)): ?>
-    <div class="alert alert-info">
-        <?php if ($search !== ''): ?>
-            No hay resultados para <strong><?= htmlspecialchars($_GET['q']) ?></strong>.
-            <a href="index.php" class="alert-link">Quitar filtro</a>.
-        <?php else: ?>
-            No hay equipos registrados todavía. Haz clic en <strong>“Nuevo equipo”</strong> para añadir el primero.
-        <?php endif; ?>
-    </div>
-<?php else: ?>
-    <?php if ($search !== ''): ?>
-        <p class="text-muted">
-            Mostrando resultados para <strong><?= htmlspecialchars($_GET['q'] ?? '')
- ?></strong>
-            (<?= count($equipos) ?> equipo(s)).
-        </p>
-    <?php endif; ?> -->
-
-
-    <ul class="nav nav-tabs mb-3" id="equiposTabs">
-    <li class="nav-item">
-        <a class="nav-link active" data-tipo="">Todos</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-tipo="PC">PCs</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-tipo="PORTATIL">Portátiles</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-tipo="MONITOR">Monitores</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-tipo="IMPRESORA">Impresoras</a>
-    </li>
-     <li class="nav-item">
-        <a class="nav-link" data-tipo="ESCANER">Escaner</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-tipo="DOCK">Dock / Otros</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-tipo="AP">AP WiFi</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-tipo="NAS">NAS</a>
-    </li>
-</ul>
-
-
-    <div class="table-responsive" >
-        <table class="table table-hover align-middle">
-           <table id="tablaEquipos" class="table table-striped table-sm align-middle">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Etiqueta</th>
-            <th>Imagen</th>
-            <th>Nº serie</th>
-            <th>Tipo</th>
-            <th>Marca / Modelo</th>
-            <th>Usuario / Depto / Sección</th>
-            <th>Servicio</th>
-            <th>Ubicación</th>
-            <th>IP Asignada</th>
-            <!--<th>Red</th>-->
-            <th>Monitores</th>
-            <th>Estado</th>
-            <th style="width: 150px;">Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        <!-- Ahora lo rellena DataTables por AJAX -->
-    </tbody>
-</table>
-
-
-    </div>
-<?php endif; ?>
+<!-- Tabla -->
+<div class="table-responsive">
+    <table id="tablaEquipos" class="table table-striped table-sm align-middle table-hover table-sticky">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Etiqueta</th>
+                <th>Imagen</th>
+                <th>Nº serie</th>
+                <th>Tipo</th>
+                <th>Marca / Modelo</th>
+                <th>Usuario / Depto / Sección</th>
+                <th>Servicio</th>
+                <th>Ubicación</th>
+                <th>IP Asignada</th>
+                <!--<th>Red</th>-->
+                <th>Monitores</th>
+                <th>Estado</th>
+                <th style="width: 150px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Ahora lo rellena DataTables por AJAX -->
+        </tbody>
+    </table>
+</div>
 
 <!-- DataTables (puedes pasar a local más adelante si quieres) -->
 <!-- jQuery local -->
@@ -475,29 +515,25 @@ $(document).ready(function () {
             type: 'GET',
             data: function (d) {
 
-                // Filtro de estado (si tienes un select #filtroEstado)
                 d.estado = $('#filtroEstado').val() || '';
-
-                // Si mantienes un select #filtroTipo, que tenga prioridad
-                if ($('#filtroTipo').length && $('#filtroTipo').val()) {
-                    d.tipo = $('#filtroTipo').val();
-                } else {
-                    // Si no, usamos el tipo seleccionado en las pestañas
-                    d.tipo = currentFilterTipo;
-                }
+                d.ubicacion = $('#filtroUbicacion').val() || '';
+                d.seccion_id = $('#filtroSeccion').val() || '';
+                d.tipo = ($('#filtroTipo').val() || currentFilterTipo || '');
             }
         },
 
         // Botones de exportación
-        dom: 'Bfrtip',
+        dom: 'Brtip',
         buttons: [
             {
                 extend: 'copy',
-                text: 'Copiar'
+                text: 'Copiar',
+                className: 'btn btn-sm btn-outline-secondary'
             },
             {
                 extend: 'excelHtml5',
                 text: 'Excel (página actual)',
+                className: 'btn btn-sm btn-outline-secondary',
                 exportOptions: {
                     // sin 2 (Imagen) ni 12 (Acciones)
                     columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
@@ -506,6 +542,7 @@ $(document).ready(function () {
             {
                 extend: 'csvHtml5',
                 text: 'CSV (página actual)',
+                className: 'btn btn-sm btn-outline-secondary',
                 exportOptions: {
                     columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
                 }
@@ -513,12 +550,14 @@ $(document).ready(function () {
             {
                 extend: 'print',
                 text: 'Imprimir',
+                className: 'btn btn-sm btn-outline-secondary',
                 exportOptions: {
                     columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
                 }
             },
             {
                 text: 'CSV (todos los registros)',
+                className: 'btn btn-sm btn-outline-secondary',
                 action: function (e, dt, button, config) {
                     var params = dt.ajax.params();
                     params.export = 'csv';
@@ -528,6 +567,7 @@ $(document).ready(function () {
             },
             {
                 text: 'Excel (todos los registros)',
+                className: 'btn btn-sm btn-outline-secondary',
                 action: function (e, dt, button, config) {
                     var params = dt.ajax.params();
                     var query = $.param(params);
@@ -540,7 +580,7 @@ $(document).ready(function () {
         autoWidth: false,
         scrollX: true,
         columnDefs: [
-            { orderable: false, searchable: false, targets: [1, 11] } // imagen y acciones
+            { orderable: false, searchable: false, targets: [2, 12] } // imagen y acciones
         ],
 
         createdRow: function (row, data, dataIndex) {
@@ -559,21 +599,27 @@ $(document).ready(function () {
             // 3. Colorear celda de estado según su valor
             var indiceEstado = 11; // índice de la columna "Estado"
             var $celda = $('td:eq(' + indiceEstado + ')', row);
-            var estado = $celda.text().toLowerCase().trim();
+            var estadoOriginal = $celda.text().trim();
+            var estado = estadoOriginal.toLowerCase();
+            var badgeClass = 'bg-secondary';
 
             if (estado === 'activo') {
-                $celda.addClass('estado-activo');
+                badgeClass = 'bg-success';
             } else if (estado === 'averiado') {
-                $celda.addClass('estado-averiado');
+                badgeClass = 'bg-warning text-dark';
             } else if (estado === 'baja') {
-                $celda.addClass('estado-baja');
+                badgeClass = 'bg-danger';
             } else if (estado === 'almacen') {
-                $celda.addClass('estado-almacen');
+                badgeClass = 'bg-secondary';
             } else if (estado === 'prestado') {
-                $celda.addClass('estado-prestado');
+                badgeClass = 'bg-info text-dark';
             } else if (estado === 'privado') {
-                $celda.addClass('estado-privado');
+                badgeClass = 'bg-dark';
             }
+
+            $celda
+                .addClass('text-center')
+                .html('<span class="badge rounded-pill ' + badgeClass + '">' + estadoOriginal + '</span>');
         },
 
         language: {
@@ -581,6 +627,32 @@ $(document).ready(function () {
             searchPlaceholder: "Buscar en la tabla...",
             url: 'vendor/datatables/i18n/es-ES.json'
         }
+    });
+
+    // Mover los botones junto al resto de acciones
+    tabla.buttons().container().appendTo('#exportButtons');
+
+    // 🔹 Búsqueda global personalizada
+    $('#busquedaGlobal').on('keyup change', function () {
+        tabla.search(this.value).draw();
+    });
+
+    // 🔹 Selects de filtro
+    $('#filtroEstado, #filtroTipo, #filtroUbicacion, #filtroSeccion').on('change', function () {
+        tabla.ajax.reload();
+    });
+
+    // 🔹 Limpiar filtros
+    $('#limpiarFiltros').on('click', function () {
+        $('#busquedaGlobal').val('');
+        $('#filtroEstado, #filtroTipo, #filtroUbicacion, #filtroSeccion').val('');
+        currentFilterTipo = "";
+
+        $('#equiposTabs .nav-link').removeClass('active');
+        $('#equiposTabs .nav-link').first().addClass('active');
+
+        tabla.search('').draw();
+        tabla.ajax.reload();
     });
 
     // 🔹 Click en pestañas (tabs)
@@ -591,6 +663,7 @@ $(document).ready(function () {
         $(this).addClass('active');
 
         currentFilterTipo = $(this).data('tipo') || "";
+        $('#filtroTipo').val(currentFilterTipo);
         tabla.ajax.reload();
     });
 
@@ -605,6 +678,7 @@ $(document).ready(function () {
                 $('#equiposTabs .nav-link').removeClass('active');
                 $(this).addClass('active');
                 currentFilterTipo = tipo;
+                $('#filtroTipo').val(tipoFiltro);
             }
         });
 

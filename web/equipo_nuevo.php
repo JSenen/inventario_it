@@ -275,298 +275,305 @@ usort($imagenes_existentes, function ($a, $b) {
 ?>
 
 
-<form method="post" class="row g-3" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data">
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-2">
+                    <strong>Identificación</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Etiqueta</label>
+                            <input type="text" name="etiqueta" class="form-control campo-etiqueta" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo de equipo</label>
+                            <select name="tipo" class="form-control campo-destacado" required>
+                                <option value="">-- Selecciona Tipo --</option>
+                                <?php foreach ($tipos as $t): ?>
+                                    <?php
+                                        $nnombreTipos = $t['nombre'];
+                                        $valorPost  = $_POST['tipo'] ?? '';
+                                        $selected   = (strtoupper($valorPost) === strtoupper($nnombreTipos)) ? 'selected' : '';
+                                    ?>
+                                    <option value="<?= htmlspecialchars(strtoupper($nnombreTipos)) ?>" <?= $selected ?>>
+                                        <?= htmlspecialchars($nnombreTipos) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Número de serie</label>
+                            <input type="text" name="numero_serie" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['numero_serie'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Marca</label>
+                            <input type="text" name="marca" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['marca'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" name="modelo" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['modelo'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Servicio</label>
+                            <select name="hostname" class="form-select campo-destacado ">
+                                <option value="">-- Selecciona Servicio --</option>
+                                <?php foreach ($servicios as $s): ?>
+                                    <?php
+                                        $nombreServicio = $s['nombre'];
+                                        $valorPost  = $_POST['hostname'] ?? '';
+                                        $selected   = (strtoupper($valorPost) === strtoupper($nombreServicio)) ? 'selected' : '';
+                                    ?>
+                                    <option value="<?= htmlspecialchars(strtoupper($nombreServicio)) ?>" <?= $selected ?>>
+                                        <?= htmlspecialchars($nombreServicio) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12" id="bloque-monitores" style="display:none;">
+                            <label class="form-label">Monitores libres para asociar</label>
+                            <select name="monitores[]" class="form-select" multiple size="4">
+                                <?php
+                                $postMonitores = isset($_POST['monitores']) && is_array($_POST['monitores'])
+                                    ? array_map('intval', $_POST['monitores'])
+                                    : [];
+                                foreach ($monitores as $m):
+                                    $idMon = (int)$m['id'];
+                                    $selected = in_array($idMon, $postMonitores) ? 'selected' : '';
+                                ?>
+                                    <option class="campo-destacado" value="<?= $idMon ?>" <?= $selected ?>>
+                                        <?= htmlspecialchars(trim(
+                                            ($m['marca'] ?? '') . ' ' .
+                                            ($m['modelo'] ?? '') .
+                                            ( $m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '' )
+                                        )) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="form-text text-muted">
+                                Mantén Ctrl (o Cmd en Mac) para seleccionar varios monitores.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  <div class="col-md-3">
-        <label class="form-label">Etiqueta</label>
-        <input type="text" name="etiqueta" class="form-control campo-etiqueta" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
-    </div>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-2">
+                    <strong>Asignación y ubicación</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Usuario asignado</label>
+                            <input type="text" name="usuario_asignado" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['usuario_asignado'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label bi-geo-alt-fill">Ubicación</label>
+                            <select name="ubicacion" class="form-select campo-destacado">
+                                <option value="">-- Selecciona ubicación --</option>
+                                <?php foreach ($ubicaciones as $u): ?>
+                                    <?php
+                                        $nombreUbic = $u['nombre'];
+                                        $valorPost  = $_POST['ubicacion'] ?? '';
+                                        $selected   = (strtoupper($valorPost) === strtoupper($nombreUbic)) ? 'selected' : '';
+                                    ?>
+                                    <option value="<?= htmlspecialchars(strtoupper($nombreUbic)) ?>" <?= $selected ?>>
+                                        <?= htmlspecialchars($nombreUbic) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label bi-diagram-3">Departamento</label>
+                            <select name="departamento" class="form-select campo-destacado">
+                                <option value="">-- Selecciona departamento --</option>
+                                <?php foreach ($departamentos as $d): ?>
+                                    <?php
+                                        $nombreDep  = $d['nombre'];
+                                        $valorPost  = $_POST['departamento'] ?? '';
+                                        $selected   = (strtoupper($valorPost) === strtoupper($nombreDep)) ? 'selected' : '';
+                                    ?>
+                                    <option value="<?= htmlspecialchars(strtoupper($nombreDep)) ?>" <?= $selected ?>>
+                                        <?= htmlspecialchars($nombreDep) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>   
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label bi-grid-3x3-gap">Sección</label>
+                            <select name="seccion_id" class="form-control campo-destacado" required>
+                                <option value="">-- Selecciona sección --</option>
+                                <?php
+                                $seccionPost = $_POST['seccion_id'] ?? '';
+                                foreach ($secciones as $sec):
+                                    $selected = ($seccionPost !== '' && (int)$seccionPost === (int)$sec['id']) ? 'selected' : '';
+                                ?>
+                                    <option value="<?= $sec['id'] ?>" <?= $selected ?>>
+                                        <?= htmlspecialchars($sec['nombre']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha Alta</label>
+                            <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    <div class="col-md-3">
-    <label class="form-label"><b>Tipo de equipo</b></label>
-    <select name="tipo" class="form-control campo-destacado" required>
-        <option value="">-- Selecciona Tipo --</option>
-        <?php foreach ($tipos as $t): ?>
-            <?php
-                $nnombreTipos = $t['nombre'];
-                $valorPost  = $_POST['tipo'] ?? '';
-                $selected   = (strtoupper($valorPost) === strtoupper($nnombreTipos)) ? 'selected' : '';
-            ?>
-            <option value="<?= htmlspecialchars(strtoupper($nnombreTipos)) ?>" <?= $selected ?>>
-                <?= htmlspecialchars($nnombreTipos) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-</div>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <strong>Imagen</strong>
+                    <button type="button" class="btn btn-link btn-sm text-decoration-none p-0" id="limpiarImagen">Quitar selección</button>
+                </div>
+                <div class="card-body">
+                    <input type="hidden" name="imagen_existente" id="imagen_existente" value="<?= htmlspecialchars($_POST['imagen_existente'] ?? '') ?>">
+                    <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3">
+                        <?php
+                        $imagenPost = $_POST['imagen_existente'] ?? '';
+                        if (!empty($imagenes_existentes)):
+                            foreach ($imagenes_existentes as $rutaFs):
+                                $file  = basename($rutaFs);
+                                $label = preg_replace('/^\d+_/', '', $file);
+                                $isSel = ($imagenPost !== '' && $imagenPost === $file);
+                        ?>
+                            <div class="col">
+                                <button type="button"
+                                        class="btn btn-light w-100 h-100 seleccionar-imagen <?= $isSel ? 'active-selection' : '' ?>"
+                                        data-file="<?= htmlspecialchars($file) ?>"
+                                        data-label="<?= htmlspecialchars($label) ?>">
+                                    <img src="uploads/equipos/<?= htmlspecialchars($file) ?>" class="img-fluid" alt="<?= htmlspecialchars($label) ?>">
+                                    <div class="small text-truncate mt-1"><?= htmlspecialchars($label) ?></div>
+                                </button>
+                            </div>
+                        <?php
+                            endforeach;
+                        else:
+                        ?>
+                            <div class="col">
+                                <span class="text-muted small">No hay imágenes guardadas.</span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <label for="imagen" class="form-label mb-1"><strong>Subir imagen nueva</strong> (si no hay ninguna disponible)</label>
+                    <input type="file" class="form-control campo-destacado" id="imagen_nueva_input" name="imagen" accept="image/*">
+                </div>
+            </div>
 
-    <div class="col-md-8" id="bloque-monitores" style="display:none;">
-    <label class="form-label">Monitores libres para asociar</label>
-        <select name="monitores[]" class="form-select" multiple size="5">
-            <?php
-            $postMonitores = isset($_POST['monitores']) && is_array($_POST['monitores'])
-                ? array_map('intval', $_POST['monitores'])
-                : [];
-            foreach ($monitores as $m):
-                $idMon = (int)$m['id'];
-                $selected = in_array($idMon, $postMonitores) ? 'selected' : '';
-            ?>
-                <option class="campo-destacado" value="<?= $idMon ?>" <?= $selected ?>>
-                    <?= htmlspecialchars(trim(
-                        ($m['marca'] ?? '') . ' ' .
-                        ($m['modelo'] ?? '') .
-                        ( $m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '' )
-                    )) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <small class="form-text ">
-            Mantén Ctrl (o Cmd en Mac) para seleccionar varios monitores.
-        </small>
-    </div>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-2">
+                    <strong>Notas</strong>
+                </div>
+                <div class="card-body">
+                    <textarea name="notas" class="form-control campo-destacado" rows="3"><?= htmlspecialchars($_POST['notas'] ?? '') ?></textarea>
+                </div>
+            </div>
 
-    <div class="col-md-2">
-        <label class="form-label">Marca</label>
-        <input type="text" name="marca" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['marca'] ?? '') ?>">
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Modelo</label>
-        <input type="text" name="modelo" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['modelo'] ?? '') ?>">
-    </div>
-
-    <div class="col-md-3">
-        <label class="form-label">Número de serie</label>
-        <input type="text" name="numero_serie" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['numero_serie'] ?? '') ?>">
-    </div>
-  
-    <div class="col-md-3">
-        <label class="form-label">Servicio</label>
-            <select name="hostname" class="form-select campo-destacado ">
-                <option value="">-- Selecciona Servicio --</option>
-                <?php foreach ($servicios as $s): ?>
-                    <?php
-                        $nombreServicio = $s['nombre'];
-                        $valorPost  = $_POST['hostname'] ?? '';
-                        $selected   = (strtoupper($valorPost) === strtoupper($nombreServicio)) ? 'selected' : '';
-                    ?>
-                    <option value="<?= htmlspecialchars(strtoupper($nombreServicio)) ?>" <?= $selected ?>>
-                        <?= htmlspecialchars($nombreServicio) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>        
-    </div>
-    
-    <div class="col-md-3">
-        <label class="form-label">Usuario asignado</label>
-        <input type="text" name="usuario_asignado" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['usuario_asignado'] ?? '') ?>">
-    </div>
-    <div class="col-md-2">
-        <label class="form-label bi-geo-alt-fill"> Ubicación</label>
-
-        <select name="ubicacion" class="form-select campo-destacado">
-            <option value="">-- Selecciona ubicación --</option>
-            <?php foreach ($ubicaciones as $u): ?>
-                <?php
-                    $nombreUbic = $u['nombre'];
-                    $valorPost  = $_POST['ubicacion'] ?? '';
-                    $selected   = (strtoupper($valorPost) === strtoupper($nombreUbic)) ? 'selected' : '';
-                ?>
-                <option value="<?= htmlspecialchars(strtoupper($nombreUbic)) ?>" <?= $selected ?>>
-                    <?= htmlspecialchars($nombreUbic) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <label class="form-label bi-diagram-3"> Departamento</label>
-        <select name="departamento" class="form-select campo-destacado">
-            <option value="">-- Selecciona departamento --</option>
-            <?php foreach ($departamentos as $d): ?>
-                <?php
-                    $nombreDep  = $d['nombre'];
-                    $valorPost  = $_POST['departamento'] ?? '';
-                    $selected   = (strtoupper($valorPost) === strtoupper($nombreDep)) ? 'selected' : '';
-                ?>
-                <option value="<?= htmlspecialchars(strtoupper($nombreDep)) ?>" <?= $selected ?>>
-                    <?= htmlspecialchars($nombreDep) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>   
-    </div>
-
-    <div class="col-md-3">
-        <label class="form-label bi-grid-3x3-gap"> Sección</label>
-        <select name="seccion_id" class="form-control campo-destacado" required>
-            <option value="">-- Selecciona sección --</option>
-
-            <?php
-            $seccionPost = $_POST['seccion_id'] ?? '';
-            foreach ($secciones as $sec):
-                $selected = ($seccionPost !== '' && (int)$seccionPost === (int)$sec['id']) ? 'selected' : '';
-            ?>
-                <option value="<?= $sec['id'] ?>" <?= $selected ?>>
-                    <?= htmlspecialchars($sec['nombre']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-
-
-    <div class="col-md-2">
-        <label class="form-label">Fecha Alta</label>
-        <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">
-    </div>
-<!--
-    <div class="col-md-4">
-        <label class="form-label">Proveedor</label>
-        <input type="text" name="proveedor" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['proveedor'] ?? '') ?>">
-    </div>
-    <div class="col-md-4">
-        <label class="form-label">Coste (€)</label>
-        <input type="number" step="0.01" name="coste" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['coste'] ?? '') ?>">
-    </div>
-            -->
-    <div class="col-md-4">
-    <label class="form-label d-block campo-destacado" style="color: #414141; font-weight: bold;">
-        Estado
-    </label>
-
-    <?php
-    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado','Privado'];
-    $estadoSel = $_POST['estado'] ?? 'Activo';
-
-    // Colores por estado
-    $colores = [
-        'Activo'   => '#28a745', 
-        'Almacén'  => '#0d6efd', 
-        'Averiado' => '#ffc107', 
-        'Baja'     => '#dc3545', 
-        'Prestado' => '#6c757d', 
-        'Privado'  => '#f90dfdff',
-    ];
-
-    foreach ($estados as $est):
-        $idRadio = "estado_" . strtolower(str_replace(' ', '_', $est));
-        $color   = $colores[$est] ?? '#fff'; // fallback blanco
-    ?>
-        <div class="form-check">
-            <input 
-                class="form-check-input"
-                type="radio"
-                name="estado"
-                id="<?= $idRadio ?>"
-                value="<?= $est ?>"
-                <?= ($estadoSel === $est) ? 'checked' : '' ?>
-            >
-            <label class="form-check-label" for="<?= $idRadio ?>" style="color: <?= $color ?>;">
-                <?= $est ?>
-            </label>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-2">
+                    <strong>Datos de red (opcional)</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Red</label>
+                            <select name="red_id" class="form-select campo-destacado" id="redSelect">
+                                <option value="">-- Sin red --</option>
+                                <?php foreach ($redes as $r): ?>
+                                    <option value="<?= $r['id'] ?>" <?= (($_POST['red_id'] ?? '') == $r['id']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($r['nombre']) ?> (<?= htmlspecialchars($r['direccion_red']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">IP principal</label>
+                            <select name="ip" id="ipSelect" class="form-select campo-destacado">
+                                <option value="">Selecciona una red primero</option>
+                                <?php
+                                $ipSelected = $_POST['ip'] ?? '';
+                                if ($ipSelected !== ''): ?>
+                                    <option value="<?= htmlspecialchars($ipSelected) ?>" selected>
+                                        <?= htmlspecialchars($ipSelected) ?>
+                                    </option>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">MAC</label>
+                            <input type="text" name="mac" class="form-control campo-destacado" placeholder="AA:BB:CC:DD:EE:FF" value="<?= htmlspecialchars($_POST['mac'] ?? '') ?>">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    <?php endforeach; ?>
-</div>
 
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-summary mb-3">
+                <div class="card-header py-2">
+                    <strong>Estado y seguimiento</strong>
+                </div>
+                <div class="card-body">
+                    <?php
+                    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado','Privado'];
+                    $estadoSel = $_POST['estado'] ?? 'Activo';
+                    $colores = [
+                        'Activo'   => '#198754',
+                        'Almacén'  => '#0d6efd',
+                        'Averiado' => '#ffc107',
+                        'Baja'     => '#dc3545',
+                        'Prestado' => '#6c757d',
+                        'Privado'  => '#6f42c1',
+                    ];
 
-            
-    
-<div class="mb-3">
-    <label class="form-label"><b>Imágenes existentes en Base de Datos</b></label>
+                    foreach ($estados as $est):
+                        $idRadio = "estado_" . strtolower(str_replace(' ', '_', $est));
+                        $color   = $colores[$est] ?? '#fff';
+                    ?>
+                        <div class="form-check">
+                            <input 
+                                class="form-check-input"
+                                type="radio"
+                                name="estado"
+                                id="<?= $idRadio ?>"
+                                value="<?= $est ?>"
+                                <?= ($estadoSel === $est) ? 'checked' : '' ?>
+                            >
+                            <label class="form-check-label" for="<?= $idRadio ?>" style="color: <?= $color ?>;">
+                                <?= $est ?>
+                            </label>
+                        </div>
+                    <?php endforeach; ?>
+                    <div class="alert alert-light border mt-3 mb-0 py-2 small">
+                        Activo o Prestado requieren <strong>usuario asignado</strong>.
+                    </div>
+                </div>
+            </div>
 
-    <div class="d-flex align-items-center gap-3">
-        <select name="imagen_existente" id="imagen_existente" class="form-control campo-destacado" style="max-width: 350px;">
-            <option value="">-- Seleccionar una imagen ya subida --</option>
-            <?php foreach ($imagenes_existentes as $rutaFs): ?>
-                <?php 
-                    $file  = basename($rutaFs);
-                    // Quitar el timestamp inicial: 1764317850_NOMBRE.jpg -> NOMBRE.jpg
-                    $label = preg_replace('/^\d+_/', '', $file);
-                ?>
-                <option value="<?= htmlspecialchars($file) ?>">
-                    <?= htmlspecialchars($label) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-
-        <!-- Miniatura al lado del select -->
-        <img id="preview_img_nuevo"
-             style="display:none;max-width:120px;border:1px solid #ccc;margin-left:12px;">
-    </div>
-</div>
-
-
-<div class="mb-3">
-    <label for="imagen" class="form-label"><b>Subir imagen nueva para este equipo</b>(Suba una imagen si no hay ninguna disponible)</label>
-    <input type="file" class="form-control campo-destacado" name="imagen" accept="image/*">
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const select  = document.getElementById('imagen_existente');
-    const preview = document.getElementById('preview_img_nuevo');
-
-    if (select) {
-        select.addEventListener('change', function () {
-            if (this.value) {
-                // Ruta WEB, no uses __DIR__ aquí
-                preview.src = 'uploads/equipos/' + this.value;
-                preview.style.display = 'block';
-            } else {
-                preview.src = '';
-                preview.style.display = 'none';
-            }
-        });
-    }
-});
-</script>
-
-
-
-    <div class="col-12">
-        <label class="form-label">Notas</label>
-        <textarea name="notas" class="form-control campo-destacado" rows="3"><?= htmlspecialchars($_POST['notas'] ?? '') ?></textarea>
+            <div class="card shadow-sm">
+                <div class="card-header py-2">
+                    <strong>Previsualización</strong>
+                </div>
+                <div class="card-body text-center">
+                    <img id="preview_img_nuevo" class="img-fluid rounded" style="display:none;max-height:220px;border:1px solid #e5e7eb;">
+                    <div class="text-muted small mt-2">Se mostrará la imagen seleccionada o la subida.</div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <hr class="mt-4">
-
-    <h2 class="h5">Datos de red (opcional)</h2>
-
-    <div class="col-md-4">
-    <label class="form-label">Red</label>
-    <select name="red_id" class="form-select campo-destacado" id="redSelect">
-        <option value="">-- Sin red --</option>
-        <?php foreach ($redes as $r): ?>
-            <option value="<?= $r['id'] ?>" <?= (($_POST['red_id'] ?? '') == $r['id']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($r['nombre']) ?> (<?= htmlspecialchars($r['direccion_red']) ?>)
-            </option>
-        <?php endforeach; ?>
-    </select>
-</div>
-
-<div class="col-md-4">
-    <label class="form-label">IP principal</label>
-    <select name="ip" id="ipSelect" class="form-select campo-destacado">
-        <option value="">Selecciona una red primero</option>
-        <?php
-        // Si hubo error y el usuario ya había elegido una IP, la mostramos seleccionada
-        $ipSelected = $_POST['ip'] ?? '';
-        if ($ipSelected !== ''): ?>
-            <option value="<?= htmlspecialchars($ipSelected) ?>" selected>
-                <?= htmlspecialchars($ipSelected) ?>
-            </option>
-        <?php endif; ?>
-    </select>
-</div>
-
-<div class="col-md-4">
-    <label class="form-label">MAC</label>
-    <input type="text" name="mac" class="form-control campo-destacado" placeholder="AA:BB:CC:DD:EE:FF" value="<?= htmlspecialchars($_POST['mac'] ?? '') ?>">
-</div>
-
-
-    <div class="col-12 mt-4">
-        <button type="submit" class="btn btn-success">Guardar</button>
-        <a href="index.php" class="btn btn-secondary">Cancelar</a>
+    <div class="form-actions-fixed mt-3">
+        <div class="container d-flex justify-content-end gap-2">
+            <a href="index.php" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-success">Guardar equipo</button>
+        </div>
     </div>
 </form>
+
 <!-- JavaScript para mostrar/ocultar bloque de monitores -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -585,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (tipoSelect && bloqueMonitores) {
         tipoSelect.addEventListener('change', actualizarBloqueMonitores);
-        actualizarBloqueMonitores(); // Estado inicial (por si hay errores en POST)
+        actualizarBloqueMonitores();
     }
 });
 </script>
@@ -595,12 +602,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const redSelect = document.getElementById('redSelect');
     const ipSelect  = document.getElementById('ipSelect');
     const currentIp = <?= json_encode($_POST['ip'] ?? '') ?>;
+    const imagenInput = document.getElementById('imagen_nueva_input');
+    const imagenHidden = document.getElementById('imagen_existente');
+    const preview = document.getElementById('preview_img_nuevo');
+    const limpiarBtn = document.getElementById('limpiarImagen');
+    const imagenButtons = document.querySelectorAll('.seleccionar-imagen');
+
+    function setPreview(src) {
+        if (preview) {
+            preview.src = src || '';
+            preview.style.display = src ? 'block' : 'none';
+        }
+    }
 
     async function cargarIpsLibres(redId) {
-        ipSelect.innerHTML = '<option value="">Cargando IPs...</option>';
+        ipSelect.innerHTML = '<option value=\"\">Cargando IPs...</option>';
 
         if (!redId) {
-            ipSelect.innerHTML = '<option value="">Selecciona una red primero</option>';
+            ipSelect.innerHTML = '<option value=\"\">Selecciona una red primero</option>';
             return;
         }
 
@@ -608,7 +627,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const resp = await fetch('get_ips_libres.php?red_id=' + encodeURIComponent(redId));
             const data = await resp.json();
 
-            ipSelect.innerHTML = '<option value="">-- Selecciona IP --</option>';
+            ipSelect.innerHTML = '<option value=\"\">-- Selecciona IP --</option>';
 
             if (!Array.isArray(data) || data.length === 0) {
                 const opt = document.createElement('option');
@@ -629,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         } catch (e) {
             console.error(e);
-            ipSelect.innerHTML = '<option value="">Error cargando IPs</option>';
+            ipSelect.innerHTML = '<option value=\"\">Error cargando IPs</option>';
         }
     }
 
@@ -638,10 +657,56 @@ document.addEventListener('DOMContentLoaded', function () {
             cargarIpsLibres(this.value);
         });
 
-        // Si ya había una red seleccionada (por validación fallida), recargar IPs al entrar
         if (redSelect.value) {
             cargarIpsLibres(redSelect.value);
         }
+    }
+
+    if (imagenButtons.length) {
+        imagenButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                imagenButtons.forEach(b => b.classList.remove('active-selection'));
+                btn.classList.add('active-selection');
+                const file = btn.dataset.file || '';
+                imagenHidden.value = file;
+                if (file) {
+                    setPreview('uploads/equipos/' + file);
+                }
+                if (imagenInput) {
+                    imagenInput.value = '';
+                }
+            });
+        });
+    }
+
+    if (imagenInput) {
+        imagenInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                imagenButtons.forEach(b => b.classList.remove('active-selection'));
+                imagenHidden.value = '';
+                const reader = new FileReader();
+                reader.onload = function (ev) {
+                    setPreview(ev.target.result);
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+    }
+
+    if (limpiarBtn) {
+        limpiarBtn.addEventListener('click', () => {
+            imagenButtons.forEach(b => b.classList.remove('active-selection'));
+            imagenHidden.value = '';
+            if (imagenInput) {
+                imagenInput.value = '';
+            }
+            setPreview('');
+        });
+    }
+
+    // Mostrar preview si venimos de un POST con imagen seleccionada
+    if (imagenHidden && imagenHidden.value) {
+        setPreview('uploads/equipos/' + imagenHidden.value);
     }
 });
 </script>

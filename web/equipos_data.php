@@ -15,8 +15,10 @@ try {
     $searchValue = trim($req['search']['value'] ?? '');
 
     // (Opcional) filtros adicionales si los usas en el index
-    $estado = $req['estado'] ?? '';
-    $tipo   = $req['tipo']   ?? '';
+    $estado     = $req['estado'] ?? '';
+    $tipo       = $req['tipo']   ?? '';
+    $ubicacion  = $req['ubicacion'] ?? '';
+    $seccion_id = $req['seccion_id'] ?? '';
 
     // Columnas en el mismo orden de la tabla HTML
     $columns = [
@@ -51,6 +53,14 @@ try {
     if ($tipo !== '') {
         $where[] = 'e.tipo = :tipo';
         $params[':tipo'] = $tipo;
+    }
+    if ($ubicacion !== '') {
+        $where[] = 'e.ubicacion = :ubicacion';
+        $params[':ubicacion'] = $ubicacion;
+    }
+    if ($seccion_id !== '') {
+        $where[] = 'e.seccion_id = :seccion_id';
+        $params[':seccion_id'] = (int)$seccion_id;
     }
 
     // BÚSQUEDA GLOBAL: en todos los campos relevantes
