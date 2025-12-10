@@ -25,7 +25,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="index.php" class="btn btn-primary">Volver al listado</a>
+    <a href="index.php" class="btn btn-secondary">Volver al listado</a>
 </div>
 
     <div class="card shadow-sm">
@@ -92,5 +92,44 @@ document.addEventListener('DOMContentLoaded', function () {
     aplicarZoom();
 });
 </script>
+
+<!-- Enlace a inventario -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const obj = document.getElementById('planoSvg');
+
+    obj.addEventListener('load', function () {
+        const svgDoc = obj.contentDocument;
+        if (!svgDoc) return;
+
+        const links = svgDoc.querySelectorAll('a');
+
+        links.forEach(a => {
+            // En algunos SVGs el enlace está en xlink:href
+            let href = a.getAttribute('xlink:href') || a.getAttribute('href');
+            if (!href) return;
+
+            // 1) Si viene con "https://app.diagrams.net/..." lo recortamos
+            if (href.startsWith('https://app.diagrams.net/')) {
+                href = href.replace('https://app.diagrams.net', '');
+            }
+
+            // 2) Si sigue siendo relativo (no empieza por http), lo hacemos absoluto a TU servidor
+            if (!href.startsWith('http')) {
+                // window.location.origin = "http://192.168.1.36" o lo que toque
+                if (!href.startsWith('/')) {
+                    href = '/' + href;
+                }
+                href = window.location.origin + href;
+            }
+
+            // 3) Escribimos de vuelta el href corregido y salimos del <object> al hacer clic
+            a.setAttribute('href', href);
+            a.setAttribute('target', '_top'); // abre en la página principal
+        });
+    });
+});
+</script>
+
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
