@@ -221,6 +221,18 @@
     z-index: 2;
 }
 
+.table-sticky .col-acciones {
+    position: sticky;
+    right: 0;
+    background: #fff;
+    z-index: 3;
+    box-shadow: -6px 0 10px -8px rgba(0, 0, 0, 0.25);
+}
+
+.table-sticky thead .col-acciones {
+    z-index: 4;
+}
+
 .form-actions-fixed {
     position: sticky;
     bottom: 0;
@@ -357,6 +369,16 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=tipos">Tipos de equipo</a></li>
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=servicio">Servicio</a></li>
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=secciones">Secciones</a></li>
+                    </ul>
+                </li>
+                <!-- Recibos -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="recibosMenu" role="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                        📄 Recibos
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="recibosMenu">
+                        <li><a class="dropdown-item" href="renovaciones.php">Recibos Renovación</a></li>
                         <li><a class="dropdown-item" href="movimientos.php">Recibos Movimiento</a></li>
                     </ul>
                 </li>
@@ -373,7 +395,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     </li>
                 <?php endif; ?>
             </ul>
-<form class="d-flex ms-auto" action="busqueda.php" method="get" role="search">
+<!-- <form class="d-flex ms-auto" action="busqueda.php" method="get" role="search">
     <input
         class="form-control form-control-sm me-2"
         type="search"
@@ -384,7 +406,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <button class="btn btn-sm btn-outline-light" type="submit">
         Buscar
     </button>
-</form>
+</form> -->
 
             <!-- Info de usuario + botón Salir -->
             <?php if (!empty($_SESSION['tip'])): ?>

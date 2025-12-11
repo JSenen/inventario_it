@@ -407,6 +407,14 @@ require_once __DIR__ . '/includes/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="col-md-2">
+                <label class="form-label mb-0 small text-muted">Etiqueta</label>
+                <select id="filtroEtiqueta" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    <option value="con">Con etiqueta</option>
+                    <option value="sin">Sin etiqueta</option>
+                </select>
+            </div>
             <div class="col-md-1 d-flex justify-content-end">
                 <button type="button" id="limpiarFiltros" class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
             </div>
@@ -441,7 +449,15 @@ require_once __DIR__ . '/includes/header.php';
                     <a class="nav-link" data-tipo="NAS">NAS</a>
                 </li>
             </ul>
-            <div id="exportButtons" class="d-flex gap-2"></div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Mostrar / ocultar
+                    </button>
+                    <div class="dropdown-menu p-3 small" id="colToggleMenu" style="min-width: 220px;"></div>
+                </div>
+                <div id="exportButtons" class="d-flex gap-2"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -469,8 +485,9 @@ require_once __DIR__ . '/includes/header.php';
                 <th>IP Asignada</th>
                 <!--<th>Red</th>-->
                 <th>Monitores</th>
+                <th>Últ. renovación</th>
                 <th>Estado</th>
-                <th style="width: 150px;">Acciones</th>
+                <th class="col-acciones text-center" style="width: 150px;">Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -509,6 +526,8 @@ $(document).ready(function () {
         serverSide: true,
         pageLength: 10,
         lengthMenu: [10, 25, 50, 100],
+        stateSave: true,
+        stateDuration: 60 * 60 * 24 * 30, // 30 días
 
         ajax: {
             url: 'equipos_data.php',
@@ -519,6 +538,7 @@ $(document).ready(function () {
                 d.ubicacion = $('#filtroUbicacion').val() || '';
                 d.seccion_id = $('#filtroSeccion').val() || '';
                 d.tipo = ($('#filtroTipo').val() || currentFilterTipo || '');
+                d.etiqueta_estado = $('#filtroEtiqueta').val() || '';
             }
         },
 
@@ -535,8 +555,8 @@ $(document).ready(function () {
                 text: 'Excel (página actual)',
                 className: 'btn btn-sm btn-outline-secondary',
                 exportOptions: {
-                    // sin 2 (Imagen) ni 12 (Acciones)
-                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                    // sin 2 (Imagen) ni 13 (Acciones)
+                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
                 }
             },
             {
@@ -544,7 +564,7 @@ $(document).ready(function () {
                 text: 'CSV (página actual)',
                 className: 'btn btn-sm btn-outline-secondary',
                 exportOptions: {
-                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
                 }
             },
             {
@@ -552,7 +572,7 @@ $(document).ready(function () {
                 text: 'Imprimir',
                 className: 'btn btn-sm btn-outline-secondary',
                 exportOptions: {
-                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
                 }
             },
             {
@@ -580,7 +600,8 @@ $(document).ready(function () {
         autoWidth: false,
         scrollX: true,
         columnDefs: [
-            { orderable: false, searchable: false, targets: [2, 12] } // imagen y acciones
+            { orderable: false, searchable: false, targets: [2, 13] }, // imagen y acciones
+            { targets: 13, className: 'col-acciones text-center' }
         ],
 
         createdRow: function (row, data, dataIndex) {
@@ -597,29 +618,52 @@ $(document).ready(function () {
             }
 
             // 3. Colorear celda de estado según su valor
-            var indiceEstado = 11; // índice de la columna "Estado"
+            var indiceEstado = 12; // índice de la columna "Estado"
             var $celda = $('td:eq(' + indiceEstado + ')', row);
-            var estadoOriginal = $celda.text().trim();
-            var estado = estadoOriginal.toLowerCase();
-            var badgeClass = 'bg-secondary';
+            if ($celda.find('.badge').length === 0) {
+                var estadoOriginal = $celda.text().trim();
+                var estado = estadoOriginal.toLowerCase();
+                var badgeClass = 'bg-secondary';
+                var icon = 'bi-info-circle-fill';
 
-            if (estado === 'activo') {
-                badgeClass = 'bg-success';
-            } else if (estado === 'averiado') {
-                badgeClass = 'bg-warning text-dark';
-            } else if (estado === 'baja') {
-                badgeClass = 'bg-danger';
-            } else if (estado === 'almacen') {
-                badgeClass = 'bg-secondary';
-            } else if (estado === 'prestado') {
-                badgeClass = 'bg-info text-dark';
-            } else if (estado === 'privado') {
-                badgeClass = 'bg-dark';
+                if (estado === 'activo') {
+                    badgeClass = 'bg-success';
+                    icon = 'bi-check-circle-fill';
+                } else if (estado === 'averiado') {
+                    badgeClass = 'bg-warning text-dark';
+                    icon = 'bi-exclamation-triangle-fill';
+                } else if (estado === 'baja') {
+                    badgeClass = 'bg-danger';
+                    icon = 'bi-x-circle-fill';
+                } else if (estado === 'almacen') {
+                    badgeClass = 'bg-secondary';
+                    icon = 'bi-archive-fill';
+                } else if (estado === 'prestado') {
+                    badgeClass = 'bg-info text-dark';
+                    icon = 'bi-clock-history';
+                } else if (estado === 'privado') {
+                    badgeClass = 'bg-dark';
+                    icon = 'bi-shield-lock-fill';
+                }
+
+                $celda
+                    .addClass('text-center')
+                    .html('<span class="badge rounded-pill ' + badgeClass + ' d-inline-flex align-items-center gap-1">' +
+                        '<i class="bi ' + icon + '"></i>' +
+                        estadoOriginal +
+                    '</span>');
             }
 
-            $celda
-                .addClass('text-center')
-                .html('<span class="badge rounded-pill ' + badgeClass + '">' + estadoOriginal + '</span>');
+            // Activar tooltips en la fila
+            if (window.bootstrap) {
+                $('td [data-bs-toggle="tooltip"]', row).each(function () {
+                    var existing = bootstrap.Tooltip.getInstance(this);
+                    if (existing) {
+                        existing.dispose();
+                    }
+                    new bootstrap.Tooltip(this);
+                });
+            }
         },
 
         language: {
@@ -632,20 +676,72 @@ $(document).ready(function () {
     // Mover los botones junto al resto de acciones
     tabla.buttons().container().appendTo('#exportButtons');
 
+    // 🔹 Toggle de columnas (seleccionadas)
+    const $toggleMenu = $('#colToggleMenu');
+    const toggleCols = [
+        { idx: 2, label: 'Imagen' },
+        { idx: 3, label: 'Nº Serie' },
+        { idx: 4, label: 'Tipo' },
+        { idx: 5, label: 'Marca / Modelo' },
+        { idx: 6, label: 'Usuario / Dpto / Sección' },
+        { idx: 7, label: 'Servicio' },
+        { idx: 8, label: 'Ubicación' },
+        { idx: 9, label: 'IP Asignada' },
+        { idx: 10, label: 'Monitores' },
+        { idx: 11, label: 'Últ. renovación' }
+    ];
+
+    function syncToggleChecks() {
+        toggleCols.forEach(function (col) {
+            const column = tabla.column(col.idx);
+            $('#toggleCol' + col.idx).prop('checked', column.visible());
+        });
+    }
+
+    toggleCols.forEach(function (col) {
+        const column = tabla.column(col.idx);
+        const checkboxId = 'toggleCol' + col.idx;
+        const $wrapper = $('<div class="form-check mb-1"></div>');
+        const $input = $('<input>', {
+            type: 'checkbox',
+            class: 'form-check-input',
+            id: checkboxId
+        }).data('col', col.idx).prop('checked', column.visible());
+        const $label = $('<label>', {
+            class: 'form-check-label',
+            for: checkboxId,
+            text: col.label
+        });
+
+        $input.on('change', function () {
+            column.visible($(this).is(':checked'));
+            tabla.columns.adjust();
+            tabla.state.save(); // persistir al vuelo
+        });
+
+        $wrapper.append($input, $label);
+        $toggleMenu.append($wrapper);
+    });
+
+    // Sincroniza checks si la visibilidad viene de stateSave
+    tabla.on('stateLoaded', function () {
+        syncToggleChecks();
+    });
+
     // 🔹 Búsqueda global personalizada
     $('#busquedaGlobal').on('keyup change', function () {
         tabla.search(this.value).draw();
     });
 
     // 🔹 Selects de filtro
-    $('#filtroEstado, #filtroTipo, #filtroUbicacion, #filtroSeccion').on('change', function () {
+    $('#filtroEstado, #filtroTipo, #filtroUbicacion, #filtroSeccion, #filtroEtiqueta').on('change', function () {
         tabla.ajax.reload();
     });
 
     // 🔹 Limpiar filtros
     $('#limpiarFiltros').on('click', function () {
         $('#busquedaGlobal').val('');
-        $('#filtroEstado, #filtroTipo, #filtroUbicacion, #filtroSeccion').val('');
+        $('#filtroEstado, #filtroTipo, #filtroUbicacion, #filtroSeccion, #filtroEtiqueta').val('');
         currentFilterTipo = "";
 
         $('#equiposTabs .nav-link').removeClass('active');
