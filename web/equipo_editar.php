@@ -108,57 +108,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Mantener la imagen actual por defecto
-    $imagenRuta = $equipo['imagen'] ?? null;
+    // Mantener la imagen actual por defecto y registrar su valor anterior
+    $imagenRuta     = $equipo['imagen'] ?? null;
+    $imagenAnterior = $imagenRuta;
+    $imagenCambiada = false;
     // Monitores seleccionados en el formulario
     $monitoresSeleccionadosPost = isset($_POST['monitores']) && is_array($_POST['monitores'])
     ? array_map('intval', $_POST['monitores'])
     : [];
 
-    // Imagen actual desde la BD (puede ser null o cadena vacía)
-    $imagenRuta = $equipo['imagen'] ?? null;
     // 1) Si ha elegido una imagen existente en el desplegable
     if (!empty($_POST['imagen_existente'])) {
-
-        // Borrar la imagen anterior si existe en disco
-        if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {
-            @unlink(__DIR__ . '/' . $imagenRuta);
-        }
-
         $file = basename($_POST['imagen_existente']); // seguridad básica
-        $imagenRuta = 'uploads/equipos/' . $file;
+        $nuevaRuta = 'uploads/equipos/' . $file;
+        if ($nuevaRuta !== $imagenRuta) {
+            $imagenCambiada = true;
+        }
+        $imagenRuta = $nuevaRuta;
 
-        // 2) Si no ha elegido existente, pero ha subido una nueva imagen
-        } elseif (!empty($_FILES['imagen_nueva']['name'])) {
+    // 2) Si no ha elegido existente, pero ha subido una nueva imagen
+    } elseif (!empty($_FILES['imagen_nueva']['name'])) {
 
-            $uploadDir = __DIR__ . '/uploads/equipos/';
+        $uploadDir = __DIR__ . '/uploads/equipos/';
 
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0775, true);
-            }
-
-            $nombreOriginal = basename($_FILES['imagen_nueva']['name']);
-            $nombreLimpio   = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
-            $nombreFinal    = time() . '_' . $nombreLimpio;
-
-            $rutaRelativa = 'uploads/equipos/' . $nombreFinal;
-            $rutaFisica   = $uploadDir . $nombreFinal;
-
-            if (move_uploaded_file($_FILES['imagen_nueva']['tmp_name'], $rutaFisica)) {
-
-                // Borrar la imagen anterior si existe
-                if (!empty($imagenRuta) && file_exists(__DIR__ . '/' . $imagenRuta)) {
-                    @unlink(__DIR__ . '/' . $imagenRuta);
-                }
-
-                $imagenRuta = $rutaRelativa;
-            } else {
-                $errores[] = "No se pudo guardar la nueva imagen del equipo.";
-            }
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0775, true);
         }
 
-        // 3) Si no hay ni imagen_existente ni archivo nuevo
-        //    -> $imagenRuta se queda igual que venía de la BD
+        $nombreOriginal = basename($_FILES['imagen_nueva']['name']);
+        $nombreLimpio   = preg_replace('/[^A-Za-z0-9_\.-]/', '_', $nombreOriginal);
+        $nombreFinal    = time() . '_' . $nombreLimpio;
+
+        $rutaRelativa = 'uploads/equipos/' . $nombreFinal;
+        $rutaFisica   = $uploadDir . $nombreFinal;
+
+        if (move_uploaded_file($_FILES['imagen_nueva']['tmp_name'], $rutaFisica)) {
+            $imagenRuta     = $rutaRelativa;
+            $imagenCambiada = true;
+        } else {
+            $errores[] = "No se pudo guardar la nueva imagen del equipo.";
+        }
+    }
+
+    // 3) Si no hay ni imagen_existente ni archivo nuevo
+    //    -> $imagenRuta se queda igual que venía de la BD
+    // Si ha cambiado la imagen, eliminar la anterior solo si no la usa otro equipo
+    if ($imagenCambiada && !empty($imagenAnterior) && $imagenAnterior !== $imagenRuta) {
+        $stmtUsoImg = $pdo->prepare("
+            SELECT COUNT(*) FROM equipos WHERE imagen = :img AND id <> :id
+        ");
+        $stmtUsoImg->execute([
+            ':img' => $imagenAnterior,
+            ':id'  => $id_equipo,
+        ]);
+        $estaCompartida = (int)$stmtUsoImg->fetchColumn() > 0;
+
+        if (!$estaCompartida) {
+            $rutaAnteriorFs = __DIR__ . '/' . $imagenAnterior;
+            if (is_file($rutaAnteriorFs)) {
+                @unlink($rutaAnteriorFs);
+            }
+        }
+    }
 
 
             // Campos principales

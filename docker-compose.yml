@@ -31,7 +31,6 @@ services:
     networks:
       - inventario_net
 
-
   phpmyadmin:
     image: lscr.io/linuxserver/phpmyadmin:latest
     container_name: inventario_phpmyadmin
@@ -45,11 +44,11 @@ services:
       - PMA_ARBITRARY=1
       - PMA_HOST=db
       - PMA_PORT=3306
+      - UPLOAD_LIMIT=256M
     ports:
       - "8081:80"
     networks:
       - inventario_net
-
 
 volumes:
   db_data:
