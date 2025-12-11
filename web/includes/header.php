@@ -265,6 +265,29 @@
     top: 84px;
 }
 
+/* Mantener visible la barra de desplazamiento horizontal en tablas anchas */
+.table-responsive,
+.dataTables_scrollBody {
+    overflow-x: scroll !important;
+    scrollbar-gutter: stable;
+}
+
+.table-responsive::-webkit-scrollbar,
+.dataTables_scrollBody::-webkit-scrollbar {
+    height: 12px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb,
+.dataTables_scrollBody::-webkit-scrollbar-thumb {
+    background-color: #b1b1b1;
+    border-radius: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track,
+.dataTables_scrollBody::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}
+
 </style>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </head>
