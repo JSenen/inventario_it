@@ -378,6 +378,10 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <li class="nav-item">
                     <a class="nav-link" href="averias_list.php">⚠️ Gestión de averías</a>
                 </li>
+                <!-- Controles -->
+                <li class="nav-item">
+                    <a class="nav-link" href="verificaciones.php">✅ Controles</a>
+                </li>
                 <!-- Administración (submenu) -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"

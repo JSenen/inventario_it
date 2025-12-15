@@ -486,6 +486,7 @@ require_once __DIR__ . '/includes/header.php';
                 <!--<th>Red</th>-->
                 <th>Monitores</th>
                 <th>Últ. renovación</th>
+                <th>Últ. control</th>
                 <th>Estado</th>
                 <th class="col-acciones text-center" style="width: 150px;">Acciones</th>
             </tr>
@@ -555,8 +556,8 @@ $(document).ready(function () {
                 text: 'Excel (página actual)',
                 className: 'btn btn-sm btn-outline-secondary',
                 exportOptions: {
-                    // sin 2 (Imagen) ni 13 (Acciones)
-                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                    // sin 2 (Imagen) ni 14 (Acciones)
+                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
                 }
             },
             {
@@ -564,7 +565,7 @@ $(document).ready(function () {
                 text: 'CSV (página actual)',
                 className: 'btn btn-sm btn-outline-secondary',
                 exportOptions: {
-                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
                 }
             },
             {
@@ -572,7 +573,7 @@ $(document).ready(function () {
                 text: 'Imprimir',
                 className: 'btn btn-sm btn-outline-secondary',
                 exportOptions: {
-                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                    columns: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
                 }
             },
             {
@@ -600,8 +601,8 @@ $(document).ready(function () {
         autoWidth: false,
         scrollX: true,
         columnDefs: [
-            { orderable: false, searchable: false, targets: [2, 13] }, // imagen y acciones
-            { targets: 13, className: 'col-acciones text-center' }
+            { orderable: false, searchable: false, targets: [2, 14] }, // imagen y acciones
+            { targets: 14, className: 'col-acciones text-center' }
         ],
 
         createdRow: function (row, data, dataIndex) {
@@ -618,7 +619,7 @@ $(document).ready(function () {
             }
 
             // 3. Colorear celda de estado según su valor
-            var indiceEstado = 12; // índice de la columna "Estado"
+            var indiceEstado = 13; // índice de la columna "Estado"
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             if ($celda.find('.badge').length === 0) {
                 var estadoOriginal = $celda.text().trim();
@@ -688,7 +689,8 @@ $(document).ready(function () {
         { idx: 8, label: 'Ubicación' },
         { idx: 9, label: 'IP Asignada' },
         { idx: 10, label: 'Monitores' },
-        { idx: 11, label: 'Últ. renovación' }
+        { idx: 11, label: 'Últ. renovación' },
+        { idx: 12, label: 'Últ. control' }
     ];
 
     function syncToggleChecks() {

@@ -1,11 +1,14 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/verificaciones.php';
 
 header('Content-Type: application/json; charset=utf-8');
 error_reporting(E_ALL & ~E_NOTICE);
 ini_set('display_errors', '0');
 
 try {
+    ensureTablaVerificaciones($pdo);
+
     // DataTables params
     $req = $_GET ?: $_POST;
 
@@ -36,8 +39,9 @@ try {
         //10  => 'r.nombre',        // red
         10 => 'num_monitores',
         11 => 'ultima_renovacion_fecha',
-        12 => 'e.estado',
-        13 => 'e.id',            // acciones
+        12 => 'ultima_verificacion_fecha',
+        13 => 'e.estado',
+        14 => 'e.id',            // acciones
     ];
 
     // TOTAL SIN FILTROS (solo tabla equipos)
@@ -167,7 +171,28 @@ $sqlData = "
             WHERE rr.equipo_old_id = e.id OR rr.equipo_new_id = e.id
             ORDER BY rr.fecha DESC
             LIMIT 1
-        ) AS ultima_renovacion_firmado
+        ) AS ultima_renovacion_firmado,
+        (
+            SELECT ev.fecha
+            FROM equipos_verificaciones ev
+            WHERE ev.equipo_id = e.id
+            ORDER BY ev.fecha DESC
+            LIMIT 1
+        ) AS ultima_verificacion_fecha,
+        (
+            SELECT ev.ubicacion
+            FROM equipos_verificaciones ev
+            WHERE ev.equipo_id = e.id
+            ORDER BY ev.fecha DESC
+            LIMIT 1
+        ) AS ultima_verificacion_ubicacion,
+        (
+            SELECT ev.estado_equipo
+            FROM equipos_verificaciones ev
+            WHERE ev.equipo_id = e.id
+            ORDER BY ev.fecha DESC
+            LIMIT 1
+        ) AS ultima_verificacion_estado
     FROM equipos e
     LEFT JOIN ips_equipos ip ON ip.equipo_id = e.id AND ip.es_principal = 1
     LEFT JOIN redes r        ON r.id = ip.red_id
@@ -292,6 +317,47 @@ $sqlData = "
                      htmlspecialchars($estadoRaw ?: '-') .
                      '</span>';
 
+        // Última verificación inventario
+        $colUltVerif = '<span class="text-muted">—</span>';
+        if (!empty($row['ultima_verificacion_fecha'])) {
+            $fechaVerif   = new DateTime($row['ultima_verificacion_fecha']);
+            $hoy          = new DateTime();
+            $diasDiff     = (int)$hoy->diff($fechaVerif)->format('%a');
+            $ubicacionVer = $row['ultima_verificacion_ubicacion'] ?? '';
+            $estadoVer    = $row['ultima_verificacion_estado'] ?? '';
+
+            $badgeClass = 'bg-danger';
+            $badgeText  = 'Fuera de plazo';
+            $icon       = 'bi-exclamation-octagon-fill';
+
+            if ($diasDiff <= 60) {
+                $badgeClass = 'bg-success';
+                $badgeText  = 'Al día';
+                $icon       = 'bi-check-circle-fill';
+            } elseif ($diasDiff <= 90) {
+                $badgeClass = 'bg-warning text-dark';
+                $badgeText  = 'Revisar pronto';
+                $icon       = 'bi-exclamation-triangle-fill';
+            }
+
+            $colUltVerif =
+                '<div class="d-flex flex-column gap-1 small">' .
+                    '<span class="badge rounded-pill ' . $badgeClass . ' d-inline-flex align-items-center gap-1">' .
+                        '<i class="bi ' . $icon . '"></i>' .
+                        $badgeText .
+                    '</span>' .
+                    '<small class="text-muted">' . htmlspecialchars($fechaVerif->format('Y-m-d H:i')) . '</small>';
+
+            if (!empty($ubicacionVer)) {
+                $colUltVerif .= '<small class="text-muted">Ubicación: ' . htmlspecialchars($ubicacionVer) . '</small>';
+            }
+            if (!empty($estadoVer)) {
+                $colUltVerif .= '<small class="text-muted">Estado: ' . htmlspecialchars($estadoVer) . '</small>';
+            }
+
+            $colUltVerif .= '</div>';
+        }
+
         // Última renovación
         $colUltRenov = '<span class="text-muted">—</span>';
         if (!empty($row['ultima_renovacion_id'])) {
@@ -335,6 +401,7 @@ $sqlData = "
             //$colRed,
             $colMonitores,
             $colUltRenov,
+            $colUltVerif,
             $colEstado,
             $colAcciones,
         ];

@@ -471,3 +471,23 @@ WHERE (e.fecha_compra IS NULL OR e.fecha_compra = '0000-00-00')
 -- 07-12-2025 Añadido campo solucion_aplicada a averias
 ALTER TABLE averias
 ADD COLUMN solucion_aplicada TEXT NULL AFTER empresa_ext;
+
+
+-- 15/12/2025
+
+CREATE TABLE  equipos_verificaciones (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            equipo_id INT NOT NULL,
+            fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            ubicacion VARCHAR(255) DEFAULT NULL,
+            estado_equipo VARCHAR(50) DEFAULT NULL,
+            usuario_verificador VARCHAR(100) DEFAULT NULL,
+            ip VARCHAR(50) DEFAULT NULL,
+            seccion VARCHAR(255) DEFAULT NULL,
+            departamento VARCHAR(255) DEFAULT NULL,
+            notas TEXT,
+            INDEX idx_equipo_fecha (equipo_id, fecha),
+            CONSTRAINT fk_equipo_verificaciones_equipo
+                FOREIGN KEY (equipo_id) REFERENCES equipos(id)
+                ON DELETE CASCADE
+        ) ;

@@ -3,6 +3,7 @@ require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . "/includes/logger.php";
+require_once __DIR__ . '/includes/verificaciones.php';
 
 // 👇 AÑADE ESTO
 $id_equipo = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -13,13 +14,71 @@ if ($id_equipo <= 0) {
 // Si quieres compatibilidad rápida con código antiguo que usa $id:
 $id = $id_equipo;
 
-// Obtener datos del equipo
-$stmt = $pdo->prepare("SELECT * FROM equipos WHERE id = :id");
+// Obtener datos del equipo (incluye seccion)
+$stmt = $pdo->prepare("
+    SELECT e.*, s.nombre AS seccion_nombre
+    FROM equipos e
+    LEFT JOIN secciones s ON s.id = e.seccion_id
+    WHERE e.id = :id
+");
 $stmt->execute([':id' => $id_equipo]);
 $equipo = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$equipo) {
     die('Equipo no encontrado');
+}
+
+$mensajeVerifError = null;
+
+// Registrar verificación de inventario
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar_verificacion'])) {
+    $ubicacionVerificada = strtoupper(trim($_POST['ubicacion_verificada'] ?? $equipo['ubicacion']));
+    $estadoVerificado    = trim($_POST['estado_verificado'] ?? $equipo['estado']);
+    $notasVerificacion   = trim($_POST['notas_verificacion'] ?? '');
+    $usuarioVerificador  = $_SESSION['tip'] ?? ($_SESSION['usuario'] ?? 'SIN_USUARIO');
+
+    $ipVerificada        = $ip_principal['ip'] ?? null;
+    $seccionVerificada   = $equipo['seccion_nombre'] ?? null;
+    $departamentoVerif   = $equipo['departamento'] ?? null;
+
+    try {
+        registrarVerificacionEquipo(
+            $pdo,
+            $id_equipo,
+            $estadoVerificado,
+            $ubicacionVerificada,
+            $usuarioVerificador,
+            $ipVerificada,
+            $seccionVerificada,
+            $departamentoVerif,
+            $notasVerificacion !== '' ? $notasVerificacion : null
+        );
+
+        if (!empty($_POST['actualizar_equipo'])) {
+            $stmtUpdateEq = $pdo->prepare("
+                UPDATE equipos
+                SET ubicacion = :ubicacion, estado = :estado
+                WHERE id = :id
+            ");
+            $stmtUpdateEq->execute([
+                ':ubicacion' => $ubicacionVerificada,
+                ':estado'    => $estadoVerificado,
+                ':id'        => $id_equipo,
+            ]);
+        }
+
+        logActividad(
+            $pdo,
+            'VERIFICACION_EQUIPO',
+            "Verificación registrada para equipo ID={$id_equipo} por {$usuarioVerificador}"
+        );
+
+        $_SESSION['msg_verificacion'] = 'Verificación registrada correctamente.';
+        header('Location: equipo_ver.php?id=' . $id_equipo);
+        exit;
+    } catch (Throwable $e) {
+        $mensajeVerifError = 'No se pudo registrar la verificación: ' . $e->getMessage();
+    }
 }
 
 // Inicializar variables para monitores o PC asociado
@@ -95,6 +154,8 @@ if (isset($_GET['mov']) && $_GET['mov'] === 'last') {
     $ultimoMov = $stmtMov->fetch(PDO::FETCH_ASSOC);
 }
 
+$ultimaVerificacion = obtenerUltimaVerificacionEquipo($pdo, $id_equipo);
+
 logActividad($pdo, 'VER_EQUIPO', 'Detalle del equipo visualizado: ID=' . $id);
 
 $ips = $stmt_ips->fetchAll(PDO::FETCH_ASSOC);
@@ -154,6 +215,103 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
         <?php if (!empty($ultimaRenov['id'])): ?>
             <a href="recibo_renovacion.php?id=<?= (int)$ultimaRenov['id'] ?>" class="btn btn-outline-secondary">Último recibo de renovación</a>
         <?php endif; ?>
+    </div>
+
+    <?php if (!empty($_SESSION['msg_verificacion'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($_SESSION['msg_verificacion']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+        <?php unset($_SESSION['msg_verificacion']); ?>
+    <?php endif; ?>
+    <?php if ($mensajeVerifError): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($mensajeVerifError) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    <?php endif; ?>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Control de inventario</strong>
+            <?php if ($ultimaVerificacion): ?>
+                <?php
+                    $fechaVerifObj = new DateTime($ultimaVerificacion['fecha']);
+                    $diasDiff = (int)(new DateTime())->diff($fechaVerifObj)->format('%a');
+                    $badgeClass = 'bg-danger';
+                    $badgeText  = 'Fuera de plazo';
+                    if ($diasDiff <= 60) {
+                        $badgeClass = 'bg-success';
+                        $badgeText  = 'Al día';
+                    } elseif ($diasDiff <= 90) {
+                        $badgeClass = 'bg-warning text-dark';
+                        $badgeText  = 'Revisar pronto';
+                    }
+                ?>
+                <span class="badge rounded-pill <?= $badgeClass ?>">
+                    <?= htmlspecialchars($badgeText) ?> · <?= htmlspecialchars($diasDiff) ?> días
+                </span>
+            <?php else: ?>
+                <span class="badge bg-secondary">Sin controles previos</span>
+            <?php endif; ?>
+        </div>
+        <div class="card-body">
+            <?php if ($ultimaVerificacion): ?>
+                <p class="small mb-3">
+                    Última verificación: <strong><?= htmlspecialchars($fechaVerifObj->format('Y-m-d H:i')) ?></strong>
+                    · Ubicación: <?= htmlspecialchars($ultimaVerificacion['ubicacion'] ?? '-') ?>
+                    · Estado: <?= htmlspecialchars($ultimaVerificacion['estado_equipo'] ?? '-') ?>
+                    · IP: <?= htmlspecialchars($ultimaVerificacion['ip'] ?? '-') ?>
+                    · Sección: <?= htmlspecialchars($ultimaVerificacion['seccion'] ?? '-') ?>
+                    · Depto: <?= htmlspecialchars($ultimaVerificacion['departamento'] ?? '-') ?>
+                    · Verificado por: <?= htmlspecialchars($ultimaVerificacion['usuario_verificador'] ?? '-') ?>
+                    <?php if (!empty($ultimaVerificacion['notas'])): ?>
+                        <br><span class="text-muted">Notas: <?= nl2br(htmlspecialchars($ultimaVerificacion['notas'])) ?></span>
+                    <?php endif; ?>
+                </p>
+            <?php else: ?>
+                <p class="text-muted small mb-3">Aún no se ha registrado ninguna verificación para este equipo.</p>
+            <?php endif; ?>
+
+            <form method="post" class="row g-3">
+                <input type="hidden" name="registrar_verificacion" value="1">
+                <div class="col-md-4">
+                    <label class="form-label small mb-1">Ubicación verificada</label>
+                    <input
+                        type="text"
+                        name="ubicacion_verificada"
+                        class="form-control"
+                        value="<?= htmlspecialchars($equipo['ubicacion']) ?>"
+                        required
+                    >
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Estado verificado</label>
+                    <select name="estado_verificado" class="form-select">
+                        <?php foreach (['Activo','Almacén','Averiado','Baja','Prestado','Privado'] as $estadoOpt): ?>
+                            <option value="<?= $estadoOpt ?>" <?= $equipo['estado'] === $estadoOpt ? 'selected' : '' ?>>
+                                <?= $estadoOpt ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label small mb-1">Notas de verificación (opcional)</label>
+                    <textarea name="notas_verificacion" rows="2" class="form-control" placeholder="Condición física, etiquetas, incidencias..."></textarea>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="1" id="actualizar_equipo" name="actualizar_equipo" checked>
+                        <label class="form-check-label" for="actualizar_equipo">
+                            Actualizar ficha del equipo con esta ubicación y estado
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button type="submit" class="btn btn-primary">Registrar verificación</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <h4>Información del equipo</h4>
