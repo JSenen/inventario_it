@@ -1,0 +1,71 @@
+/* Tamaño y posición del reloj */
+#pocketwatch-fixed {
+  --size: 170px; /* 👈 cambia aquí: 120/130/140 */
+  position: fixed;
+  top: 72px;
+  right: 20px;
+  width: var(--size);
+  height: var(--size);
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0.92;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+}
+
+.pocketwatch {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  /* 👇 Centro del eje (AJUSTE FINO) */
+  --cx: 50%;
+  --cy: 58%; /* 👈 este PNG suele ir mejor 55.5%–56.5% */
+}
+
+.pocketwatch-bg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Agujas */
+.hand {
+  position: absolute;
+  left: var(--cx);
+  top: var(--cy);
+  transform-origin: 50% 100%;
+  transform: translate(-50%, -100%) rotate(0deg);
+  pointer-events: none;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+  border-radius: 999px;
+}
+
+/* Longitudes proporcionales al tamaño */
+.hand.hour {
+  width: 4px;
+  height: calc(var(--size) * 0.17);
+  background: #1b1b1b;
+}
+.hand.minute {
+  width: 3px;
+  height: calc(var(--size) * 0.14);
+  background: #1b1b1b;
+}
+.hand.second {
+  width: 2px;
+  height: calc(var(--size) * 0.17);
+  background: #a12a1b;
+}
+
+/* Centro */
+.pin {
+  position: absolute;
+  left: var(--cx);
+  top: var(--cy);
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  background: #2a1b0c;
+  border: 2px solid #d4b06a;
+  border-radius: 50%;
+}

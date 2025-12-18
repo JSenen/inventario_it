@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+
 
 </body>
 </html>
+

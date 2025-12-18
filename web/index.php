@@ -285,9 +285,24 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         </div>
     </div>
+ <!-- POCKETWATCH -->
+<link rel="stylesheet" href="assets/pocketwatch/watch.css">
 
+<div id="pocketwatch-fixed" title="Hora local">
+  <div class="pocketwatch">
+    <img class="pocketwatch-bg" src="assets/pocketwatch/watch.png" alt="Pocket Watch">
 
+    <div class="hand hour"   id="pw-hour"></div>
+    <div class="hand minute" id="pw-minute"></div>
+    <div class="hand second" id="pw-second"></div>
+
+    <div class="pin"></div>
+  </div>
 </div>
+
+<script src="assets/pocketwatch/watch.js"></script>
+
+
 
 <div class="row mb-4">
     <div class="col-md-6 mb-3">
@@ -350,7 +365,11 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     </div>
 
+
+
 </div>
+
+
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Inventario de Equipos</h1>
