@@ -272,35 +272,35 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
         <div class="col-md-2 col-sm-4 mb-2">
-        <div class="card text-bg-info h-100">
-            <div class="card-body py-2">
-                <div class="small text-uppercase">Movimientos hoy</div>
-                <div class="fs-6">
-                    Entregas: <strong><?= (int)($movStatsHoy['entregas_hoy'] ?? 0) ?></strong><br>
-                    Recogidas: <strong><?= (int)($movStatsHoy['recogidas_hoy'] ?? 0) ?></strong>
-                </div>
-            </div>
-            <div class="card-footer p-1 text-end">
-                <a href="movimientos.php" class="small text-white">Ver detalle</a>
-            </div>
-        </div>
+  <div class="card text-bg-info h-100 card-movimientos">
+    <div class="card-body py-2">
+      <div class="small text-uppercase">Movimientos hoy</div>
+      <div class="fs-6">
+        Entregas: <strong><?= (int)($movStatsHoy['entregas_hoy'] ?? 0) ?></strong><br>
+        Recogidas: <strong><?= (int)($movStatsHoy['recogidas_hoy'] ?? 0) ?></strong>
+      </div>
     </div>
- <!-- POCKETWATCH -->
-<link rel="stylesheet" href="assets/pocketwatch/watch.css">
 
-<div id="pocketwatch-fixed" title="Hora local">
-  <div class="pocketwatch">
-    <img class="pocketwatch-bg" src="assets/pocketwatch/watch.png" alt="Pocket Watch">
+    <div class="card-footer p-1 text-end">
+      <a href="movimientos.php" class="small text-white">Ver detalle</a>
+    </div>
 
-    <div class="hand hour"   id="pw-hour"></div>
-    <div class="hand minute" id="pw-minute"></div>
-    <div class="hand second" id="pw-second"></div>
-
-    <div class="pin"></div>
+    <!-- POCKETWATCH (anclado a esta card) -->
+    <div class="pocketwatch-card" title="Hora local">
+      <div class="pocketwatch">
+        <img class="pocketwatch-bg" src="assets/pocketwatch/watch.png" alt="Pocket Watch">
+        <div class="hand hour"   id="pw-hour"></div>
+        <div class="hand minute" id="pw-minute"></div>
+        <div class="hand second" id="pw-second"></div>
+        <div class="pin"></div>
+      </div>
+    </div>
   </div>
 </div>
 
-<script src="assets/pocketwatch/watch.js"></script>
+
+
+
 
 
 
@@ -515,6 +515,11 @@ require_once __DIR__ . '/includes/header.php';
         </tbody>
     </table>
 </div>
+
+<!-- LINK POCKETWATCH -->
+
+<link rel="stylesheet" href="assets/pocketwatch/watch.css">
+<script src="assets/pocketwatch/watch.js"></script>
 
 <!-- DataTables (puedes pasar a local más adelante si quieres) -->
 <!-- jQuery local -->
