@@ -2,6 +2,12 @@
 require_once 'auth.php';
 require_once 'config.php';
 
+function jsonError(string $msg): void {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => $msg]);
+    exit;
+}
+
 // Parámetros DataTables
 $draw   = $_GET['draw'] ?? 1;
 $start  = $_GET['start'] ?? 0;
@@ -9,7 +15,7 @@ $length = $_GET['length'] ?? 25;
 $search = $_GET['search']['value'] ?? '';
 
 // Columnas permitidas para ordenar
-$columns = ['id', 'numero', 'iccid', 'operador', 'puk', 'estado'];
+$columns = ['id', 'etiqueta', 'numero', 'iccid', 'operador', 'puk', 'estado'];
 $orderColIndex = $_GET['order'][0]['column'] ?? 0;
 $orderDir      = $_GET['order'][0]['dir'] ?? 'asc';
 $orderColumn   = $columns[$orderColIndex] ?? 'id';
@@ -22,7 +28,8 @@ $whereParts = [];
 $params     = [];
 
 if (!empty($search)) {
-    $whereParts[] = "(numero LIKE :search 
+    $whereParts[] = "(etiqueta LIKE :search 
+              OR numero LIKE :search 
               OR iccid LIKE :search 
               OR operador LIKE :search 
               OR puk LIKE :search)";
@@ -41,37 +48,41 @@ if (!empty($_GET['operador'] ?? '')) {
 
 $where = $whereParts ? ('WHERE ' . implode(' AND ', $whereParts)) : '';
 
-// Total registros
-$totalStmt = $pdo->query("SELECT COUNT(*) FROM sims");
-$recordsTotal = (int)$totalStmt->fetchColumn();
+try {
+    // Total registros
+    $totalStmt = $pdo->query("SELECT COUNT(*) FROM sims");
+    $recordsTotal = (int)$totalStmt->fetchColumn();
 
-// Total filtrados
-if ($where) {
-    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM sims $where");
-    $countStmt->execute($params);
-    $recordsFiltered = (int)$countStmt->fetchColumn();
-} else {
-    $recordsFiltered = $recordsTotal;
+    // Total filtrados
+    if ($where) {
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM sims $where");
+        $countStmt->execute($params);
+        $recordsFiltered = (int)$countStmt->fetchColumn();
+    } else {
+        $recordsFiltered = $recordsTotal;
+    }
+
+    // Datos
+    $sql = "SELECT id, etiqueta, numero, iccid, operador, puk, estado 
+            FROM sims
+            $where
+            ORDER BY $orderColumn $orderDir
+            LIMIT :start, :length";
+
+    $stmt = $pdo->prepare($sql);
+
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v);
+    }
+
+    $stmt->bindValue(':start', (int)$start, PDO::PARAM_INT);
+    $stmt->bindValue(':length', (int)$length, PDO::PARAM_INT);
+
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    jsonError('Error en consulta: ' . $e->getMessage());
 }
-
-// Datos
-$sql = "SELECT id, numero, iccid, operador, puk, estado 
-        FROM sims
-        $where
-        ORDER BY $orderColumn $orderDir
-        LIMIT :start, :length";
-
-$stmt = $pdo->prepare($sql);
-
-foreach ($params as $k => $v) {
-    $stmt->bindValue($k, $v);
-}
-
-$stmt->bindValue(':start', (int)$start, PDO::PARAM_INT);
-$stmt->bindValue(':length', (int)$length, PDO::PARAM_INT);
-
-$stmt->execute();
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Formatear filas
 $data = [];
@@ -83,6 +94,7 @@ foreach ($rows as $r) {
 
     $data[] = [
         'id'       => $r['id'],
+        'etiqueta' => htmlspecialchars($r['etiqueta'] ?? ''),
         'numero'   => htmlspecialchars($r['numero']),
         'iccid'    => htmlspecialchars($r['iccid']),
         'operador' => htmlspecialchars($r['operador']),

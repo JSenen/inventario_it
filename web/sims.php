@@ -91,6 +91,7 @@ $operadores = $pdo->query("
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Etiqueta</th>
                 <th>Número</th>
                 <th>ICCID</th>
                 <th>Operador</th>
@@ -135,6 +136,7 @@ $(document).ready(function () {
         buttons: ['copy', 'excel', 'csv', 'print'],
         columns: [
             { data: 'id' },
+            { data: 'etiqueta' },
             { data: 'numero' },
             { data: 'iccid' },
             { data: 'operador' },
@@ -156,7 +158,7 @@ $(document).ready(function () {
             // ID(0), Imagen(1), Nº serie(2), Tipo(3), Marca(4),
             // Usuario(5), Servicio(6), Ubicación(7),
             // IP principal(8), Red(9), Estado(10), Acciones(11)
-            var indiceEstado = 5;
+            var indiceEstado = 6;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();

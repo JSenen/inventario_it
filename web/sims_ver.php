@@ -36,7 +36,7 @@ require_once 'includes/header.php';
 <div class="container mt-4">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Tarjeta SIM - <?= htmlspecialchars($sim['numero']) ?></h2>
+        <h2>Tarjeta SIM - <?= htmlspecialchars(($sim['etiqueta'] ? '['.$sim['etiqueta'].'] ' : '') . $sim['numero']) ?></h2>
 
         <div>
             <a href="sims_editar.php?id=<?= (int)$id ?>" class="btn btn-warning">Editar</a>
@@ -57,6 +57,7 @@ require_once 'includes/header.php';
 
     <table class="table table-bordered">
         <tr><th>ID</th> <td><?= (int)$sim['id'] ?></td></tr>
+        <tr><th>Etiqueta</th> <td><?= htmlspecialchars($sim['etiqueta'] ?? '') ?></td></tr>
         <tr><th>Número</th> <td><?= htmlspecialchars($sim['numero']) ?></td></tr>
         <tr><th>ICCID</th> <td><?= htmlspecialchars($sim['iccid']) ?></td></tr>
         <tr><th>Operador</th> <td><?= htmlspecialchars($sim['operador']) ?></td></tr>

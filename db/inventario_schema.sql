@@ -318,6 +318,7 @@ CREATE INDEX idx_equipos_estado ON equipos (estado);
 --  Tabla para gestionar teléfonos móviles
 CREATE TABLE telefonos (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    etiqueta VARCHAR(100) UNIQUE NULL,
     marca VARCHAR(100) NOT NULL,
     modelo VARCHAR(100) NOT NULL,
     imei VARCHAR(20) NOT NULL UNIQUE,
@@ -346,10 +347,15 @@ ALTER TABLE telefonos
 ADD usuario_receptor VARCHAR(150) DEFAULT NULL,
 ADD fecha_entrega DATE DEFAULT NULL;
 
+-- 09-02-2026 Añadir etiqueta a teléfonos si no existe
+ALTER TABLE telefonos
+    ADD COLUMN IF NOT EXISTS etiqueta VARCHAR(100) UNIQUE NULL AFTER id;
+
 
 --  Tabla para gestionar SIMs
 CREATE TABLE sims (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    etiqueta VARCHAR(100) UNIQUE NULL,
     numero VARCHAR(20) NOT NULL UNIQUE,         -- número de teléfono
     iccid VARCHAR(30) NOT NULL UNIQUE,          -- código único de la SIM
     operador VARCHAR(50) NOT NULL,              -- Movistar, Orange, Vodafone...
@@ -367,6 +373,10 @@ CREATE TABLE sims (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- 09-02-2026 Añadir etiqueta a SIMs si no existe
+ALTER TABLE sims
+    ADD COLUMN IF NOT EXISTS etiqueta VARCHAR(100) UNIQUE NULL AFTER id;
 
 -- Tabla intermedia para asignar SIMs a teléfonos
 CREATE TABLE telefono_sim (
@@ -491,3 +501,22 @@ CREATE TABLE  equipos_verificaciones (
                 FOREIGN KEY (equipo_id) REFERENCES equipos(id)
                 ON DELETE CASCADE
         ) ;
+--- Tabla para gestionar renovaciones de teléfonos móviles (cambios de equipo)
+        CREATE TABLE IF NOT EXISTS renovaciones_telefonos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        tel_old_id INT NOT NULL,
+        tel_new_id INT NOT NULL,
+        sim_movida TINYINT(1) NOT NULL DEFAULT 0,
+        estado_old VARCHAR(20),
+        fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+        firma_token VARCHAR(64),
+        firma_path VARCHAR(255),
+        firmado TINYINT(1) DEFAULT 0,
+        firmado_fecha DATETIME NULL,
+        KEY idx_token (firma_token)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 09-02-2026 Añadir etiqueta a teléfonos y SIMs si no existe
+    ALTER TABLE telefonos ADD COLUMN etiqueta VARCHAR(100) NULL UNIQUE AFTER id;
+    ALTER TABLE sims ADD COLUMN etiqueta VARCHAR(100) NULL UNIQUE AFTER id;
+

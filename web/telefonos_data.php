@@ -2,6 +2,12 @@
 require_once 'auth.php';
 require_once 'config.php';
 
+function jsonError(string $msg): void {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => $msg]);
+    exit;
+}
+
 // Opcional: para ver errores si algo falla
 // error_reporting(E_ALL);
 // ini_set('display_errors', 1);
@@ -17,6 +23,7 @@ $search = $_GET['search']['value'] ?? '';
 // Columnas válidas para ordenar
 $columns = [
     't.id',
+    't.etiqueta',
     't.marca',
     't.modelo',
     't.imei',
@@ -37,7 +44,8 @@ $whereParts = [];
 $params     = [];
 
 if (!empty($search)) {
-    $whereParts[] = "(t.marca LIKE :search
+    $whereParts[] = "(t.etiqueta LIKE :search
+        OR t.marca LIKE :search
         OR t.modelo LIKE :search
         OR t.imei LIKE :search
         OR t.usuario_asignado LIKE :search
@@ -84,22 +92,24 @@ $fromClause = "
         ON s.id = ts.sim_id
 ";
 
-// Total registros (sin filtro)
-$totalStmt = $pdo->query("SELECT COUNT(*) FROM telefonos");
-$recordsTotal = (int)$totalStmt->fetchColumn();
+try {
+    // Total registros (sin filtro)
+    $totalStmt = $pdo->query("SELECT COUNT(*) FROM telefonos");
+    $recordsTotal = (int)$totalStmt->fetchColumn();
 
-// Total filtrados
-if ($where) {
-    $countStmt = $pdo->prepare("SELECT COUNT(DISTINCT t.id) $fromClause $where");
-    $countStmt->execute($params);
-    $recordsFiltered = (int)$countStmt->fetchColumn();
-} else {
-    $recordsFiltered = $recordsTotal;
-}
+    // Total filtrados
+    if ($where) {
+        $countStmt = $pdo->prepare("SELECT COUNT(DISTINCT t.id) $fromClause $where");
+        $countStmt->execute($params);
+        $recordsFiltered = (int)$countStmt->fetchColumn();
+    } else {
+        $recordsFiltered = $recordsTotal;
+    }
 
 // Datos
 $sql = "SELECT
             t.id,
+            t.etiqueta,
             t.marca,
             t.modelo,
             t.imei,
@@ -113,18 +123,21 @@ $sql = "SELECT
         ORDER BY $orderColumn $orderDir
         LIMIT :start, :length";
 
-$stmt = $pdo->prepare($sql);
+    $stmt = $pdo->prepare($sql);
 
-// Bind de filtro si hay
-foreach ($params as $k => $v) {
-    $stmt->bindValue($k, $v, PDO::PARAM_STR);
+    // Bind de filtro si hay
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, PDO::PARAM_STR);
+    }
+
+    $stmt->bindValue(':start', $start, PDO::PARAM_INT);
+    $stmt->bindValue(':length', $length, PDO::PARAM_INT);
+
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    jsonError('Error en consulta: ' . $e->getMessage());
 }
-
-$stmt->bindValue(':start', $start, PDO::PARAM_INT);
-$stmt->bindValue(':length', $length, PDO::PARAM_INT);
-
-$stmt->execute();
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Construir array de salida
 $data = [];
@@ -140,6 +153,7 @@ foreach ($rows as $r) {
 
     $data[] = [
         'id'               => (int)$r['id'],
+        'etiqueta'         => htmlspecialchars($r['etiqueta'] ?? ''),
         'marca'            => htmlspecialchars($r['marca']),
         'modelo'           => htmlspecialchars($r['modelo']),
         'imei'             => htmlspecialchars($r['imei']),

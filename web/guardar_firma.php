@@ -20,14 +20,20 @@ $stmt->execute([':t' => $token]);
 $mov = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $ren = null;
+$renTel = null;
 if (!$mov) {
     $stmtRen = $pdo->prepare("SELECT * FROM renovaciones WHERE firma_token = :t");
     $stmtRen->execute([':t' => $token]);
     $ren = $stmtRen->fetch(PDO::FETCH_ASSOC);
     if (!$ren) {
-        http_response_code(404);
-        echo "Movimiento/Renovación no encontrado";
-        exit;
+        $stmtRenTel = $pdo->prepare("SELECT * FROM renovaciones_telefonos WHERE firma_token = :t");
+        $stmtRenTel->execute([':t' => $token]);
+        $renTel = $stmtRenTel->fetch(PDO::FETCH_ASSOC);
+        if (!$renTel) {
+            http_response_code(404);
+            echo "Movimiento/Renovación no encontrado";
+            exit;
+        }
     }
 }
 
@@ -57,7 +63,7 @@ if ($mov) {
     ]);
 
     generarPdfMovimiento($pdo, (int)$mov['id']);
-} else {
+} elseif ($ren) {
     $stmtUp = $pdo->prepare("
         UPDATE renovaciones
         SET firma_path = :firma, firmado = 1, firmado_fecha = NOW()
@@ -66,6 +72,16 @@ if ($mov) {
     $stmtUp->execute([
         ':firma' => $rutaRelativa,
         ':id'    => $ren['id'],
+    ]);
+} else {
+    $stmtUp = $pdo->prepare("
+        UPDATE renovaciones_telefonos
+        SET firma_path = :firma, firmado = 1, firmado_fecha = NOW()
+        WHERE id = :id
+    ");
+    $stmtUp->execute([
+        ':firma' => $rutaRelativa,
+        ':id'    => $renTel['id'],
     ]);
 }
 

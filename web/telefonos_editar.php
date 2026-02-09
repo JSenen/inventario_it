@@ -54,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $marca      = trim($_POST['marca'] ?? '');
     $modelo     = trim($_POST['modelo'] ?? '');
     $imei       = trim($_POST['imei'] ?? '');
+    $etiqueta   = trim($_POST['etiqueta'] ?? '');
     $num_serie  = trim($_POST['numero_serie'] ?? '');
     $usuario    = trim($_POST['usuario_asignado'] ?? '');
     $depart     = trim($_POST['departamento'] ?? '');
@@ -85,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    SET marca = :marca,
                        modelo = :modelo,
                        imei = :imei,
+                       etiqueta = :etiqueta,
                        numero_serie = :num_serie,
                        usuario_asignado = :usuario,
                        departamento = :depart,
@@ -102,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':marca'      => $marca,
                 ':modelo'     => $modelo,
                 ':imei'       => $imei,
+                ':etiqueta'   => $etiqueta ?: null,
                 ':num_serie'  => $num_serie,
                 ':usuario'    => $usuario,
                 ':depart'     => $depart,
@@ -241,6 +244,11 @@ require_once 'includes/header.php';
 
     <form method="post">
         <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Etiqueta</label>
+                <input type="text" name="etiqueta" class="form-control"
+                       value="<?= htmlspecialchars($telefono['etiqueta']) ?>">
+            </div>
             <div class="col-md-4 mb-3">
                 <label class="form-label">Marca</label>
                 <input type="text" name="marca" class="form-control"

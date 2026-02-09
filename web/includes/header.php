@@ -119,6 +119,16 @@
     font-weight: bold;
     text-align: center;
 }
+
+/* Resalta etiquetas visibles en selects/listados */
+.etiqueta-ok {
+    font-weight: 600;
+    color: #0d6efd;
+}
+.etiqueta-missing {
+    color: #6c757d;
+    font-style: italic;
+}
 .estado-provado {
     background-color: #d876cfff !important;  /* cyan */
     color: white !important;

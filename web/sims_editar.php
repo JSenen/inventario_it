@@ -33,6 +33,7 @@ $stmtTel->execute([':id' => $id]);
 $telefonoActual = $stmtTel->fetch(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $etiqueta  = trim($_POST['etiqueta'] ?? '');
     $numero    = trim($_POST['numero'] ?? '');
     $iccid     = trim($_POST['iccid'] ?? '');
     $operador  = trim($_POST['operador'] ?? '');
@@ -52,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmtUpd = $pdo->prepare("
                 UPDATE sims
-                   SET numero      = :numero,
+                   SET etiqueta    = :etiqueta,
+                       numero      = :numero,
                        iccid       = :iccid,
                        operador    = :operador,
                        tarifa      = :tarifa,
@@ -66,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
 
             $stmtUpd->execute([
+                ':etiqueta'   => $etiqueta ?: null,
                 ':numero'     => $numero,
                 ':iccid'      => $iccid,
                 ':operador'   => $operador,
@@ -89,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Recargar datos en $sim con lo del POST para mantener valores del formulario
     $sim['numero']        = $numero;
+    $sim['etiqueta']      = $etiqueta;
     $sim['iccid']         = $iccid;
     $sim['operador']      = $operador;
     $sim['tarifa']        = $tarifa;
@@ -130,6 +134,11 @@ require_once 'includes/header.php';
 
     <form method="post">
         <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Etiqueta</label>
+                <input type="text" name="etiqueta" class="form-control"
+                       value="<?= htmlspecialchars($sim['etiqueta']) ?>">
+            </div>
             <div class="col-md-4 mb-3">
                 <label class="form-label">Número</label>
                 <input type="text" name="numero" class="form-control"

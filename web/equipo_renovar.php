@@ -268,11 +268,12 @@ require_once __DIR__ . '/includes/header.php';
                 <?php foreach ($candidatos as $c): ?>
                     <?php
                         $texto = trim(
-                            ($c['etiqueta'] ? '['.$c['etiqueta'].'] ' : '') .
+                            ($c['etiqueta'] ? '['.$c['etiqueta'].'] ' : '[Sin etiqueta] ') .
                             ($c['marca'] ?? '') . ' ' .
                             ($c['modelo'] ?? '') .
                             ($c['numero_serie'] ? ' SN:'.$c['numero_serie'] : '')
                         );
+                        $claseOpt = $c['etiqueta'] ? 'etiqueta-ok' : 'etiqueta-missing';
                         $busqueda = strtolower(
                             ($c['etiqueta'] ?? '') . ' ' .
                             ($c['numero_serie'] ?? '') . ' ' .
@@ -289,6 +290,7 @@ require_once __DIR__ . '/includes/header.php';
                         data-tipo="<?= htmlspecialchars($c['tipo'] ?? '') ?>"
                         data-estado="<?= htmlspecialchars($c['estado'] ?? 'N/A') ?>"
                         data-search="<?= htmlspecialchars($busqueda) ?>"
+                        class="<?= $claseOpt ?>"
                         <?= (isset($nuevo_equipo_id) && $nuevo_equipo_id == $c['id']) ? 'selected' : '' ?>>
                         <?= htmlspecialchars($texto) ?> (<?= htmlspecialchars($c['tipo']) ?> - <?= htmlspecialchars($c['estado'] ?? 'N/A') ?>)
                     </option>

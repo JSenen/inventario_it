@@ -35,7 +35,7 @@ require_once 'includes/header.php';
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Teléfono móvil - <?= htmlspecialchars($tel['marca'] . ' ' . $tel['modelo']) ?></h2>
+        <h2>Teléfono móvil - <?= htmlspecialchars(($tel['etiqueta'] ? '['.$tel['etiqueta'].'] ' : '').$tel['marca'] . ' ' . $tel['modelo']) ?></h2>
         <div>
             <a href="telefonos_editar.php?id=<?= (int)$id ?>" class="btn btn-warning">Editar</a>
             <a href="telefono_historial.php?id=<?= (int)$id ?>" class="btn btn-info">Historial SIM</a>
@@ -44,6 +44,7 @@ require_once 'includes/header.php';
    class="btn btn-secondary" target="_blank">
    Parte de entrega
 </a>
+            <a href="telefono_renovar.php?id=<?= (int)$id ?>" class="btn btn-success">Renovar</a>
             <a href="telefonos.php" class="btn btn-secondary">Volver al listado</a>
         </div>
     </div>
@@ -53,17 +54,18 @@ require_once 'includes/header.php';
         <div class="col-md-8">
             <table class="table table-bordered">
                 <tr><th>ID</th>              <td><?= (int)$tel['id'] ?></td></tr>
-                <tr><th>Marca</th>           <td><?= htmlspecialchars($tel['marca']) ?></td></tr>
-                <tr><th>Modelo</th>          <td><?= htmlspecialchars($tel['modelo']) ?></td></tr>
-                <tr><th>IMEI</th>            <td><?= htmlspecialchars($tel['imei']) ?></td></tr>
-                <tr><th>Número de serie</th> <td><?= htmlspecialchars($tel['numero_serie']) ?></td></tr>
-                <tr><th>Usuario asignado</th><td><?= htmlspecialchars($tel['usuario_asignado']) ?></td></tr>
-                <tr><th>Departamento</th>    <td><?= htmlspecialchars($tel['departamento']) ?></td></tr>
-                <tr><th>Ubicación</th>       <td><?= htmlspecialchars($tel['ubicacion']) ?></td></tr>
-                <tr><th>Sección</th>         <td><?= htmlspecialchars($tel['seccion']) ?></td></tr>
-                <tr><th>Estado</th>          <td><?= htmlspecialchars($tel['estado']) ?></td></tr>
-                <tr><th>Fecha alta</th>      <td><?= htmlspecialchars($tel['fecha_alta']) ?></td></tr>
-                <tr><th>Fecha baja</th>      <td><?= htmlspecialchars($tel['fecha_baja']??'') ?></td></tr>
+                <tr><th>Etiqueta</th>        <td><?= htmlspecialchars($tel['etiqueta'] ?? '') ?></td></tr>
+                <tr><th>Marca</th>           <td><?= htmlspecialchars($tel['marca'] ?? '') ?></td></tr>
+                <tr><th>Modelo</th>          <td><?= htmlspecialchars($tel['modelo'] ?? '') ?></td></tr>
+                <tr><th>IMEI</th>            <td><?= htmlspecialchars($tel['imei'] ?? '') ?></td></tr>
+                <tr><th>Número de serie</th> <td><?= htmlspecialchars($tel['numero_serie'] ?? '') ?></td></tr>
+                <tr><th>Usuario asignado</th><td><?= htmlspecialchars($tel['usuario_asignado'] ?? '') ?></td></tr>
+                <tr><th>Departamento</th>    <td><?= htmlspecialchars($tel['departamento'] ?? '') ?></td></tr>
+                <tr><th>Ubicación</th>       <td><?= htmlspecialchars($tel['ubicacion'] ?? '') ?></td></tr>
+                <tr><th>Sección</th>         <td><?= htmlspecialchars($tel['seccion'] ?? '') ?></td></tr>
+                <tr><th>Estado</th>          <td><?= htmlspecialchars($tel['estado'] ?? '') ?></td></tr>
+                <tr><th>Fecha alta</th>      <td><?= htmlspecialchars($tel['fecha_alta'] ?? '') ?></td></tr>
+                <tr><th>Fecha baja</th>      <td><?= htmlspecialchars($tel['fecha_baja'] ?? '') ?></td></tr>
                 <!-- <tr><th>Proveedor</th>       <td><?= htmlspecialchars($tel['proveedor']) ?></td></tr>
                 <tr><th>Coste</th>           <td><?= htmlspecialchars($tel['coste']??'') ?> €</td></tr> -->
                 <tr>

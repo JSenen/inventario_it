@@ -130,6 +130,7 @@ logActividad($pdo,"IMPRESION PARTE","Impresion parte telefono ID= ", $id);
         <tr><th>Número de serie</th><td><?= htmlspecialchars($tel['numero_serie'] ?: '-') ?></td></tr>
         <tr><th>Estado</th><td><?= htmlspecialchars($tel['estado']) ?></td></tr>
         <tr><th>Fecha alta</th><td><?= htmlspecialchars($tel['fecha_alta']) ?></td></tr>
+        <tr><th>SIM heredada</th><td><?= $sim ? 'Sí' : 'No' ?></td></tr>
     </table>
 
     <!-- SIM -->

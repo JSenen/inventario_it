@@ -217,6 +217,7 @@ $telPorDept = $pdo->query($sqlDept)->fetchAll(PDO::FETCH_ASSOC);
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Etiqueta</th>
                 <th>Marca</th>
                 <th>Modelo</th>
                 <th>IMEI</th>
@@ -270,6 +271,7 @@ $(document).ready(function () {
         buttons: ['copy', 'excel', 'csv', 'print'],
         columns: [
             { data: 'id' },
+            { data: 'etiqueta' },
             { data: 'marca' },
             { data: 'modelo' },
             { data: 'imei' },
@@ -283,7 +285,7 @@ $(document).ready(function () {
            // 👇 AÑADIMOS ESTO
         createdRow: function (row, data, dataIndex) {
             // Índice de la columna "Estado"
-            var indiceEstado = 8;
+            var indiceEstado = 9;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();
