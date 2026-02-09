@@ -64,8 +64,8 @@ require_once 'includes/header.php';
                 <tr><th>Estado</th>          <td><?= htmlspecialchars($tel['estado']) ?></td></tr>
                 <tr><th>Fecha alta</th>      <td><?= htmlspecialchars($tel['fecha_alta']) ?></td></tr>
                 <tr><th>Fecha baja</th>      <td><?= htmlspecialchars($tel['fecha_baja']??'') ?></td></tr>
-                <tr><th>Proveedor</th>       <td><?= htmlspecialchars($tel['proveedor']) ?></td></tr>
-                <tr><th>Coste</th>           <td><?= htmlspecialchars($tel['coste']??'') ?> €</td></tr>
+                <!-- <tr><th>Proveedor</th>       <td><?= htmlspecialchars($tel['proveedor']) ?></td></tr>
+                <tr><th>Coste</th>           <td><?= htmlspecialchars($tel['coste']??'') ?> €</td></tr> -->
                 <tr>
                     <th>Observaciones</th>
                     <td><?= nl2br(htmlspecialchars($tel['observaciones'])) ?></td>
@@ -79,7 +79,7 @@ require_once 'includes/header.php';
                 <div class="card-header"><b>SIM actual</b></div>
                 <div class="card-body">
                     <?php if ($simActual): ?>
-                        <p><b>Número:</b> <?= htmlspecialchars($simActual['numero']) ?></p>
+                        <p><b>Número:</b> <span class="etiqueta-numero"><?= htmlspecialchars($simActual['numero']) ?></span></p>
                         <p><b>Operador:</b> <?= htmlspecialchars($simActual['operador']) ?></p>
                         <p><b>ICCID:</b> <?= htmlspecialchars($simActual['iccid']) ?></p>
                         <p><b>Estado SIM:</b> <?= htmlspecialchars($simActual['estado']) ?></p>

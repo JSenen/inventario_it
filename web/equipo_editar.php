@@ -195,10 +195,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $red_id = $_POST['red_id'] ?? '';
 
             // Avería
-            $tipo_averia  = strtoupper(trim($_POST['tipo_averia'] ?? ''));
-            $num_asunto   = strtoupper(trim($_POST['num_asunto'] ?? ''));
-            $desc_averia  = trim($_POST['desc_averia'] ?? '');
-            $empresa_ext  = strtoupper(trim($_POST['empresa_ext'] ?? ''));
+            $gestion_averia = strtoupper(trim($_POST['gestion_averia'] ?? 'EXTERNA')); // EXTERNA | INTERNA (GATI)
+            $tipo_averia    = strtoupper(trim($_POST['tipo_averia'] ?? ''));
+            $num_asunto     = strtoupper(trim($_POST['num_asunto'] ?? ''));
+            $desc_averia    = trim($_POST['desc_averia'] ?? '');
+            $empresa_ext    = strtoupper(trim($_POST['empresa_ext'] ?? ''));
 
             $estadoEsAveriado = (strcasecmp($estado, 'Averiado') === 0);
 
@@ -210,8 +211,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($tipo_averia === '') {
                     $errores[] = "El tipo de avería es obligatorio cuando el equipo está en estado AVERIADO.";
                 }
-                if ($num_asunto === '') {
-                    $errores[] = "El número de asunto es obligatorio cuando el equipo está en estado AVERIADO.";
+                if ($gestion_averia === 'INTERNA') {
+                    // Reparación interna: limpiar campos externos para evitar datos residuales
+                    $num_asunto  = null;
+                    $empresa_ext = $empresa_ext !== '' ? $empresa_ext : 'GATI (INTERNA)';
                 }
             }
 
@@ -254,6 +257,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $seccion_id = isset($_POST['seccion_id']) && $_POST['seccion_id'] !== ''
             ? (int) $_POST['seccion_id']
             : null;
+
+            // Normalizamos campos de avería según quién gestiona
+            $esGestionInterna = ($gestion_averia === 'INTERNA');
+            $numAsuntoDb      = $esGestionInterna ? null : ($num_asunto !== '' ? $num_asunto : null);
+            $empresaExtDb     = $esGestionInterna
+                ? ($empresa_ext !== '' ? $empresa_ext : 'GATI (INTERNA)')
+                : ($empresa_ext !== '' ? $empresa_ext : 'PENDIENTE RAU');
 
             // Si no hay errores, proceder a actualizar
             if (empty($errores)) {
@@ -371,9 +381,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ");
                     $stmtAvUp->execute([
                         ':tipo_averia' => $tipo_averia,
-                        ':num_asunto'  => $num_asunto,
+                        ':num_asunto'  => $numAsuntoDb,
                         ':descripcion' => $desc_averia,
-                        ':empresa_ext' => $empresa_ext,
+                        ':empresa_ext' => $empresaExtDb,
                         ':id'          => $averia['id'],
                     ]);
                     $averiaId = (int)$averia['id'];
@@ -386,9 +396,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtAvIns->execute([
                         ':equipo_id'   => $id,
                         ':tipo_averia' => $tipo_averia,
-                        ':num_asunto'  => $num_asunto,
+                        ':num_asunto'  => $numAsuntoDb,
                         ':descripcion' => $desc_averia,
-                        ':empresa_ext' => $empresa_ext,
+                        ':empresa_ext' => $empresaExtDb,
                     ]);
                     $averiaId = (int)$pdo->lastInsertId();
                 }
@@ -469,10 +479,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
 
             $averia = [
-                'tipo_averia' => $tipo_averia,
-                'num_asunto'  => $num_asunto,
-                'descripcion' => $desc_averia,
-                'empresa_ext' => $empresa_ext,
+                'tipo_averia'    => $tipo_averia,
+                'num_asunto'     => $numAsuntoDb ?? $num_asunto,
+                'descripcion'    => $desc_averia,
+                'empresa_ext'    => $empresaExtDb,
+                'gestion_averia' => $gestion_averia,
             ];
         }
 
@@ -546,11 +557,20 @@ require_once __DIR__ . '/includes/header.php';
             <option value="<?= $idMon ?>" <?= $selected ?>>
                 <?= htmlspecialchars(trim(
                     ($m['marca'] ?? '') . ' ' .
-                    ($m['modelo'] ?? '') .
-                    ( $m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '' )
+                    ($m['modelo'] ?? '')
                 )) ?>
+
+                <?php if (!empty($m['etiqueta'])): ?>
+                    <span class="etiqueta-ok">
+                        <?= htmlspecialchars($m['etiqueta']) ?>
+                    </span>
+                <?php endif; ?>
+
+                <?= !empty($m['numero_serie']) ? ' [SN: '.$m['numero_serie'].']' : '' ?>
                 <?= $m['asignado_a_este'] ? ' (actual)' : '' ?>
             </option>
+
+
         <?php endforeach; ?>
     </select>
 </div> -->
@@ -573,8 +593,9 @@ require_once __DIR__ . '/includes/header.php';
             <option value="<?= $idMon ?>" <?= $selected ?>
                     <?= $m['asignado_a_este'] ? ' data-actual="1"' : '' ?>>
                 <?= htmlspecialchars(trim(
-                    ($m['marca'] ?? '') . ' ' .
-                    ($m['modelo'] ?? '') .
+                    ($m['marca'] ?? '') . ' modelo: ' .
+                    ($m['modelo'] ?? '') . ' etiqueta: ' . 
+                    ($m['etiqueta'] ?? '')  . ' ' .
                     ( $m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '' )
                 )) ?>
                 <?= $m['asignado_a_este'] ? ' (actual)' : '' ?>
@@ -827,7 +848,8 @@ $imagenSeleccionada = $_POST['imagen_existente']
         </div>
 
         <div id="galeriaImagenes" class="collapse">
-            <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3 mt-2">
+            <div class="thumb-grid-wrapper">
+                <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3 mt-2">
                 <?php
                 $imagenPost = $imagenSeleccionada;
                 if (!empty($imagenes_existentes)):
@@ -853,6 +875,7 @@ $imagenSeleccionada = $_POST['imagen_existente']
                         <span class="text-muted small">No hay imágenes guardadas.</span>
                     </div>
                 <?php endif; ?>
+                </div>
             </div>
         </div>
 
@@ -882,6 +905,11 @@ $tipo_averia_val = $_POST['tipo_averia'] ?? ($averia['tipo_averia'] ?? '');
 $num_asunto_val  = $_POST['num_asunto']  ?? ($averia['num_asunto']  ?? '');
 $desc_averia_val = $_POST['desc_averia'] ?? ($averia['descripcion'] ?? '');
 $empresa_ext_val = $_POST['empresa_ext'] ?? ($averia['empresa_ext'] ?? '');
+$inferGestion    = ($averia && ($averia['num_asunto'] ?? '') === '') ? 'INTERNA' : 'EXTERNA';
+$gestion_averia_val = strtoupper($_POST['gestion_averia'] ?? ($averia['gestion_averia'] ?? $inferGestion));
+if (!in_array($gestion_averia_val, ['EXTERNA', 'INTERNA'], true)) {
+    $gestion_averia_val = 'EXTERNA';
+}
 $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 ?>
 
@@ -894,12 +922,26 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 <div id="bloqueAveria" style="<?= $mostrarAveria ? '' : 'display:none;' ?>">
     <div class="row g-3">
         <div class="col-md-4">
+            <label class="form-label">Quién gestiona la avería *</label>
+            <select name="gestion_averia" id="gestionAveria" class="form-select campo-averia">
+                <option value="EXTERNA" <?= $gestion_averia_val === 'EXTERNA' ? 'selected' : '' ?>>
+                    RAU / Empresa externa (requiere nº de asunto)
+                </option>
+                <option value="INTERNA" <?= $gestion_averia_val === 'INTERNA' ? 'selected' : '' ?>>
+                    GATI (reparación interna, sin nº de asunto)
+                </option>
+            </select>
+            <p class="form-text mb-0">
+                Si interviene una empresa, se solicitará el nº de asunto a RAU. Para reparaciones internas, no se generará número.
+            </p>
+        </div>
+        <div class="col-md-4">
             <label class="form-label">Tipo de avería *</label>
             <input type="text" name="tipo_averia" class="form-control campo-averia"
                    value="<?= htmlspecialchars($tipo_averia_val) ?>"
                    placeholder="Ej: No enciende, Pantalla rota, Disco defectuoso...">
         </div>
-        <div class="col-md-4">
+        <div class="col-md-4" id="grupoNumAsunto">
             <label class="form-label">Nº de asunto (empresa externa) *</label>
             <input type="text" name="num_asunto" class="form-control campo-averia"
                    value="<?= htmlspecialchars($num_asunto_val) ?>"
@@ -909,19 +951,30 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 </p>
         </div>
 
-        <div class="col-md-4">
-            <label class="form-label">Reparación realizada por: </label>
+        <div class="col-md-4" id="grupoEmpresaExt">
+            <label class="form-label">Reparación realizada por</label>
             <input type="text" name="empresa_ext" class="form-control campo-averia"
                    value="<?= htmlspecialchars($empresa_ext_val) ?>"
-                   placeholder="Nombre de la empresa de soporte o 'Interna'">
-                               <p class="form-text mb-3">
-    La empresa externa notifcada por RAU con el número de asunto o indicar 'Interna'.
-</p>
+                   placeholder="Nombre de la empresa asignada por RAU">
+            <p class="form-text mb-3">
+                Completar cuando lo gestiona una empresa externa; para GATI puede dejarlo en blanco.
+            </p>
         </div>
         <div class="col-12">
             <label class="form-label">Descripción de la avería</label>
             <textarea name="desc_averia" class="form-control campo-averia" rows="3"
                       placeholder="Describe brevemente el problema, pruebas realizadas, etc."><?= htmlspecialchars($desc_averia_val) ?></textarea>
+        </div>
+    </div>
+
+    <div id="rauEmailBox" class="alert alert-info mt-3" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="mb-0">Texto para correo a RAU</strong>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="copyRauEmail">Copiar</button>
+        </div>
+        <textarea class="form-control" id="rauEmailBody" rows="7" readonly></textarea>
+        <div class="form-text">
+            Copia y pega este texto en GroupWise para solicitar nº de asunto y empresa.
         </div>
     </div>
 </div>
@@ -1109,32 +1162,151 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', function () {
     const radiosEstado  = document.querySelectorAll('input[name="estado"]');
     const bloqueAveria  = document.getElementById('bloqueAveria');
+    const selectGestion = document.getElementById('gestionAveria');
+    const grupoNumAsunto = document.getElementById('grupoNumAsunto');
+    const grupoEmpresaExt = document.getElementById('grupoEmpresaExt');
+    const inputNumAsunto = document.querySelector('input[name="num_asunto"]');
+    const inputEmpresaExt = document.querySelector('input[name="empresa_ext"]');
+    const rauEmailBox   = document.getElementById('rauEmailBox');
+    const rauEmailBody  = document.getElementById('rauEmailBody');
+    const copyRauEmail  = document.getElementById('copyRauEmail');
 
-    if (radiosEstado.length > 0 && bloqueAveria) {
+    const inputsRau = [
+        'input[name="etiqueta"]',
+        'select[name="tipo"]',
+        'input[name="marca"]',
+        'input[name="modelo"]',
+        'input[name="numero_serie"]',
+        'select[name="hostname"]',
+        'input[name="usuario_asignado"]',
+        'select[name="departamento"]',
+        'select[name="seccion_id"]',
+        'select[name="ubicacion"]',
+        'select[name="ip"]',
+        'input[name="tipo_averia"]',
+        'textarea[name="desc_averia"]'
+    ].map(sel => document.querySelector(sel)).filter(Boolean);
 
-        function toggleAveria() {
-            const seleccionado = document.querySelector('input[name="estado"]:checked');
-            if (!seleccionado) {
-                bloqueAveria.style.display = 'none';
-                return;
-            }
+    function toggleCamposGestion() {
+        const esInterna = (selectGestion?.value || '').toUpperCase() === 'INTERNA';
 
-            const val = seleccionado.value.toLowerCase(); // 'Activo', 'Averiado', etc.
-            if (val === 'averiado') {
-                bloqueAveria.style.display = '';   // se muestra
-            } else {
-                bloqueAveria.style.display = 'none'; // se oculta
-            }
+        if (grupoNumAsunto) {
+            grupoNumAsunto.style.display = esInterna ? 'none' : '';
+        }
+        if (grupoEmpresaExt) {
+            grupoEmpresaExt.style.display = esInterna ? 'none' : '';
+        }
+        if (inputNumAsunto) {
+            inputNumAsunto.required = false;
+        }
+        if (inputEmpresaExt) {
+            inputEmpresaExt.required = false;
+        }
+        buildRauEmail();
+    }
+
+    function toggleAveria() {
+        if (!bloqueAveria) return;
+        const seleccionado = document.querySelector('input[name="estado"]:checked');
+        if (!seleccionado) {
+            bloqueAveria.style.display = 'none';
+            toggleCamposGestion();
+            buildRauEmail();
+            return;
         }
 
-        // Escuchar cambios en todos los radios
-        radiosEstado.forEach(radio => {
-            radio.addEventListener('change', toggleAveria);
-        });
-
-        // Estado inicial al cargar la página
-        toggleAveria();
+        const val = seleccionado.value.toLowerCase(); // 'Activo', 'Averiado', etc.
+        if (val === 'averiado') {
+            bloqueAveria.style.display = '';   // se muestra
+        } else {
+            bloqueAveria.style.display = 'none'; // se oculta
+        }
+        toggleCamposGestion();
     }
+
+    function buildRauEmail() {
+        const esInterna = (selectGestion?.value || '').toUpperCase() === 'INTERNA';
+        const bloqueVisible = bloqueAveria && bloqueAveria.style.display !== 'none';
+        if (!rauEmailBox || !rauEmailBody) return;
+
+        if (!bloqueVisible || esInterna) {
+            rauEmailBox.style.display = 'none';
+            rauEmailBody.value = '';
+            return;
+        }
+
+        const getVal = (el) => (el?.value || '').trim();
+        const getText = (el) => {
+            if (!el) return '';
+            if (el.tagName === 'SELECT') {
+                const opt = el.selectedOptions && el.selectedOptions[0];
+                return (opt?.textContent || '').trim();
+            }
+            return getVal(el);
+        };
+
+        const etiqueta    = getVal(inputsRau[0]) || ('EQ-' + <?= (int)$equipo['id'] ?>);
+        const tipo        = getText(inputsRau[1]);
+        const marca       = getVal(inputsRau[2]);
+        const modelo      = getVal(inputsRau[3]);
+        const serie       = getVal(inputsRau[4]);
+        const servicio    = getText(inputsRau[5]);
+        const usuario     = getVal(inputsRau[6]);
+        const depto       = getText(inputsRau[7]);
+        const seccion     = getText(inputsRau[8]);
+        const ubicacion   = getText(inputsRau[9]);
+        const ip          = getText(inputsRau[10]);
+        const tipoAv      = getVal(inputsRau[11]);
+        const descAv      = getVal(inputsRau[12]);
+
+        const asunto = `Solicitud RAU - Avería equipo ${etiqueta}`;
+        const cuerpo = [
+            asunto,
+            '',
+            `Equipo: ${etiqueta} (ID ${<?= (int)$equipo['id'] ?>})`,
+            `Tipo/Marca/Modelo: ${[tipo, marca, modelo].filter(Boolean).join(' ')}`,
+            `Nº serie: ${serie || 'N/D'}`,
+            `Servicio: ${servicio || 'N/D'}`,
+            `Usuario asignado: ${usuario || 'N/D'}`,
+            `Departamento: ${depto || 'N/D'}`,
+            `Sección: ${seccion || 'N/D'}`,
+            `Ubicación: ${ubicacion || 'N/D'}`,
+            `IP principal: ${ip || 'N/D'}`,
+            '',
+            `Tipo de avería: ${tipoAv || 'N/D'}`,
+            `Descripción: ${descAv || 'N/D'}`,
+            '',
+            'Solicito nº de asunto y empresa que atenderá la incidencia.'
+        ].join('\\n');
+
+        rauEmailBody.value = cuerpo;
+        rauEmailBox.style.display = '';
+    }
+
+    // Escuchar cambios en todos los radios
+    radiosEstado.forEach(radio => {
+        radio.addEventListener('change', toggleAveria);
+    });
+    if (selectGestion) {
+        selectGestion.addEventListener('change', toggleCamposGestion);
+    }
+    inputsRau.forEach(el => {
+        el.addEventListener('input', buildRauEmail);
+        el.addEventListener('change', buildRauEmail);
+    });
+    if (selectGestion) {
+        selectGestion.addEventListener('change', buildRauEmail);
+    }
+    if (copyRauEmail && rauEmailBody) {
+        copyRauEmail.addEventListener('click', () => {
+            rauEmailBody.select();
+            document.execCommand('copy');
+        });
+    }
+
+    // Estado inicial al cargar la página
+    toggleAveria();
+    buildRauEmail();
 });
 </script>
 

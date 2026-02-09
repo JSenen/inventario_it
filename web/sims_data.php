@@ -9,7 +9,7 @@ $length = $_GET['length'] ?? 25;
 $search = $_GET['search']['value'] ?? '';
 
 // Columnas permitidas para ordenar
-$columns = ['id', 'numero', 'iccid', 'operador', 'tarifa', 'estado'];
+$columns = ['id', 'numero', 'iccid', 'operador', 'puk', 'estado'];
 $orderColIndex = $_GET['order'][0]['column'] ?? 0;
 $orderDir      = $_GET['order'][0]['dir'] ?? 'asc';
 $orderColumn   = $columns[$orderColIndex] ?? 'id';
@@ -18,13 +18,28 @@ $orderColumn   = $columns[$orderColIndex] ?? 'id';
 $where = '';
 $params = [];
 
+$whereParts = [];
+$params     = [];
+
 if (!empty($search)) {
-    $where = "WHERE numero LIKE :search 
+    $whereParts[] = "(numero LIKE :search 
               OR iccid LIKE :search 
               OR operador LIKE :search 
-              OR tarifa LIKE :search";
+              OR puk LIKE :search)";
     $params[':search'] = "%$search%";
 }
+
+if (!empty($_GET['estado'] ?? '')) {
+    $whereParts[] = "estado = :estado";
+    $params[':estado'] = $_GET['estado'];
+}
+
+if (!empty($_GET['operador'] ?? '')) {
+    $whereParts[] = "operador = :operador";
+    $params[':operador'] = $_GET['operador'];
+}
+
+$where = $whereParts ? ('WHERE ' . implode(' AND ', $whereParts)) : '';
 
 // Total registros
 $totalStmt = $pdo->query("SELECT COUNT(*) FROM sims");
@@ -40,7 +55,7 @@ if ($where) {
 }
 
 // Datos
-$sql = "SELECT id, numero, iccid, operador, tarifa, estado 
+$sql = "SELECT id, numero, iccid, operador, puk, estado 
         FROM sims
         $where
         ORDER BY $orderColumn $orderDir
@@ -71,7 +86,7 @@ foreach ($rows as $r) {
         'numero'   => htmlspecialchars($r['numero']),
         'iccid'    => htmlspecialchars($r['iccid']),
         'operador' => htmlspecialchars($r['operador']),
-        'tarifa'   => htmlspecialchars($r['tarifa']),
+        'puk'      => htmlspecialchars($r['puk']),
         'estado'   => htmlspecialchars($r['estado']),
         'acciones' => $acciones
     ];

@@ -133,6 +133,14 @@
     text-align: center;
 }
 
+.etiqueta-numero {
+    background-color: #d65252ff !important;  /* rojo */
+    color: white !important;
+    font-weight: bold;
+    text-align: center;
+    font-size: 18px;
+}
+
 .custom-dropdown-menu {
     position: absolute;
     top: 100%;
@@ -253,6 +261,12 @@
 .thumb-grid img:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.thumb-grid-wrapper {
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 .seleccionar-imagen.active-selection {
@@ -380,7 +394,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 </li>
                 <!-- Controles -->
                 <li class="nav-item">
-                    <a class="nav-link" href="verificaciones.php">✅ Controles</a>
+                    <a class="nav-link" href="verificaciones.php">✅ Revistas</a>
                 </li>
                 <!-- Administración (submenu) -->
                 <li class="nav-item dropdown">

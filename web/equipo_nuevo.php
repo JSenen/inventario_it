@@ -432,7 +432,8 @@ usort($imagenes_existentes, function ($a, $b) {
                 </div>
                 <div class="card-body">
                     <input type="hidden" name="imagen_existente" id="imagen_existente" value="<?= htmlspecialchars($_POST['imagen_existente'] ?? '') ?>">
-                    <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3">
+                    <div class="thumb-grid-wrapper">
+                        <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3">
                         <?php
                         $imagenPost = $_POST['imagen_existente'] ?? '';
                         if (!empty($imagenes_existentes)):
@@ -458,6 +459,7 @@ usort($imagenes_existentes, function ($a, $b) {
                                 <span class="text-muted small">No hay imágenes guardadas.</span>
                             </div>
                         <?php endif; ?>
+                        </div>
                     </div>
                     <label for="imagen" class="form-label mb-1"><strong>Subir imagen nueva</strong> (si no hay ninguna disponible)</label>
                     <input type="file" class="form-control campo-destacado" id="imagen_nueva_input" name="imagen" accept="image/*">

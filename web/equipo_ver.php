@@ -1,7 +1,6 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . "/includes/logger.php";
 require_once __DIR__ . '/includes/verificaciones.php';
 
@@ -170,18 +169,10 @@ $stmtRenLast = $pdo->prepare("
 ");
 $stmtRenLast->execute([':id' => $id_equipo]);
 $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
+require_once __DIR__ . '/includes/header.php';
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Detalle del Equipo</title>
-    <link rel="stylesheet" href="css/bootstrap.min.css">
-</head>
-<body>
-
-<div class="container mt-4">
+<div class="mt-4">
     <h2>Detalle del Equipo</h2>
     <hr>
 <?php if ($ultimoMov): ?>
@@ -316,7 +307,7 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
 
     <h4>Información del equipo</h4>
     <table class="table table-bordered">
-        <tr><th>ID</th> <td> (id) <?= htmlspecialchars($equipo['id']) ?> (etiqueta) <?= htmlspecialchars($equipo['etiqueta'] ?? '') ?></td></tr>
+        <tr><th>ID</th> <td> (id) <?= htmlspecialchars($equipo['id']) ?> (etiqueta) <span class="etiqueta-ok"> <?= htmlspecialchars($equipo['etiqueta'] ?? '') ?></span></td></tr>
         <?php if (!empty($equipo['imagen'])): ?>
         <tr>
             <th>Imagen</th>
@@ -386,7 +377,7 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
         <?= $equipo['fecha_baja'] ? htmlspecialchars($equipo['fecha_baja']) : '<span class="text-muted">-</span>' ?>
     </td>
 </tr>
-<tr>
+<!-- <tr>
     <th>Proveedor</th>
     <td><?= htmlspecialchars($equipo['proveedor'] ?? '') ?></td>
 </tr>
@@ -399,7 +390,7 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
             -
         <?php endif; ?>
     </td>
-</tr>
+</tr> -->
         <tr><th>Estado</th> <td><?= htmlspecialchars($equipo['estado']) ?></td></tr>
         <tr><th>Creado en</th> <td><?= htmlspecialchars($equipo['creado_en']) ?></td></tr>
     </table>
@@ -478,5 +469,4 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
     <?php endif; ?>
 
 </div>
-</body>
-</html>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -13,6 +13,12 @@ $totalSimsDisponibles = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado
 // SIMs en baja
 $totalSimsBaja = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado = 'Baja'")->fetchColumn();
 
+$operadores = $pdo->query("
+    SELECT DISTINCT operador
+    FROM sims
+    WHERE operador IS NOT NULL AND operador <> ''
+    ORDER BY operador ASC
+")->fetchAll(PDO::FETCH_COLUMN);
 
 
 ?>
@@ -51,6 +57,36 @@ $totalSimsBaja = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado = 'Baj
         <a href="sims_nuevo.php" class="btn btn-primary">Nueva SIM</a>
     </div>
 
+    <!-- Filtros -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label mb-0 small text-muted">Estado</label>
+                    <select id="filtroEstado" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <option value="Disponible">Disponible</option>
+                        <option value="Asignada">Asignada</option>
+                        <option value="Averiada">Averiada</option>
+                        <option value="Baja">Baja</option>
+                    </select>
+                </div>
+                <div class="col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label mb-0 small text-muted">Operador</label>
+                    <select id="filtroOperador" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <?php foreach ($operadores as $op): ?>
+                            <option value="<?= htmlspecialchars($op) ?>"><?= htmlspecialchars($op) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-sm-4 col-md-3 col-lg-2 d-flex">
+                    <button id="limpiarFiltros" class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <table id="tablaSims" class="table table-striped table-bordered">
         <thead>
             <tr>
@@ -58,7 +94,7 @@ $totalSimsBaja = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado = 'Baj
                 <th>Número</th>
                 <th>ICCID</th>
                 <th>Operador</th>
-                <th>Tarifa</th>
+                <th>PUK</th>
                 <th>Estado</th>
                 <th>Acciones</th>
             </tr>
@@ -94,6 +130,7 @@ $(document).ready(function () {
         },
         pageLength: 25,
         lengthMenu: [10, 25, 50, 100],
+        stateSave: true,
         dom: 'Bfrtip',
         buttons: ['copy', 'excel', 'csv', 'print'],
         columns: [
@@ -101,10 +138,18 @@ $(document).ready(function () {
             { data: 'numero' },
             { data: 'iccid' },
             { data: 'operador' },
-            { data: 'tarifa' },
+            { data: 'puk' },
             { data: 'estado' },
             { data: 'acciones', orderable: false, searchable: false }
         ],
+        ajax: {
+            url: 'sims_data.php',
+            type: 'GET',
+            data: function (d) {
+                d.estado   = $('#filtroEstado').val() || '';
+                d.operador = $('#filtroOperador').val() || '';
+            }
+        },
            // 👇 AÑADIMOS ESTO
         createdRow: function (row, data, dataIndex) {
             // Índice de la columna "Estado"
@@ -134,6 +179,16 @@ $(document).ready(function () {
             searchPlaceholder: "Buscar en la tabla...",
             url: 'vendor/datatables/i18n/es-ES.json'
         }
+    });
+
+    $('#filtroEstado, #filtroOperador').on('change', function () {
+        $('#tablaSims').DataTable().ajax.reload();
+    });
+
+    $('#limpiarFiltros').on('click', function () {
+        $('#filtroEstado').val('');
+        $('#filtroOperador').val('');
+        $('#tablaSims').DataTable().ajax.reload();
     });
 
 });

@@ -1,7 +1,6 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/verificaciones.php';
 
 ensureTablaVerificaciones($pdo);
@@ -162,6 +161,7 @@ $ubicaciones = $pdo->query("SELECT nombre FROM ubicaciones ORDER BY nombre ASC")
 $departamentos = $pdo->query("SELECT nombre FROM departamentos ORDER BY nombre ASC")->fetchAll(PDO::FETCH_COLUMN);
 $secciones = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC")->fetchAll(PDO::FETCH_ASSOC);
 
+require_once __DIR__ . '/includes/header.php';
 ?>
 <div class="container mb-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -343,7 +343,11 @@ $secciones = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC")
                                     <td><?= htmlspecialchars($v['estado_equipo'] ?? '') ?></td>
                                     <td><?= htmlspecialchars($v['ip'] ?? '') ?></td>
                                     <td><?= htmlspecialchars($v['usuario_verificador'] ?? '') ?></td>
-                                    <td class="text-muted"><?= nl2br(htmlspecialchars($v['notas'] ?? '')) ?></td>
+                                    <td class="text-muted">
+                                        <div class="small text-break" style="max-width: 260px; white-space: pre-line;">
+                                            <?= htmlspecialchars($v['notas'] ?? '') ?>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
