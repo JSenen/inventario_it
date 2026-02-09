@@ -201,7 +201,7 @@ require_once 'includes/header.php';
                 <label class="form-label">Estado</label>
                 <select name="estado" class="form-select">
                     <option value="Activo">Activo</option>
-                    <option value="Almacén">Almacén</option>
+                    <option value="Almacén" selected>Almacén</option>
                     <option value="Prestado">Prestado</option>
                     <option value="Averiado">Averiado</option>
                     <option value="Baja">Baja</option>
@@ -214,14 +214,14 @@ require_once 'includes/header.php';
                 <label class="form-label">Fecha alta</label>
                 <input type="date" name="fecha_alta" class="form-control" value="<?= date('Y-m-d') ?>">
             </div>
-            <div class="col-md-4 mb-3">
+            <!-- <div class="col-md-4 mb-3">
                 <label class="form-label">Proveedor</label>
                 <input type="text" name="proveedor" class="form-control">
             </div>
             <div class="col-md-4 mb-3">
                 <label class="form-label">Coste (€)</label>
                 <input type="number" step="0.01" name="coste" class="form-control">
-            </div>
+            </div> -->
         </div>
 
         <!-- Selección de SIM -->
