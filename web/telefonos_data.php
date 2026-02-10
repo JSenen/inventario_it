@@ -26,6 +26,7 @@ $columns = [
     't.etiqueta',
     't.marca',
     't.modelo',
+    't.numero_serie',
     't.imei',
     't.usuario_asignado',
     't.departamento',
@@ -47,6 +48,7 @@ if (!empty($search)) {
     $whereParts[] = "(t.etiqueta LIKE :search
         OR t.marca LIKE :search
         OR t.modelo LIKE :search
+        OR t.numero_serie LIKE :search
         OR t.imei LIKE :search
         OR t.usuario_asignado LIKE :search
         OR t.departamento LIKE :search
@@ -112,6 +114,7 @@ $sql = "SELECT
             t.etiqueta,
             t.marca,
             t.modelo,
+            t.numero_serie,
             t.imei,
             t.usuario_asignado,
             t.departamento,
@@ -150,12 +153,14 @@ foreach ($rows as $r) {
 
     $simNumero   = $r['sim_numero'] ?? '';
     $simOperador = $r['sim_operador'] ?? '';
+    $numeroSerie = $r['numero_serie'] ?? '';
 
     $data[] = [
         'id'               => (int)$r['id'],
         'etiqueta'         => htmlspecialchars($r['etiqueta'] ?? ''),
         'marca'            => htmlspecialchars($r['marca']),
         'modelo'           => htmlspecialchars($r['modelo']),
+        'numero_serie'     => $numeroSerie !== '' ? htmlspecialchars($numeroSerie) : '-',
         'imei'             => htmlspecialchars($r['imei']),
         'usuario_asignado' => htmlspecialchars($r['usuario_asignado']),
         'departamento'     => htmlspecialchars($r['departamento']),

@@ -220,6 +220,7 @@ $telPorDept = $pdo->query($sqlDept)->fetchAll(PDO::FETCH_ASSOC);
                 <th>Etiqueta</th>
                 <th>Marca</th>
                 <th>Modelo</th>
+                <th>Nº Serie</th>
                 <th>IMEI</th>
                 <th>Usuario</th>
                 <th>Departamento</th>
@@ -274,6 +275,7 @@ $(document).ready(function () {
             { data: 'etiqueta' },
             { data: 'marca' },
             { data: 'modelo' },
+            { data: 'numero_serie' },
             { data: 'imei' },
             { data: 'usuario_asignado' },
             { data: 'departamento' },
@@ -284,8 +286,23 @@ $(document).ready(function () {
         ],
            // 👇 AÑADIMOS ESTO
         createdRow: function (row, data, dataIndex) {
+
+        // ---- Etiqueta (columna 1) -> clase etiqueta-ok si tiene valor ----
+            var indiceEtiqueta = 1;
+            var $celdaEtiqueta = $('td:eq(' + indiceEtiqueta + ')', row);
+
+            // En serverSide, normalmente viene en data.etiqueta
+            var etiqueta = (data.etiqueta || '').toString().trim();
+
+            if (etiqueta !== '') {
+                $celdaEtiqueta.addClass('etiqueta-ok');
+                // opcional: si quieres que parezca "badge"
+                // $celdaEtiqueta.html('<span class="etiqueta-ok">' + etiqueta + '</span>');
+                // (si haces esto, NO hace falta addClass al td)
+            }
+            
             // Índice de la columna "Estado"
-            var indiceEstado = 9;
+            var indiceEstado = 10;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();
@@ -301,7 +318,12 @@ $(document).ready(function () {
             } else if (estado === 'prestado') {
                 $celda.addClass('estado-prestado');
             }   
+
+           
+
+            
         },
+        
 
         // Traducción al castellano
         language: {
