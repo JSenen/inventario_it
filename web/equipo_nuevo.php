@@ -30,6 +30,25 @@ $redes = $redesStmt->fetchAll(PDO::FETCH_ASSOC);
 $seccionesStmt = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC");   
 $secciones = $seccionesStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Tabla de relación SIM↔equipo (para PTI) por si aún no existe
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_sim (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        sim_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_sim (sim_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (sim_id) REFERENCES sims(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
+// SIMs disponibles para asignar (solo se muestran si el tipo es PTI)
+$simsDisponibles = $pdo->query("SELECT id, numero, operador, iccid, etiqueta FROM sims WHERE estado = 'Disponible' ORDER BY numero ASC")->fetchAll(PDO::FETCH_ASSOC);
+
 // Monitores libres (no asignados todavía)
 $monitoresStmt = $pdo->query("
     SELECT e.id, e.marca, e.modelo, e.numero_serie
@@ -78,6 +97,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $monitoresSeleccionados = isset($_POST['monitores']) && is_array($_POST['monitores'])
     ? array_map('intval', $_POST['monitores'])
     : [];
+    $sim_id_pti      = isset($_POST['sim_id_pti']) && $_POST['sim_id_pti'] !== '' ? (int)$_POST['sim_id_pti'] : null;
+
+    $tipoUpper       = strtoupper($tipo);
+    $esPTI           = (strpos($tipoUpper, 'PTI') !== false);
+
+    // Validar SIM solo si es PTI y se seleccionó una
+    if ($esPTI && $sim_id_pti !== null) {
+        $stmtCheckSim = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM equipo_sim 
+            WHERE sim_id = :sim AND fecha_liberacion IS NULL
+        ");
+        $stmtCheckSim->execute([':sim' => $sim_id_pti]);
+        $yaAsignada = (int)$stmtCheckSim->fetchColumn() > 0;
+        if ($yaAsignada) {
+            $errores[] = "La SIM seleccionada ya está asignada a otro equipo.";
+        }
+
+        $stmtEstadoSim = $pdo->prepare("SELECT estado FROM sims WHERE id = :id");
+        $stmtEstadoSim->execute([':id' => $sim_id_pti]);
+        $estadoSim = $stmtEstadoSim->fetchColumn();
+        if (!$estadoSim) {
+            $errores[] = "La SIM seleccionada no existe.";
+        } elseif ($estadoSim !== 'Disponible') {
+            $errores[] = "La SIM seleccionada no está disponible.";
+        }
+    }
 
 
     if ($tipo === '') {
@@ -165,8 +211,11 @@ if ($numero_serie !== '') {
 
             $equipoId = (int)$pdo->lastInsertId();
 
-            // Si es PC o PORTÁTIL, guardar monitores asociados
-        if (in_array($tipo, ['PC','PORTATIL'.'PORTÁTIL']) && !empty($monitoresSeleccionados)) {
+            // Si es un equipo con monitores (PC, portátil o variante PTI), guardar asociaciones
+        $tipoConMonitores = strtoupper($tipo);
+        $tiposMonitores = ['PC','PORTATIL','PORTÁTIL','PTI','PORTATIL (PTI)','PORTÁTIL (PTI)'];
+
+        if (in_array($tipoConMonitores, $tiposMonitores, true) && !empty($monitoresSeleccionados)) {
             $sqlRel = "INSERT INTO pc_monitores (id_pc, id_monitor)
                     VALUES (:id_pc, :id_monitor)";
             $stmtRel = $pdo->prepare($sqlRel);
@@ -180,6 +229,21 @@ if ($numero_serie !== '') {
                 }
             }
         }
+
+            // Si es PTI y se seleccionó SIM, crear relación
+            if ($esPTI && $sim_id_pti !== null) {
+                $stmtRelSim = $pdo->prepare("
+                    INSERT INTO equipo_sim (equipo_id, sim_id)
+                    VALUES (:equipo, :sim)
+                ");
+                $stmtRelSim->execute([
+                    ':equipo' => $equipoId,
+                    ':sim'    => $sim_id_pti,
+                ]);
+
+                $stmtUpdSim = $pdo->prepare("UPDATE sims SET estado = 'Asignada' WHERE id = :sim");
+                $stmtUpdSim->execute([':sim' => $sim_id_pti]);
+            }
 
             // Si se proporcionó IP y red, guardarla
             if ($ip !== '' && $red_id !== '') {
@@ -421,6 +485,25 @@ usort($imagenes_existentes, function ($a, $b) {
                             <label class="form-label">Fecha Alta</label>
                             <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">
                         </div>
+                        <div class="col-md-6" id="bloque-sim-pti" style="display:none;">
+                            <label class="form-label"><b>Asignar SIM (solo PTI, opcional)</b></label>
+                            <select name="sim_id_pti" class="form-select">
+                                <option value="">-- Sin SIM --</option>
+                                <?php foreach ($simsDisponibles as $sim): ?>
+                                    <?php
+                                        $selected = (isset($_POST['sim_id_pti']) && (int)$_POST['sim_id_pti'] === (int)$sim['id']) ? 'selected' : '';
+                                    ?>
+                                    <?php
+                                        // La clase en <option> no siempre aplica en todos los navegadores; añadimos color inline si tiene etiqueta
+                                        $styleEtiqueta = $sim['etiqueta'] ? 'style="color:#0d6efd;font-weight:600;"' : '';
+                                    ?>
+                                    <option value="<?= (int)$sim['id'] ?>" <?= $selected ?> class="<?= $sim['etiqueta'] ? 'etiqueta-ok' : '' ?>" <?= $styleEtiqueta ?>>
+                                        <?= $sim['etiqueta'] ? '[' . htmlspecialchars($sim['etiqueta']) . '] ' : '' ?><?= htmlspecialchars($sim['numero']) ?> · <?= htmlspecialchars($sim['operador']) ?> (ICCID: <?= htmlspecialchars($sim['iccid']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="text-muted">Visible solo para equipos de tipo PTI. No es obligatorio.</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -581,18 +664,28 @@ usort($imagenes_existentes, function ($a, $b) {
 document.addEventListener('DOMContentLoaded', function () {
     const tipoSelect       = document.querySelector('select[name="tipo"]');
     const bloqueMonitores  = document.getElementById('bloque-monitores');
+    const bloqueSim        = document.getElementById('bloque-sim-pti');
 
     function actualizarBloqueMonitores() {
         if (!tipoSelect) return;
         const valor = (tipoSelect.value || '').toUpperCase();
-        if (valor === 'PC' || valor === 'PORTATIL') {
+        const esPortatil = valor.includes('PORTATIL') || valor.includes('PORTÁTIL') || valor === 'PTI';
+        const esPTI = valor.includes('PTI');
+        if (valor === 'PC' || esPortatil) {
             bloqueMonitores.style.display = 'block';
         } else {
             bloqueMonitores.style.display = 'none';
         }
+        if (bloqueSim) {
+            bloqueSim.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const selectSim = bloqueSim.querySelector('select[name="sim_id_pti"]');
+                if (selectSim) selectSim.value = '';
+            }
+        }
     }
 
-    if (tipoSelect && bloqueMonitores) {
+    if (tipoSelect) {
         tipoSelect.addEventListener('change', actualizarBloqueMonitores);
         actualizarBloqueMonitores();
     }

@@ -265,8 +265,13 @@ $sqlData = "
         //$colRed       = htmlspecialchars($row['red_nombre'] ?? '');
         $colMonitores = '';
         $numMon = (int)($row['num_monitores'] ?? 0);
+        $tipoUpper = strtoupper($row['tipo'] ?? '');
+        $esEquipoConMonitores = ($tipoUpper === 'PC')
+            || (strpos($tipoUpper, 'PORTATIL') !== false)
+            || (strpos($tipoUpper, 'PORTÁTIL') !== false)
+            || ($tipoUpper === 'PTI');
 
-        if (in_array($row['tipo'], ['PC', 'PORTÁTIL', 'PORTATIL'])) {
+        if ($esEquipoConMonitores) {
             if ($numMon === 0) {
                 $colMonitores = '<span class="badge bg-secondary">0</span>';
             } elseif ($numMon === 1) {

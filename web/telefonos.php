@@ -269,7 +269,28 @@ $(document).ready(function () {
         lengthMenu: [10, 25, 50, 100],
         stateSave: true,
         dom: 'Bfrtip',
-        buttons: ['copy', 'excel', 'csv', 'print'],
+        buttons: [
+        'copy',
+        {
+            text: 'Excel',
+            action: function (e, dt) {
+            var params = dt.ajax.params();
+
+            var query = $.param({
+                search: params.search.value,
+                estado: $('#filtroEstado').val() || '',
+                departamento: $('#filtroDepartamento').val() || '',
+                operador: $('#filtroOperador').val() || '',
+                sim_asignada: $('#filtroSim').val() || ''
+            });
+
+            window.location.href = 'telefonos_export.php?' + query;
+            }
+        },
+        'csv',
+        'print'
+        ],
+
         columns: [
             { data: 'id' },
             { data: 'etiqueta' },

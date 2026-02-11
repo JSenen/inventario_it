@@ -21,6 +21,11 @@ $equipo_origen = $stmtOrigen->fetch(PDO::FETCH_ASSOC);
 if (!$equipo_origen) {
     die('Equipo original no encontrado');
 }
+$tipoOrigenUpper = strtoupper($equipo_origen['tipo'] ?? '');
+$equipoOrigenConMonitores = ($tipoOrigenUpper === 'PC')
+    || (strpos($tipoOrigenUpper, 'PORTATIL') !== false)
+    || (strpos($tipoOrigenUpper, 'PORTÁTIL') !== false)
+    || ($tipoOrigenUpper === 'PTI');
 
 // IP principal del equipo origen (si existe)
 $stmtIpOrigen = $pdo->prepare("SELECT * FROM ips_equipos WHERE equipo_id = :id AND es_principal = 1 LIMIT 1");
@@ -29,7 +34,7 @@ $ip_origen = $stmtIpOrigen->fetch(PDO::FETCH_ASSOC);
 
 // Monitores asociados al equipo origen (solo aplica a PC/PORTÁTIL)
 $monitores_origen = [];
-if (in_array($equipo_origen['tipo'], ['PC','PORTÁTIL'])) {
+if ($equipoOrigenConMonitores) {
     $stmtMon = $pdo->prepare("
         SELECT e.*
         FROM pc_monitores pm
@@ -158,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // 2) Gestionar monitores del equipo origen (solo si era PC/PORTÁTIL)
-            if (!empty($monitores_origen) && in_array($equipo_origen['tipo'], ['PC','PORTÁTIL'], true)) {
+            if (!empty($monitores_origen) && $equipoOrigenConMonitores) {
                 $idsMon = array_column($monitores_origen, 'id');
                 $placeholders = implode(',', array_fill(0, count($idsMon), '?'));
 
@@ -323,7 +328,7 @@ require_once __DIR__ . '/includes/header.php';
             <?php endif; ?>
         </div>
 
-        <?php if (in_array($equipo_origen['tipo'], ['PC','PORTÁTIL'], true)): ?>
+        <?php if ($equipoOrigenConMonitores): ?>
         <div id="bloque-monitores-opciones" style="display:none;">
             <div class="col-md-6">
                 <label class="form-label"><strong>Monitores actuales (<?= count($monitores_origen) ?>)</strong></label>

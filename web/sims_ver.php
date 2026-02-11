@@ -30,6 +30,20 @@ $stmtTel = $pdo->prepare($sqlTel);
 $stmtTel->execute([':id' => $id]);
 $telefonoActual = $stmtTel->fetch(PDO::FETCH_ASSOC);
 
+// Consultar si está asignada a un equipo PTI
+$sqlEquipo = "
+    SELECT e.id, e.marca, e.modelo, e.numero_serie, e.etiqueta, e.hostname
+    FROM equipo_sim es
+    JOIN equipos e ON e.id = es.equipo_id
+    WHERE es.sim_id = :id
+      AND es.fecha_liberacion IS NULL
+    ORDER BY es.fecha_asignacion DESC
+    LIMIT 1
+";
+$stmtEq = $pdo->prepare($sqlEquipo);
+$stmtEq->execute([':id' => $id]);
+$equipoActual = $stmtEq->fetch(PDO::FETCH_ASSOC);
+
 require_once 'includes/header.php';
 ?>
 
@@ -44,6 +58,10 @@ require_once 'includes/header.php';
             <?php if ($telefonoActual): ?>
                 <a href="telefonos_ver.php?id=<?= (int)$telefonoActual['id'] ?>" class="btn btn-info">
                     Ver teléfono asignado
+                </a>
+            <?php elseif ($equipoActual): ?>
+                <a href="equipo_ver.php?id=<?= (int)$equipoActual['id'] ?>" class="btn btn-info">
+                    Ver equipo asignado
                 </a>
             <?php endif; ?>
 
@@ -83,9 +101,23 @@ require_once 'includes/header.php';
                 (IMEI: <?= htmlspecialchars($telefonoActual['imei']) ?>)
             </a>
         </div>
+    <?php elseif ($equipoActual): ?>
+        <div class="alert alert-success mt-3">
+            <a href="sims_editar.php?id=<?= (int)$id ?>" class="btn btn-warning">Editar</a>
+            <b>SIM actualmente asignada a equipo (PTI):</b><br>
+            <a href="equipo_ver.php?id=<?= (int)$equipoActual['id'] ?>">
+                <?= htmlspecialchars(($equipoActual['etiqueta'] ? '['.$equipoActual['etiqueta'].'] ' : '') . ($equipoActual['marca'] ?? '') . ' ' . ($equipoActual['modelo'] ?? '')) ?>
+                <?php if (!empty($equipoActual['hostname'])): ?>
+                    (Servicio: <?= htmlspecialchars($equipoActual['hostname']) ?>)
+                <?php endif; ?>
+                <?php if (!empty($equipoActual['numero_serie'])): ?>
+                    (SN: <?= htmlspecialchars($equipoActual['numero_serie']) ?>)
+                <?php endif; ?>
+            </a>
+        </div>
     <?php else: ?>
         <div class="alert alert-warning mt-3">
-            Esta SIM no está asignada actualmente a ningún teléfono.
+            Esta SIM no está asignada actualmente a ningún teléfono o equipo.
         </div>
     <?php endif; ?>
 

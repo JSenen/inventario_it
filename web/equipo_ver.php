@@ -27,6 +27,22 @@ if (!$equipo) {
     die('Equipo no encontrado');
 }
 
+// Asegurar tabla de relación SIM↔equipo para PTI
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_sim (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        sim_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_sim (sim_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (sim_id) REFERENCES sims(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
 $mensajeVerifError = null;
 
 // Registrar verificación de inventario
@@ -83,9 +99,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar_verificacio
 // Inicializar variables para monitores o PC asociado
 $monitores_pc = [];
 $pc_asociado  = null;
+$tipoEquipoUpper = strtoupper($equipo['tipo'] ?? '');
+$esEquipoConMonitores = ($tipoEquipoUpper === 'PC')
+    || (strpos($tipoEquipoUpper, 'PORTATIL') !== false)
+    || (strpos($tipoEquipoUpper, 'PORTÁTIL') !== false)
+    || ($tipoEquipoUpper === 'PTI');
+$simActual = null;
+
+// SIM actual si es PTI
+if (strpos($tipoEquipoUpper, 'PTI') !== false) {
+    $stmtSim = $pdo->prepare("
+        SELECT s.*
+        FROM equipo_sim es
+        JOIN sims s ON s.id = es.sim_id
+        WHERE es.equipo_id = :id
+          AND es.fecha_liberacion IS NULL
+        ORDER BY es.fecha_asignacion DESC
+        LIMIT 1
+    ");
+    $stmtSim->execute([':id' => $id_equipo]);
+    $simActual = $stmtSim->fetch(PDO::FETCH_ASSOC);
+}
 
 // Si es PC o PORTÁTIL → listar monitores
-if (in_array($equipo['tipo'], ['PC','PORTÁTIL'])) {
+if ($esEquipoConMonitores) {
     $sqlMon = "SELECT e.*
                FROM pc_monitores pm
                JOIN equipos e ON e.id = pm.id_monitor
@@ -326,7 +363,21 @@ require_once __DIR__ . '/includes/header.php';
         <tr><th>Usuario asignado</th> <td><?= htmlspecialchars($equipo['usuario_asignado']) ?></td></tr>
         <tr><th>Departamento</th> <td><?= htmlspecialchars($equipo['departamento']) ?></td></tr>
         <tr><th>Ubicación</th> <td><?= htmlspecialchars($equipo['ubicacion']) ?></td></tr>
-        <?php if (in_array($equipo['tipo'], ['PC','PORTÁTIL'])): ?>
+        <?php if ($simActual): ?>
+            <tr>
+                <th>SIM (PTI)</th>
+                <td>
+                    Nº <?= htmlspecialchars($simActual['numero']) ?> · <?= htmlspecialchars($simActual['operador']) ?><br>
+                    ICCID: <?= htmlspecialchars($simActual['iccid']) ?>
+                </td>
+            </tr>
+        <?php elseif (strpos($tipoEquipoUpper, 'PTI') !== false): ?>
+            <tr>
+                <th>SIM (PTI)</th>
+                <td><span class="text-muted">Sin SIM asignada</span></td>
+            </tr>
+        <?php endif; ?>
+        <?php if ($esEquipoConMonitores): ?>
 <tr>
     <th>Monitores asociados</th>
     <td>

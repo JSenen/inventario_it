@@ -133,7 +133,27 @@ $(document).ready(function () {
         lengthMenu: [10, 25, 50, 100],
         stateSave: true,
         dom: 'Bfrtip',
-        buttons: ['copy', 'excel', 'csv', 'print'],
+        buttons: [
+            'copy',
+            {
+                text: 'Excel',
+                action: function (e, dt, node, config) {
+
+                    var params = dt.ajax.params();
+
+                    var query = $.param({
+                        search: params.search.value,
+                        estado: $('#filtroEstado').val(),
+                        operador: $('#filtroOperador').val()
+                    });
+
+                    window.location.href = 'sims_export.php?' + query;
+                }
+            },
+            'csv',
+            'print'
+        ],
+
         columns: [
             { data: 'id' },
             { data: 'etiqueta' },

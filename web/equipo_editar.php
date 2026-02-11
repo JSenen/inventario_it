@@ -40,6 +40,44 @@ $secciones = $seccionesStmt->fetchAll(PDO::FETCH_ASSOC);
 $departamentosStmt = $pdo->query("SELECT nombre FROM departamentos ORDER BY nombre ASC");       
 $departamentos = $departamentosStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Tabla de relación SIM↔equipo (PTI) por si aún no existe
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_sim (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        sim_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_sim (sim_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (sim_id) REFERENCES sims(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
+// SIM actual (si es PTI) y SIMs disponibles
+$stmtSimActual = $pdo->prepare("
+    SELECT es.id AS rel_id, s.*
+    FROM equipo_sim es
+    JOIN sims s ON s.id = es.sim_id
+    WHERE es.equipo_id = :id
+      AND es.fecha_liberacion IS NULL
+    ORDER BY es.fecha_asignacion DESC
+    LIMIT 1
+");
+$stmtSimActual->execute([':id' => $id_equipo]);
+$simActual = $stmtSimActual->fetch(PDO::FETCH_ASSOC);
+
+$simsDisponiblesStmt = $pdo->prepare("
+    SELECT id, numero, operador, iccid, etiqueta
+    FROM sims
+    WHERE estado = 'Disponible' OR id = :simActual
+    ORDER BY numero ASC
+");
+$simsDisponiblesStmt->execute([':simActual' => $simActual['id'] ?? 0]);
+$simsDisponibles = $simsDisponiblesStmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Imagen actual del equipo
 $imagenActual = isset($equipo['imagen']) ? $equipo['imagen'] : '';
 
@@ -116,6 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $monitoresSeleccionadosPost = isset($_POST['monitores']) && is_array($_POST['monitores'])
     ? array_map('intval', $_POST['monitores'])
     : [];
+    // SIM seleccionada para PTI (opcional)
+    $sim_id_pti_nueva = isset($_POST['sim_id_pti']) && $_POST['sim_id_pti'] !== '' ? (int)$_POST['sim_id_pti'] : null;
 
     // 1) Si ha elegido una imagen existente en el desplegable
     if (!empty($_POST['imagen_existente'])) {
@@ -187,6 +227,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $estado           = trim($_POST['estado'] ?? 'En uso');
             $notas            = strtoupper(trim($_POST['notas'] ?? ''));
             $etiqueta        = strtoupper(trim($_POST['etiqueta'] ?? ''));
+
+            $tipoUpper        = strtoupper($tipo);
+            $esPTI            = (strpos($tipoUpper, 'PTI') !== false);
+
+            // Validación SIM para PTI
+            if ($esPTI && $sim_id_pti_nueva !== null && (!$simActual || $sim_id_pti_nueva !== (int)$simActual['id'])) {
+                $stmtCheckSim = $pdo->prepare("
+                    SELECT COUNT(*) 
+                    FROM equipo_sim 
+                    WHERE sim_id = :sim AND fecha_liberacion IS NULL
+                ");
+                $stmtCheckSim->execute([':sim' => $sim_id_pti_nueva]);
+                $yaAsignada = (int)$stmtCheckSim->fetchColumn() > 0;
+                if ($yaAsignada) {
+                    $errores[] = "La SIM seleccionada ya está asignada a otro equipo.";
+                }
+
+                $stmtEstadoSim = $pdo->prepare("SELECT estado FROM sims WHERE id = :id");
+                $stmtEstadoSim->execute([':id' => $sim_id_pti_nueva]);
+                $estadoSim = $stmtEstadoSim->fetchColumn();
+                if (!$estadoSim) {
+                    $errores[] = "La SIM seleccionada no existe.";
+                } elseif ($estadoSim !== 'Disponible') {
+                    $errores[] = "La SIM seleccionada no está disponible.";
+                }
+            }
     
 
             // Red / IP
@@ -341,8 +407,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
             
+            $tipoConMonitores = strtoupper($tipo);
+            $tiposMonitores = ['PC','PORTATIL','PORTÁTIL','PTI','PORTATIL (PTI)','PORTÁTIL (PTI)'];
+            $esEquipoConMonitor = in_array($tipoConMonitores, $tiposMonitores, true);
+
             // Gestionar monitores asociados
-            if (in_array($tipo, ['PC','PORTATIL'])) {
+            if ($esEquipoConMonitor) {
                 // Borrar relaciones actuales y crear nuevas
                 $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :id_pc");
                 $stmtDel->execute([':id_pc' => $id_equipo]);
@@ -363,6 +433,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Si deja de ser PC/PORTÁTIL, se eliminan sus monitores
                 $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :id_pc");
                 $stmtDel->execute([':id_pc' => $id_equipo]);
+            }
+
+            // Gestionar SIM para PTI
+            if (!$esPTI && $simActual) {
+                // Ya no es PTI: liberar SIM actual
+                $stmtClose = $pdo->prepare("
+                    UPDATE equipo_sim
+                    SET fecha_liberacion = NOW()
+                    WHERE equipo_id = :eq AND fecha_liberacion IS NULL
+                ");
+                $stmtClose->execute([':eq' => $id_equipo]);
+
+                $stmtUpdSim = $pdo->prepare("UPDATE sims SET estado = 'Disponible' WHERE id = :sim");
+                $stmtUpdSim->execute([':sim' => $simActual['id']]);
+            } elseif ($esPTI) {
+                // A) tenía SIM y se quita
+                if ($simActual && $sim_id_pti_nueva === null) {
+                    $stmtClose = $pdo->prepare("
+                        UPDATE equipo_sim
+                        SET fecha_liberacion = NOW()
+                        WHERE equipo_id = :eq AND sim_id = :sim AND fecha_liberacion IS NULL
+                    ");
+                    $stmtClose->execute([':eq' => $id_equipo, ':sim' => $simActual['id']]);
+
+                    $stmtUpdSim = $pdo->prepare("UPDATE sims SET estado = 'Disponible' WHERE id = :sim");
+                    $stmtUpdSim->execute([':sim' => $simActual['id']]);
+                }
+
+                // B) no tenía SIM y ahora sí
+                if (!$simActual && $sim_id_pti_nueva !== null) {
+                    $stmtRel = $pdo->prepare("
+                        INSERT INTO equipo_sim (equipo_id, sim_id)
+                        VALUES (:eq, :sim)
+                    ");
+                    $stmtRel->execute([':eq' => $id_equipo, ':sim' => $sim_id_pti_nueva]);
+
+                    $stmtUpdSim = $pdo->prepare("UPDATE sims SET estado = 'Asignada' WHERE id = :sim");
+                    $stmtUpdSim->execute([':sim' => $sim_id_pti_nueva]);
+                }
+
+                // C) tenía SIM y se cambia por otra
+                if ($simActual && $sim_id_pti_nueva !== null && $sim_id_pti_nueva !== (int)$simActual['id']) {
+                    // cerrar relación actual
+                    $stmtClose = $pdo->prepare("
+                        UPDATE equipo_sim
+                        SET fecha_liberacion = NOW()
+                        WHERE equipo_id = :eq AND sim_id = :sim AND fecha_liberacion IS NULL
+                    ");
+                    $stmtClose->execute([':eq' => $id_equipo, ':sim' => $simActual['id']]);
+
+                    $stmtUpdSimOld = $pdo->prepare("UPDATE sims SET estado = 'Disponible' WHERE id = :sim");
+                    $stmtUpdSimOld->execute([':sim' => $simActual['id']]);
+
+                    // nueva relación
+                    $stmtRelNew = $pdo->prepare("
+                        INSERT INTO equipo_sim (equipo_id, sim_id)
+                        VALUES (:eq, :sim)
+                    ");
+                    $stmtRelNew->execute([':eq' => $id_equipo, ':sim' => $sim_id_pti_nueva]);
+
+                    $stmtUpdSimNew = $pdo->prepare("UPDATE sims SET estado = 'Asignada' WHERE id = :sim");
+                    $stmtUpdSimNew->execute([':sim' => $sim_id_pti_nueva]);
+                }
             }
 
             // Gestionar AVERÍA
@@ -721,6 +854,32 @@ require_once __DIR__ . '/includes/header.php';
             </option>
         <?php endforeach; ?>
     </select>
+</div>
+
+<div class="col-md-6" id="bloque-sim-pti" style="display:none;">
+    <label class="form-label"><b>SIM (solo PTI, opcional)</b></label>
+    <select name="sim_id_pti" class="form-select">
+        <option value="">-- Sin SIM --</option>
+        <?php
+        $simPost = $_POST['sim_id_pti'] ?? null;
+        foreach ($simsDisponibles as $sim):
+            $selected =
+                ($simPost !== null && $simPost !== '') ? ((int)$simPost === (int)$sim['id'] ? 'selected' : '') :
+                ($simActual && (int)$simActual['id'] === (int)$sim['id'] ? 'selected' : '');
+        ?>
+            <?php
+                $styleEtiqueta = $sim['etiqueta'] ? 'style="color:#0d6efd;font-weight:600;"' : '';
+            ?>
+            <option value="<?= (int)$sim['id'] ?>" <?= $selected ?> class="<?= $sim['etiqueta'] ? 'etiqueta-ok' : '' ?>" <?= $styleEtiqueta ?>>
+                <?= $sim['etiqueta'] ? '[' . htmlspecialchars($sim['etiqueta']) . '] ' : '' ?><?= htmlspecialchars($sim['numero']) ?> · <?= htmlspecialchars($sim['operador']) ?> (ICCID: <?= htmlspecialchars($sim['iccid']) ?>)
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <?php if ($simActual): ?>
+        <small class="text-muted">SIM actual: <?= htmlspecialchars($simActual['numero']) ?> (<?= htmlspecialchars($simActual['operador']) ?>)</small>
+    <?php else: ?>
+        <small class="text-muted">Visible solo si el tipo es PTI. No es obligatoria.</small>
+    <?php endif; ?>
 </div>
 
 
@@ -1316,18 +1475,28 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', function () {
     const tipoSelect       = document.querySelector('select[name="tipo"]');
     const bloqueMonitores  = document.getElementById('bloque-monitores');
+    const bloqueSim        = document.getElementById('bloque-sim-pti');
 
     function actualizarBloqueMonitores() {
         if (!tipoSelect) return;
         const valor = (tipoSelect.value || '').toUpperCase();
-        if (valor === 'PC' || valor === 'PORTATIL' || valor === 'PORTÁTIL') {
+        const esPortatil = valor.includes('PORTATIL') || valor.includes('PORTÁTIL') || valor === 'PTI';
+        const esPTI = valor.includes('PTI');
+        if (valor === 'PC' || esPortatil) {
             bloqueMonitores.style.display = 'block';
         } else {
             bloqueMonitores.style.display = 'none';
         }
+        if (bloqueSim) {
+            bloqueSim.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const selectSim = bloqueSim.querySelector('select[name="sim_id_pti"]');
+                if (selectSim) selectSim.value = '';
+            }
+        }
     }
 
-    if (tipoSelect && bloqueMonitores) {
+    if (tipoSelect) {
         tipoSelect.addEventListener('change', actualizarBloqueMonitores);
         actualizarBloqueMonitores();
     }

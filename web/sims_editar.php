@@ -45,9 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fechaBaja = $_POST['fecha_baja'] ?? $sim['fecha_baja'];
     $obs       = trim($_POST['observaciones'] ?? '');
 
-    if ($numero === '' || $iccid === '' || $operador === '') {
-        $errores[] = "Número, ICCID y Operador son obligatorios.";
-    }
+    // if ($numero === '' || $iccid === '' || $operador === '') {
+    //     $errores[] = "Número, ICCID y Operador son obligatorios.";
+    // }
 
     if (!$errores) {
         try {
@@ -142,28 +142,28 @@ require_once 'includes/header.php';
             <div class="col-md-4 mb-3">
                 <label class="form-label">Número</label>
                 <input type="text" name="numero" class="form-control"
-                       value="<?= htmlspecialchars($sim['numero']) ?>" required>
+                       value="<?= htmlspecialchars($sim['numero']) ?>">
             </div>
 
             <div class="col-md-4 mb-3">
                 <label class="form-label">ICCID</label>
                 <input type="text" name="iccid" class="form-control"
-                       value="<?= htmlspecialchars($sim['iccid']) ?>" required>
+                       value="<?= htmlspecialchars($sim['iccid']) ?>" >
             </div>
 
             <div class="col-md-4 mb-3">
                 <label class="form-label">Operador</label>
                 <input type="text" name="operador" class="form-control"
-                       value="<?= htmlspecialchars($sim['operador']) ?>" required>
+                       value="<?= htmlspecialchars($sim['operador']) ?>">
             </div>
         </div>
 
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-md-4 mb-3">
                 <label class="form-label">Tarifa</label>
                 <input type="text" name="tarifa" class="form-control"
                        value="<?= htmlspecialchars($sim['tarifa']) ?>">
-            </div>
+            </div> -->
 
             <div class="col-md-4 mb-3">
                 <label class="form-label">PIN</label>

@@ -15,9 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $estado    = trim($_POST['estado'] ?? 'Disponible');
     $obs       = trim($_POST['observaciones'] ?? '');
 
-    if ($numero === '' || $iccid === '' || $operador === '') {
-        $errores[] = "Número, ICCID y Operador son obligatorios.";
-    }
+    // if ($numero === '' || $iccid === '' || $operador === '') {
+    //     $errores[] = "Número, ICCID y Operador son obligatorios.";
+    // }
 
     if (!$errores) {
         $stmt = $pdo->prepare("
@@ -62,23 +62,23 @@ require_once 'includes/header.php';
         </div>
         <div class="mb-3">
             <label class="form-label">Número</label>
-            <input type="text" name="numero" class="form-control" required>
+            <input type="text" name="numero" class="form-control" >
         </div>
 
         <div class="mb-3">
             <label class="form-label">ICCID</label>
-            <input type="text" name="iccid" class="form-control" required>
+            <input type="text" name="iccid" class="form-control" >
         </div>
 
         <div class="mb-3">
             <label class="form-label">Operador</label>
-            <input type="text" name="operador" class="form-control" required>
+            <input type="text" name="operador" class="form-control" >
         </div>
 
-        <div class="mb-3">
+        <!-- <div class="mb-3">
             <label class="form-label">Tarifa</label>
             <input type="text" name="tarifa" class="form-control">
-        </div>
+        </div> -->
 
         <div class="mb-3">
             <label class="form-label">PIN</label>

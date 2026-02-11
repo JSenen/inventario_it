@@ -460,10 +460,16 @@ require_once __DIR__ . '/includes/header.php';
                     <a class="nav-link" data-tipo="PORTATIL">Portátiles</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" data-tipo="PTI">PTI</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" data-tipo="MONITOR">Monitores</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-tipo="IMPRESORA">Impresoras</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="IMPRESORA MULTIFUNCION">Multifunción</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-tipo="ESCANER">Escáner</a>
