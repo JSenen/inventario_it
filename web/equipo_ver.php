@@ -43,6 +43,22 @@ $pdo->exec("
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ");
 
+// Asegurar tabla de relación DOCK↔equipo PTI
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_dock (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        dock_equipo_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_dock (dock_equipo_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (dock_equipo_id) REFERENCES equipos(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
 $mensajeVerifError = null;
 
 // Registrar verificación de inventario
@@ -105,6 +121,7 @@ $esEquipoConMonitores = ($tipoEquipoUpper === 'PC')
     || (strpos($tipoEquipoUpper, 'PORTÁTIL') !== false)
     || ($tipoEquipoUpper === 'PTI');
 $simActual = null;
+$dockActual = null;
 
 // SIM actual si es PTI
 if (strpos($tipoEquipoUpper, 'PTI') !== false) {
@@ -119,6 +136,18 @@ if (strpos($tipoEquipoUpper, 'PTI') !== false) {
     ");
     $stmtSim->execute([':id' => $id_equipo]);
     $simActual = $stmtSim->fetch(PDO::FETCH_ASSOC);
+
+    $stmtDock = $pdo->prepare("
+        SELECT d.id, d.etiqueta, d.marca, d.modelo, d.numero_serie
+        FROM equipo_dock ed
+        JOIN equipos d ON d.id = ed.dock_equipo_id
+        WHERE ed.equipo_id = :id
+          AND ed.fecha_liberacion IS NULL
+        ORDER BY ed.fecha_asignacion DESC
+        LIMIT 1
+    ");
+    $stmtDock->execute([':id' => $id_equipo]);
+    $dockActual = $stmtDock->fetch(PDO::FETCH_ASSOC);
 }
 
 // Si es PC o PORTÁTIL → listar monitores
@@ -375,6 +404,25 @@ require_once __DIR__ . '/includes/header.php';
             <tr>
                 <th>SIM (PTI)</th>
                 <td><span class="text-muted">Sin SIM asignada</span></td>
+            </tr>
+        <?php endif; ?>
+        <?php if ($dockActual): ?>
+            <tr>
+                <th>DOCK (PTI)</th>
+                <td>
+                    <a href="equipo_ver.php?id=<?= (int)$dockActual['id'] ?>">
+                        <?= htmlspecialchars($dockActual['etiqueta'] ?: ('EQ-' . $dockActual['id'])) ?>
+                    </a><br>
+                    <?= htmlspecialchars(trim(($dockActual['marca'] ?? '') . ' ' . ($dockActual['modelo'] ?? ''))) ?>
+                    <?php if (!empty($dockActual['numero_serie'])): ?>
+                        <br>SN: <?= htmlspecialchars($dockActual['numero_serie']) ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        <?php elseif (strpos($tipoEquipoUpper, 'PTI') !== false): ?>
+            <tr>
+                <th>DOCK (PTI)</th>
+                <td><span class="text-muted">Sin DOCK asignado</span></td>
             </tr>
         <?php endif; ?>
         <?php if ($esEquipoConMonitores): ?>

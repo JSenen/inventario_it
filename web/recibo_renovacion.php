@@ -1,6 +1,8 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/logger.php';
+require_once __DIR__ . '/includes/mail_helper.php';
 
 $idRen  = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $tokenQ = $_GET['token'] ?? '';
@@ -14,11 +16,13 @@ $stmtRen = $pdo->prepare("
            eold.numero_serie AS old_sn, eold.hostname AS old_host, eold.estado AS old_estado,
            enew.etiqueta AS new_etiqueta, enew.marca AS new_marca, enew.modelo AS new_modelo,
            enew.numero_serie AS new_sn, enew.hostname AS new_host,
-           enew.ubicacion AS new_ubicacion, enew.departamento AS new_dep, enew.seccion_id AS new_seccion,
+           enew.ubicacion AS new_ubicacion, enew.departamento AS new_dep, enew.seccion_id AS new_seccion_id,
+           snew.nombre AS new_seccion_nombre, snew.correo AS seccion_correo,
            enew.id AS new_id, eold.id AS old_id
     FROM renovaciones r
     JOIN equipos eold ON eold.id = r.equipo_old_id
     JOIN equipos enew ON enew.id = r.equipo_new_id
+    LEFT JOIN secciones snew ON snew.id = enew.seccion_id
     WHERE (:id > 0 AND r.id = :id) OR (:tok <> '' AND r.firma_token = :tok)
     LIMIT 1
 ");
@@ -65,6 +69,65 @@ $accionesMon = [
     'almacen'   => 'Los monitores del equipo renovado se envían a Almacén',
     'baja'      => 'Los monitores del equipo renovado se dan de baja',
 ];
+
+$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://')
+         . $_SERVER['HTTP_HOST'];
+$urlFirma = $baseUrl . '/firma.php?token=' . urlencode($ren['firma_token'] ?? '');
+
+$mailOk = null;
+$mailMsg = null;
+$seccionCorreo = trim((string)($ren['seccion_correo'] ?? ''));
+$mailSubject = 'Firma de recibo de renovacion #' . (int)$ren['id'];
+$mailBody = "Hola,\n\n" .
+    "Se ha generado un recibo de renovación pendiente de firma.\n\n" .
+    "Renovación: #" . (int)$ren['id'] . "\n" .
+    "Equipo renovado: " . trim(($ren['old_marca'] ?? '') . ' ' . ($ren['old_modelo'] ?? '')) . " (SN: " . ($ren['old_sn'] ?? '-') . ")\n" .
+    "Equipo nuevo: " . trim(($ren['new_marca'] ?? '') . ' ' . ($ren['new_modelo'] ?? '')) . " (SN: " . ($ren['new_sn'] ?? '-') . ")\n" .
+    "Sección destino: " . ($ren['new_seccion_nombre'] ?? '-') . "\n\n" .
+    "Enlace de firma:\n" . $urlFirma . "\n\n" .
+    "Mensaje generado automáticamente por Inventario IT.";
+$mailtoLink = '';
+if ($seccionCorreo !== '' && filter_var($seccionCorreo, FILTER_VALIDATE_EMAIL)) {
+    $mailtoLink = 'mailto:' . rawurlencode($seccionCorreo)
+        . '?subject=' . rawurlencode($mailSubject)
+        . '&body=' . rawurlencode($mailBody);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar_correo_seccion'])) {
+    if ($seccionCorreo === '' || !filter_var($seccionCorreo, FILTER_VALIDATE_EMAIL)) {
+        $mailOk = false;
+        $mailMsg = 'La sección no tiene un correo válido configurado.';
+    } elseif (empty($ren['firma_token'])) {
+        $mailOk = false;
+        $mailMsg = 'No hay token de firma disponible para este recibo.';
+    } else {
+        $err = null;
+        $mailOk = sendPlainEmail($seccionCorreo, $mailSubject, $mailBody, $err);
+        if ($mailOk) {
+            $mailMsg = 'Correo enviado a ' . $seccionCorreo . '.';
+            logActividad(
+                $pdo,
+                'ENVIO_CORREO_RECIBO_RENOV',
+                'Renovacion=' . (int)$ren['id'] . '; destino=' . $seccionCorreo,
+                ['modulo' => 'RECIBOS', 'nivel' => 'INFO']
+            );
+        } else {
+            $mailMsg = $err ?: 'No se pudo enviar el correo.';
+            logActividad(
+                $pdo,
+                'ENVIO_CORREO_RECIBO_RENOV_FALLO',
+                'Renovacion=' . (int)$ren['id'] . '; destino=' . $seccionCorreo . '; motivo=' . $mailMsg,
+                ['modulo' => 'RECIBOS', 'nivel' => 'WARN']
+            );
+        }
+    }
+}
+
+$mostrarPopupEnvio = ($_SERVER['REQUEST_METHOD'] !== 'POST')
+    && empty($ren['firmado'])
+    && !empty($ren['firma_token'])
+    && ($seccionCorreo !== '')
+    && filter_var($seccionCorreo, FILTER_VALIDATE_EMAIL);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -82,6 +145,10 @@ $accionesMon = [
 <body>
 <div class="documento">
     <div class="no-print text-end mb-3">
+        <form id="formEnviarCorreoSeccion" method="post" class="d-inline">
+            <input type="hidden" name="enviar_correo_seccion" value="1">
+            <button type="submit" class="btn btn-outline-primary btn-sm">Enviar correo a sección</button>
+        </form>
         <a href="equipo_ver.php?id=<?= (int)$id_new ?>" class="btn btn-secondary btn-sm">Volver al equipo</a>
         <?php if (!empty($ren['firma_token'])): ?>
             <?php if (!empty($ren['firmado'])): ?>
@@ -95,6 +162,14 @@ $accionesMon = [
         <?php endif; ?>
         <button onclick="window.print()" class="btn btn-primary btn-sm">Imprimir / PDF</button>
     </div>
+    <?php if ($mailMsg !== null): ?>
+        <div class="alert alert-<?= $mailOk ? 'success' : 'warning' ?> no-print">
+            <?= htmlspecialchars($mailMsg) ?>
+            <?php if (!$mailOk && $mailtoLink !== ''): ?>
+                <a href="<?= htmlspecialchars($mailtoLink) ?>" class="ms-2">Abrir cliente de correo</a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <h2>Recibo de renovación de equipo</h2>
     <p class="text-muted">Resumen de la operación realizada.</p>
@@ -123,7 +198,7 @@ $accionesMon = [
         </tr>
         <tr>
             <th>Ubicación / Departamento / Sección</th>
-            <td><?= htmlspecialchars($ren['new_ubicacion'] ?? '-') ?> / <?= htmlspecialchars($ren['new_dep'] ?? '-') ?> / <?= htmlspecialchars($ren['new_seccion'] ?? '-') ?></td>
+            <td><?= htmlspecialchars($ren['new_ubicacion'] ?? '-') ?> / <?= htmlspecialchars($ren['new_dep'] ?? '-') ?> / <?= htmlspecialchars($ren['new_seccion_nombre'] ?? ('ID ' . ($ren['new_seccion_id'] ?? '-'))) ?></td>
         </tr>
     </table>
 
@@ -157,5 +232,23 @@ $accionesMon = [
         <div style="border:1px solid #999; height:140px; margin-bottom:20px;"></div>
     <?php endif; ?>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const mostrarPopup = <?= $mostrarPopupEnvio ? 'true' : 'false' ?>;
+    if (!mostrarPopup) return;
+
+    const key = 'prompt_envio_renov_<?= (int)$ren['id'] ?>';
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+
+    const ok = window.confirm(
+        '¿Quieres enviar este recibo por correo a la sección (<?= addslashes($seccionCorreo) ?>) para su firma?'
+    );
+    if (ok) {
+        const f = document.getElementById('formEnviarCorreoSeccion');
+        if (f) f.submit();
+    }
+});
+</script>
 </body>
 </html>

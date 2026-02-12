@@ -56,6 +56,22 @@ $pdo->exec("
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ");
 
+// Tabla de relación DOCK↔equipo PTI por si aún no existe
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_dock (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        dock_equipo_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_dock (dock_equipo_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (dock_equipo_id) REFERENCES equipos(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
 // SIM actual (si es PTI) y SIMs disponibles
 $stmtSimActual = $pdo->prepare("
     SELECT es.id AS rel_id, s.*
@@ -77,6 +93,32 @@ $simsDisponiblesStmt = $pdo->prepare("
 ");
 $simsDisponiblesStmt->execute([':simActual' => $simActual['id'] ?? 0]);
 $simsDisponibles = $simsDisponiblesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// DOCK actual (si es PTI) y DOCKs disponibles
+$stmtDockActual = $pdo->prepare("
+    SELECT ed.id AS rel_id, d.id, d.etiqueta, d.marca, d.modelo, d.numero_serie
+    FROM equipo_dock ed
+    JOIN equipos d ON d.id = ed.dock_equipo_id
+    WHERE ed.equipo_id = :id
+      AND ed.fecha_liberacion IS NULL
+    ORDER BY ed.fecha_asignacion DESC
+    LIMIT 1
+");
+$stmtDockActual->execute([':id' => $id_equipo]);
+$dockActual = $stmtDockActual->fetch(PDO::FETCH_ASSOC);
+
+$docksDisponiblesStmt = $pdo->prepare("
+    SELECT d.id, d.etiqueta, d.marca, d.modelo, d.numero_serie
+    FROM equipos d
+    LEFT JOIN equipo_dock ed
+      ON ed.dock_equipo_id = d.id
+     AND ed.fecha_liberacion IS NULL
+    WHERE UPPER(d.tipo) = 'DOCK'
+      AND (ed.id IS NULL OR d.id = :dockActual)
+    ORDER BY d.etiqueta ASC, d.numero_serie ASC, d.id ASC
+");
+$docksDisponiblesStmt->execute([':dockActual' => $dockActual['id'] ?? 0]);
+$docksDisponibles = $docksDisponiblesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Imagen actual del equipo
 $imagenActual = isset($equipo['imagen']) ? $equipo['imagen'] : '';
@@ -156,6 +198,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     : [];
     // SIM seleccionada para PTI (opcional)
     $sim_id_pti_nueva = isset($_POST['sim_id_pti']) && $_POST['sim_id_pti'] !== '' ? (int)$_POST['sim_id_pti'] : null;
+    // DOCK seleccionado para PTI (opcional)
+    $dock_id_pti_nuevo = isset($_POST['dock_id_pti']) && $_POST['dock_id_pti'] !== '' ? (int)$_POST['dock_id_pti'] : null;
 
     // 1) Si ha elegido una imagen existente en el desplegable
     if (!empty($_POST['imagen_existente'])) {
@@ -251,6 +295,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errores[] = "La SIM seleccionada no existe.";
                 } elseif ($estadoSim !== 'Disponible') {
                     $errores[] = "La SIM seleccionada no está disponible.";
+                }
+            }
+
+            // Validación DOCK para PTI
+            if ($esPTI && $dock_id_pti_nuevo !== null && (!$dockActual || $dock_id_pti_nuevo !== (int)$dockActual['id'])) {
+                $stmtCheckDock = $pdo->prepare("
+                    SELECT COUNT(*)
+                    FROM equipo_dock
+                    WHERE dock_equipo_id = :dock AND fecha_liberacion IS NULL
+                ");
+                $stmtCheckDock->execute([':dock' => $dock_id_pti_nuevo]);
+                if ((int)$stmtCheckDock->fetchColumn() > 0) {
+                    $errores[] = "El DOCK seleccionado ya está asignado a otro equipo.";
+                }
+
+                $stmtDockExiste = $pdo->prepare("
+                    SELECT COUNT(*)
+                    FROM equipos
+                    WHERE id = :id AND UPPER(tipo) = 'DOCK'
+                ");
+                $stmtDockExiste->execute([':id' => $dock_id_pti_nuevo]);
+                if ((int)$stmtDockExiste->fetchColumn() === 0) {
+                    $errores[] = "El DOCK seleccionado no existe o no es válido.";
                 }
             }
     
@@ -495,6 +562,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $stmtUpdSimNew = $pdo->prepare("UPDATE sims SET estado = 'Asignada' WHERE id = :sim");
                     $stmtUpdSimNew->execute([':sim' => $sim_id_pti_nueva]);
+                }
+            }
+
+            // Gestionar DOCK para PTI
+            if (!$esPTI && $dockActual) {
+                $stmtCloseDock = $pdo->prepare("
+                    UPDATE equipo_dock
+                    SET fecha_liberacion = NOW()
+                    WHERE equipo_id = :eq AND fecha_liberacion IS NULL
+                ");
+                $stmtCloseDock->execute([':eq' => $id_equipo]);
+            } elseif ($esPTI) {
+                // A) tenía DOCK y se quita
+                if ($dockActual && $dock_id_pti_nuevo === null) {
+                    $stmtCloseDock = $pdo->prepare("
+                        UPDATE equipo_dock
+                        SET fecha_liberacion = NOW()
+                        WHERE equipo_id = :eq AND dock_equipo_id = :dock AND fecha_liberacion IS NULL
+                    ");
+                    $stmtCloseDock->execute([':eq' => $id_equipo, ':dock' => $dockActual['id']]);
+                }
+
+                // B) no tenía DOCK y ahora sí
+                if (!$dockActual && $dock_id_pti_nuevo !== null) {
+                    $stmtDockRel = $pdo->prepare("
+                        INSERT INTO equipo_dock (equipo_id, dock_equipo_id)
+                        VALUES (:eq, :dock)
+                    ");
+                    $stmtDockRel->execute([':eq' => $id_equipo, ':dock' => $dock_id_pti_nuevo]);
+                }
+
+                // C) tenía DOCK y se cambia por otro
+                if ($dockActual && $dock_id_pti_nuevo !== null && $dock_id_pti_nuevo !== (int)$dockActual['id']) {
+                    $stmtCloseDock = $pdo->prepare("
+                        UPDATE equipo_dock
+                        SET fecha_liberacion = NOW()
+                        WHERE equipo_id = :eq AND dock_equipo_id = :dock AND fecha_liberacion IS NULL
+                    ");
+                    $stmtCloseDock->execute([':eq' => $id_equipo, ':dock' => $dockActual['id']]);
+
+                    $stmtDockRel = $pdo->prepare("
+                        INSERT INTO equipo_dock (equipo_id, dock_equipo_id)
+                        VALUES (:eq, :dock)
+                    ");
+                    $stmtDockRel->execute([':eq' => $id_equipo, ':dock' => $dock_id_pti_nuevo]);
                 }
             }
 
@@ -879,6 +991,31 @@ require_once __DIR__ . '/includes/header.php';
         <small class="text-muted">SIM actual: <?= htmlspecialchars($simActual['numero']) ?> (<?= htmlspecialchars($simActual['operador']) ?>)</small>
     <?php else: ?>
         <small class="text-muted">Visible solo si el tipo es PTI. No es obligatoria.</small>
+    <?php endif; ?>
+</div>
+
+<div class="col-md-6" id="bloque-dock-pti" style="display:none;">
+    <label class="form-label"><b>DOCK (solo PTI, opcional)</b></label>
+    <select name="dock_id_pti" class="form-select">
+        <option value="">-- Sin DOCK --</option>
+        <?php
+        $dockPost = $_POST['dock_id_pti'] ?? null;
+        foreach ($docksDisponibles as $dock):
+            $selected =
+                ($dockPost !== null && $dockPost !== '') ? ((int)$dockPost === (int)$dock['id'] ? 'selected' : '') :
+                ($dockActual && (int)$dockActual['id'] === (int)$dock['id'] ? 'selected' : '');
+        ?>
+            <option value="<?= (int)$dock['id'] ?>" <?= $selected ?>>
+                <?= !empty($dock['etiqueta']) ? '[' . htmlspecialchars($dock['etiqueta']) . '] ' : '' ?>
+                <?= htmlspecialchars(trim(($dock['marca'] ?? '') . ' ' . ($dock['modelo'] ?? ''))) ?>
+                <?= !empty($dock['numero_serie']) ? ' (SN: ' . htmlspecialchars($dock['numero_serie']) . ')' : '' ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <?php if ($dockActual): ?>
+        <small class="text-muted">DOCK actual: <?= htmlspecialchars($dockActual['etiqueta'] ?: ('EQ-' . $dockActual['id'])) ?></small>
+    <?php else: ?>
+        <small class="text-muted">Visible solo si el tipo es PTI. No es obligatorio.</small>
     <?php endif; ?>
 </div>
 
@@ -1476,6 +1613,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const tipoSelect       = document.querySelector('select[name="tipo"]');
     const bloqueMonitores  = document.getElementById('bloque-monitores');
     const bloqueSim        = document.getElementById('bloque-sim-pti');
+    const bloqueDock       = document.getElementById('bloque-dock-pti');
 
     function actualizarBloqueMonitores() {
         if (!tipoSelect) return;
@@ -1492,6 +1630,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!esPTI) {
                 const selectSim = bloqueSim.querySelector('select[name="sim_id_pti"]');
                 if (selectSim) selectSim.value = '';
+            }
+        }
+        if (bloqueDock) {
+            bloqueDock.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const selectDock = bloqueDock.querySelector('select[name="dock_id_pti"]');
+                if (selectDock) selectDock.value = '';
             }
         }
     }

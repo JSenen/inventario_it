@@ -24,6 +24,10 @@ services:
     restart: always
     depends_on:
       - db
+    environment:
+      MAIL_ENABLED: "0"
+      MAIL_FROM: "no-reply@inventario.local"
+      MAIL_FROM_NAME: "Inventario IT"
     volumes:
       - ./web:/var/www/html
     ports:

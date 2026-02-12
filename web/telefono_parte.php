@@ -27,7 +27,12 @@ $stmtSim->execute([':id' => $id]);
 $sim = $stmtSim->fetch(PDO::FETCH_ASSOC);
 
 // Guardar log
-logActividad($pdo,"IMPRESION PARTE","Impresion parte telefono ID= ", $id);
+logActividad(
+    $pdo,
+    "IMPRESION_PARTE_TELEFONO",
+    "Impresion parte telefono ID={$id}",
+    ['modulo' => 'TELEFONOS', 'nivel' => 'INFO']
+);
 
 ?>
 <!DOCTYPE html>

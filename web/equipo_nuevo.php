@@ -46,8 +46,37 @@ $pdo->exec("
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ");
 
+// Tabla de relación DOCK↔equipo PTI por si aún no existe
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_dock (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        dock_equipo_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_dock (dock_equipo_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (dock_equipo_id) REFERENCES equipos(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
 // SIMs disponibles para asignar (solo se muestran si el tipo es PTI)
 $simsDisponibles = $pdo->query("SELECT id, numero, operador, iccid, etiqueta FROM sims WHERE estado = 'Disponible' ORDER BY numero ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+// DOCKs disponibles para asignar (solo PTI)
+$docksDisponiblesStmt = $pdo->query("
+    SELECT d.id, d.etiqueta, d.marca, d.modelo, d.numero_serie
+    FROM equipos d
+    LEFT JOIN equipo_dock ed
+      ON ed.dock_equipo_id = d.id
+     AND ed.fecha_liberacion IS NULL
+    WHERE UPPER(d.tipo) = 'DOCK'
+      AND ed.id IS NULL
+    ORDER BY d.etiqueta ASC, d.numero_serie ASC, d.id ASC
+");
+$docksDisponibles = $docksDisponiblesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Monitores libres (no asignados todavía)
 $monitoresStmt = $pdo->query("
@@ -98,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ? array_map('intval', $_POST['monitores'])
     : [];
     $sim_id_pti      = isset($_POST['sim_id_pti']) && $_POST['sim_id_pti'] !== '' ? (int)$_POST['sim_id_pti'] : null;
+    $dock_id_pti     = isset($_POST['dock_id_pti']) && $_POST['dock_id_pti'] !== '' ? (int)$_POST['dock_id_pti'] : null;
 
     $tipoUpper       = strtoupper($tipo);
     $esPTI           = (strpos($tipoUpper, 'PTI') !== false);
@@ -122,6 +152,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errores[] = "La SIM seleccionada no existe.";
         } elseif ($estadoSim !== 'Disponible') {
             $errores[] = "La SIM seleccionada no está disponible.";
+        }
+    }
+
+    // Validar DOCK solo si es PTI y se seleccionó uno
+    if ($esPTI && $dock_id_pti !== null) {
+        $stmtCheckDock = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM equipo_dock
+            WHERE dock_equipo_id = :dock AND fecha_liberacion IS NULL
+        ");
+        $stmtCheckDock->execute([':dock' => $dock_id_pti]);
+        $dockYaAsignado = (int)$stmtCheckDock->fetchColumn() > 0;
+        if ($dockYaAsignado) {
+            $errores[] = "El DOCK seleccionado ya está asignado a otro equipo.";
+        }
+
+        $stmtDockExiste = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM equipos
+            WHERE id = :id AND UPPER(tipo) = 'DOCK'
+        ");
+        $stmtDockExiste->execute([':id' => $dock_id_pti]);
+        if ((int)$stmtDockExiste->fetchColumn() === 0) {
+            $errores[] = "El DOCK seleccionado no existe o no es válido.";
         }
     }
 
@@ -243,6 +297,18 @@ if ($numero_serie !== '') {
 
                 $stmtUpdSim = $pdo->prepare("UPDATE sims SET estado = 'Asignada' WHERE id = :sim");
                 $stmtUpdSim->execute([':sim' => $sim_id_pti]);
+            }
+
+            // Si es PTI y se seleccionó DOCK, crear relación
+            if ($esPTI && $dock_id_pti !== null) {
+                $stmtRelDock = $pdo->prepare("
+                    INSERT INTO equipo_dock (equipo_id, dock_equipo_id)
+                    VALUES (:equipo, :dock)
+                ");
+                $stmtRelDock->execute([
+                    ':equipo' => $equipoId,
+                    ':dock'   => $dock_id_pti,
+                ]);
             }
 
             // Si se proporcionó IP y red, guardarla
@@ -504,6 +570,21 @@ usort($imagenes_existentes, function ($a, $b) {
                             </select>
                             <small class="text-muted">Visible solo para equipos de tipo PTI. No es obligatorio.</small>
                         </div>
+                        <div class="col-md-6" id="bloque-dock-pti" style="display:none;">
+                            <label class="form-label"><b>Asignar DOCK (solo PTI, opcional)</b></label>
+                            <select name="dock_id_pti" class="form-select">
+                                <option value="">-- Sin DOCK --</option>
+                                <?php foreach ($docksDisponibles as $dock): ?>
+                                    <?php $selected = (isset($_POST['dock_id_pti']) && (int)$_POST['dock_id_pti'] === (int)$dock['id']) ? 'selected' : ''; ?>
+                                    <option value="<?= (int)$dock['id'] ?>" <?= $selected ?>>
+                                        <?= !empty($dock['etiqueta']) ? '[' . htmlspecialchars($dock['etiqueta']) . '] ' : '' ?>
+                                        <?= htmlspecialchars(trim(($dock['marca'] ?? '') . ' ' . ($dock['modelo'] ?? ''))) ?>
+                                        <?= !empty($dock['numero_serie']) ? ' (SN: ' . htmlspecialchars($dock['numero_serie']) . ')' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="text-muted">Visible solo para equipos de tipo PTI. No es obligatorio.</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -665,6 +746,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const tipoSelect       = document.querySelector('select[name="tipo"]');
     const bloqueMonitores  = document.getElementById('bloque-monitores');
     const bloqueSim        = document.getElementById('bloque-sim-pti');
+    const bloqueDock       = document.getElementById('bloque-dock-pti');
 
     function actualizarBloqueMonitores() {
         if (!tipoSelect) return;
@@ -681,6 +763,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!esPTI) {
                 const selectSim = bloqueSim.querySelector('select[name="sim_id_pti"]');
                 if (selectSim) selectSim.value = '';
+            }
+        }
+        if (bloqueDock) {
+            bloqueDock.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const selectDock = bloqueDock.querySelector('select[name="dock_id_pti"]');
+                if (selectDock) selectDock.value = '';
             }
         }
     }

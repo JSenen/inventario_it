@@ -137,24 +137,24 @@ require_once 'includes/header.php';
             <div class="col-md-3 mb-3">
                 <label class="form-label">Etiqueta</label>
                 <input type="text" name="etiqueta" class="form-control"
-                       value="<?= htmlspecialchars($sim['etiqueta']) ?>">
+                       value="<?= htmlspecialchars((string)($sim['etiqueta'])) ?>">
             </div>
             <div class="col-md-4 mb-3">
                 <label class="form-label">Número</label>
                 <input type="text" name="numero" class="form-control"
-                       value="<?= htmlspecialchars($sim['numero']) ?>">
+                       value="<?= htmlspecialchars((string)($sim['numero'])) ?>">
             </div>
 
             <div class="col-md-4 mb-3">
                 <label class="form-label">ICCID</label>
                 <input type="text" name="iccid" class="form-control"
-                       value="<?= htmlspecialchars($sim['iccid']) ?>" >
+                       value="<?= htmlspecialchars((string)($sim['iccid'])) ?>" >
             </div>
 
             <div class="col-md-4 mb-3">
                 <label class="form-label">Operador</label>
                 <input type="text" name="operador" class="form-control"
-                       value="<?= htmlspecialchars($sim['operador']) ?>">
+                       value="<?= htmlspecialchars((string)($sim['operador'])) ?>">
             </div>
         </div>
 

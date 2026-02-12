@@ -3,6 +3,9 @@
 require_once 'config.php';              // Conexión a BD ($pdo)
 require_once 'auth.php';                // Autenticación / sesión
 require_once 'includes/header.php';     // Cabecera HTML + menú
+require_once __DIR__ . '/includes/secciones_helper.php';
+
+ensureSeccionesCorreo($pdo);
 
 // Pestaña activa
 $tab = $_GET['tab'] ?? 'usuarios';
@@ -327,6 +330,7 @@ if (!in_array($tab, $validTabs)) {
                         <th>ID</th>
                         <th>Sección</th>
                         <th>Descripción</th>
+                        <th>Correo</th>
                         <th>Acciones</th>
                     </tr>
                     </thead>
@@ -336,6 +340,13 @@ if (!in_array($tab, $validTabs)) {
                             <td><?= htmlspecialchars($s['id']) ?></td>
                             <td><?= htmlspecialchars($s['nombre']) ?></td>
                             <td><?= htmlspecialchars($s['descripcion'] ?? '') ?></td>
+                            <td>
+                                <?php if (!empty($s['correo'])): ?>
+                                    <a href="mailto:<?= htmlspecialchars($s['correo']) ?>"><?= htmlspecialchars($s['correo']) ?></a>
+                                <?php else: ?>
+                                    <span class="text-muted">-</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <a href="secciones_editar.php?id=<?= $s['id'] ?>"
                                    class="btn btn-sm btn-warning">Editar</a>
@@ -400,5 +411,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 <?php require_once 'includes/footer.php'; ?>
-
 

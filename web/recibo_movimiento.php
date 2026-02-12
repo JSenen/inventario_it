@@ -1,6 +1,8 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/logger.php';
+require_once __DIR__ . '/includes/mail_helper.php';
 
 $idMov = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($idMov <= 0) {
@@ -22,7 +24,8 @@ $stmt = $pdo->prepare("
         e.proveedor,
         e.coste,
         e.estado      AS estado_equipo,
-        s.nombre      AS seccion_nombre
+        s.nombre      AS seccion_nombre,
+        s.correo      AS seccion_correo
     FROM equipos_movimientos m
     JOIN equipos e ON e.id = m.id_equipo
     LEFT JOIN secciones s ON s.id = e.seccion_id
@@ -49,6 +52,61 @@ $tieneLogo = is_file($logoFs);
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://')
          . $_SERVER['HTTP_HOST'];
 $urlFirma = $baseUrl . '/firma.php?token=' . urlencode($mov['firma_token']);
+
+$mailOk = null;
+$mailMsg = null;
+$seccionCorreo = trim((string)($mov['seccion_correo'] ?? ''));
+$mailSubject = 'Firma de recibo de movimiento #' . (int)$mov['id'];
+$mailBody = "Hola,\n\n" .
+    "Se ha generado un recibo de movimiento pendiente de firma.\n\n" .
+    "Movimiento: #" . (int)$mov['id'] . "\n" .
+    "Equipo: " . trim(($mov['marca'] ?? '') . ' ' . ($mov['modelo'] ?? '')) . "\n" .
+    "Serie: " . ($mov['numero_serie'] ?? '-') . "\n" .
+    "Sección: " . ($mov['seccion_nombre'] ?? '-') . "\n\n" .
+    "Enlace de firma:\n" . $urlFirma . "\n\n" .
+    "Mensaje generado automáticamente por Inventario IT.";
+$mailtoLink = '';
+if ($seccionCorreo !== '' && filter_var($seccionCorreo, FILTER_VALIDATE_EMAIL)) {
+    $mailtoLink = 'mailto:' . rawurlencode($seccionCorreo)
+        . '?subject=' . rawurlencode($mailSubject)
+        . '&body=' . rawurlencode($mailBody);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar_correo_seccion'])) {
+    if ($seccionCorreo === '' || !filter_var($seccionCorreo, FILTER_VALIDATE_EMAIL)) {
+        $mailOk = false;
+        $mailMsg = 'La sección no tiene un correo válido configurado.';
+    } elseif (empty($mov['firma_token'])) {
+        $mailOk = false;
+        $mailMsg = 'No hay token de firma disponible para este recibo.';
+    } else {
+        $err = null;
+        $mailOk = sendPlainEmail($seccionCorreo, $mailSubject, $mailBody, $err);
+        if ($mailOk) {
+            $mailMsg = 'Correo enviado a ' . $seccionCorreo . '.';
+            logActividad(
+                $pdo,
+                'ENVIO_CORREO_RECIBO_MOV',
+                'Movimiento=' . (int)$mov['id'] . '; destino=' . $seccionCorreo,
+                ['modulo' => 'RECIBOS', 'nivel' => 'INFO']
+            );
+        } else {
+            $mailMsg = $err ?: 'No se pudo enviar el correo.';
+            logActividad(
+                $pdo,
+                'ENVIO_CORREO_RECIBO_MOV_FALLO',
+                'Movimiento=' . (int)$mov['id'] . '; destino=' . $seccionCorreo . '; motivo=' . $mailMsg,
+                ['modulo' => 'RECIBOS', 'nivel' => 'WARN']
+            );
+        }
+    }
+}
+
+$mostrarPopupEnvio = ($_SERVER['REQUEST_METHOD'] !== 'POST')
+    && empty($mov['firmado'])
+    && !empty($mov['firma_token'])
+    && ($seccionCorreo !== '')
+    && filter_var($seccionCorreo, FILTER_VALIDATE_EMAIL);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -148,10 +206,22 @@ h1 {
 <body>
 <div class="documento">
 <div class="no-print text-end mb-3">
+    <form id="formEnviarCorreoSeccion" method="post" class="d-inline">
+        <input type="hidden" name="enviar_correo_seccion" value="1">
+        <button type="submit" class="btn btn-outline-primary btn-sm">Enviar correo a sección</button>
+    </form>
     <button onclick="window.print()" class="btn btn-secondary btn-sm">
         Imprimir / Guardar como PDF
     </button>
 </div>
+<?php if ($mailMsg !== null): ?>
+    <div class="alert alert-<?= $mailOk ? 'success' : 'warning' ?> no-print">
+        <?= htmlspecialchars($mailMsg) ?>
+        <?php if (!$mailOk && $mailtoLink !== ''): ?>
+            <a href="<?= htmlspecialchars($mailtoLink) ?>" class="ms-2">Abrir cliente de correo</a>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 
 <div class="header-doc">
     <div class="header-doc-left">
@@ -285,6 +355,23 @@ function copiarLink() {
         alert('No se ha podido copiar automáticamente. Selecciona el texto y cópialo manualmente.');
     }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const mostrarPopup = <?= $mostrarPopupEnvio ? 'true' : 'false' ?>;
+    if (!mostrarPopup) return;
+
+    const key = 'prompt_envio_mov_<?= (int)$mov['id'] ?>';
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+
+    const ok = window.confirm(
+        '¿Quieres enviar este recibo por correo a la sección (<?= addslashes($seccionCorreo) ?>) para su firma?'
+    );
+    if (ok) {
+        const f = document.getElementById('formEnviarCorreoSeccion');
+        if (f) f.submit();
+    }
+});
 </script>
 </div> <!-- /.documento -->
 </body>

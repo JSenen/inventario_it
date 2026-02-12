@@ -94,12 +94,12 @@ foreach ($rows as $r) {
 
     $data[] = [
         'id'       => $r['id'],
-        'etiqueta' => htmlspecialchars($r['etiqueta'] ?? ''),
-        'numero'   => htmlspecialchars($r['numero']),
-        'iccid'    => htmlspecialchars($r['iccid']),
-        'operador' => htmlspecialchars($r['operador']),
-        'puk'      => htmlspecialchars($r['puk']),
-        'estado'   => htmlspecialchars($r['estado']),
+        'etiqueta' => htmlspecialchars((string)($r['etiqueta'] ?? '')),
+        'numero'   => htmlspecialchars((string)($r['numero'])),
+        'iccid'    => htmlspecialchars((string)($r['iccid'])),
+        'operador' => htmlspecialchars((string)($r['operador'])),
+        'puk'      => htmlspecialchars((string)($r['puk'])),
+        'estado'   => htmlspecialchars((string)($r['estado'])),
         'acciones' => $acciones
     ];
 }

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config.php'; 
+require_once __DIR__ . '/includes/logger.php';
 
 $errores = [];
 
@@ -17,6 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$usuario) {
             $errores[] = "Usuario o contraseña incorrectos.";
+            logActividad(
+                $pdo,
+                'LOGIN_FALLIDO',
+                'Intento con TIP no existente: ' . strtoupper($tip),
+                ['modulo' => 'AUTH', 'nivel' => 'SECURITY']
+            );
         } else {
             // Comprobar SHA3-256
             $hashIntroducido = hash('sha3-256', $password);
@@ -28,11 +35,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['rol']        = $usuario['rol'];
                 $_SESSION['play_saloon_sound'] = true;
 
+                logActividad(
+                    $pdo,
+                    'LOGIN_OK',
+                    'Acceso correcto',
+                    ['modulo' => 'AUTH', 'nivel' => 'INFO']
+                );
 
                 header('Location: index.php');
                 exit;
             } else {
                 $errores[] = "Usuario o contraseña incorrectos.";
+                logActividad(
+                    $pdo,
+                    'LOGIN_FALLIDO',
+                    'Contraseña incorrecta para TIP: ' . strtoupper($tip),
+                    ['modulo' => 'AUTH', 'nivel' => 'SECURITY']
+                );
             }
         }
     }

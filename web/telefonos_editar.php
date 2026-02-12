@@ -247,7 +247,7 @@ require_once 'includes/header.php';
             <div class="col-md-4 mb-3">
                 <label class="form-label">Etiqueta</label>
                 <input type="text" name="etiqueta" class="form-control"
-                       value="<?= htmlspecialchars($telefono['etiqueta']) ?>">
+                       value="<?= htmlspecialchars((string)($telefono['etiqueta'])) ?>">
             </div>
             <div class="col-md-4 mb-3">
                 <label class="form-label">Marca</label>

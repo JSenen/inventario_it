@@ -152,10 +152,20 @@ CREATE TABLE actividad_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_tip VARCHAR(20) NOT NULL,
     accion VARCHAR(255) NOT NULL,
+    modulo VARCHAR(80) DEFAULT NULL,
+    nivel VARCHAR(20) NOT NULL DEFAULT 'INFO',
     detalles TEXT,
     ip VARCHAR(45) DEFAULT NULL,
+    ruta VARCHAR(255) DEFAULT NULL,
+    metodo VARCHAR(10) DEFAULT NULL,
+    user_agent VARCHAR(255) DEFAULT NULL,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE INDEX idx_actividad_creado_en ON actividad_logs (creado_en);
+CREATE INDEX idx_actividad_usuario ON actividad_logs (usuario_tip);
+CREATE INDEX idx_actividad_accion ON actividad_logs (accion);
+CREATE INDEX idx_actividad_modulo ON actividad_logs (modulo);
+CREATE INDEX idx_actividad_nivel ON actividad_logs (nivel);
 
 -- Impedir duplicados en numero_serie de equipos
 ALTER TABLE equipos
@@ -234,14 +244,15 @@ CREATE TABLE departamentos (
 CREATE TABLE secciones (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    descripcion VARCHAR(255) DEFAULT NULL
+    descripcion VARCHAR(255) DEFAULT NULL,
+    correo VARCHAR(150) DEFAULT NULL
 );
 
-INSERT INTO `secciones` (`id`, `nombre`, `descripcion`) VALUES
-(1, 'GATI', 'Oficina'),
-(2, 'Almacén GATI', 'Almacén GATI'),
-(3, 'Deposito Armas', 'Deposito Armas IAE Especial Barcelona'),
-(4, 'Secretaría', 'Secretaría');
+INSERT INTO `secciones` (`id`, `nombre`, `descripcion`, `correo`) VALUES
+(1, 'GATI', 'Oficina', NULL),
+(2, 'Almacén GATI', 'Almacén GATI', NULL),
+(3, 'Deposito Armas', 'Deposito Armas IAE Especial Barcelona', NULL),
+(4, 'Secretaría', 'Secretaría', NULL);
 
 ALTER TABLE equipos
 ADD COLUMN seccion_id INT DEFAULT NULL,
@@ -519,4 +530,3 @@ CREATE TABLE  equipos_verificaciones (
 -- 09-02-2026 Añadir etiqueta a teléfonos y SIMs si no existe
     ALTER TABLE telefonos ADD COLUMN etiqueta VARCHAR(100) NULL UNIQUE AFTER id;
     ALTER TABLE sims ADD COLUMN etiqueta VARCHAR(100) NULL UNIQUE AFTER id;
-

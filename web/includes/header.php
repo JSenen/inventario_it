@@ -406,6 +406,10 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <li class="nav-item">
                     <a class="nav-link" href="verificaciones.php">✅ Revistas</a>
                 </li>
+                <!-- Manual -->
+                <li class="nav-item">
+                    <a class="nav-link" href="manual_usuario.php">📘 Manual</a>
+                </li>
                 <!-- Administración (submenu) -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
@@ -420,6 +424,8 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=tipos">Tipos de equipo</a></li>
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=servicio">Servicio</a></li>
                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=secciones">Secciones</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="verificaciones_reportes.php">Reportes verificaciones</a></li>
                     </ul>
                 </li>
                 <!-- Recibos -->
