@@ -92,10 +92,11 @@ foreach ($rows as $r) {
         <a href="sims_editar.php?id=' . (int)$r['id'] . '" class="btn btn-sm btn-warning">Editar</a>
     ';
 
+    $etiquetaSim = trim((string)($r['etiqueta'] ?? ''));
     $data[] = [
         'id'       => $r['id'],
-        'etiqueta' => htmlspecialchars((string)($r['etiqueta'] ?? '')),
-        'numero'   => htmlspecialchars((string)($r['numero'])),
+        'etiqueta' => $etiquetaSim !== '' ? '<span class="etiqueta-ok">' . htmlspecialchars($etiquetaSim) . '</span>' : '<span class="etiqueta-missing">(sin etiqueta)</span>',
+        'numero'   => '<span class="sim-numero-destacado">' . htmlspecialchars((string)($r['numero'])) . '</span>',
         'iccid'    => htmlspecialchars((string)($r['iccid'])),
         'operador' => htmlspecialchars((string)($r['operador'])),
         'puk'      => htmlspecialchars((string)($r['puk'])),

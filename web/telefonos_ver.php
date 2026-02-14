@@ -35,7 +35,13 @@ require_once 'includes/header.php';
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Teléfono móvil - <?= htmlspecialchars(($tel['etiqueta'] ? '['.$tel['etiqueta'].'] ' : '').$tel['marca'] . ' ' . $tel['modelo']) ?></h2>
+        <h2>
+            Teléfono móvil -
+            <?php if (!empty($tel['etiqueta'])): ?>
+                <span class="etiqueta-ok etiqueta-inline">[<?= htmlspecialchars($tel['etiqueta']) ?>]</span>
+            <?php endif; ?>
+            <?= htmlspecialchars($tel['marca'] . ' ' . $tel['modelo']) ?>
+        </h2>
         <div>
             <a href="telefonos_editar.php?id=<?= (int)$id ?>" class="btn btn-warning">Editar</a>
             <a href="telefono_historial.php?id=<?= (int)$id ?>" class="btn btn-info">Historial SIM</a>
@@ -54,12 +60,12 @@ require_once 'includes/header.php';
         <div class="col-md-8">
             <table class="table table-bordered">
                 <tr><th>ID</th>              <td><?= (int)$tel['id'] ?></td></tr>
-                <tr><th>Etiqueta</th>        <td><?= htmlspecialchars($tel['etiqueta'] ?? '') ?></td></tr>
+                <tr><th>Etiqueta</th>        <td><span class="<?= !empty($tel['etiqueta']) ? 'etiqueta-ok' : 'etiqueta-missing' ?>"><?= htmlspecialchars(!empty($tel['etiqueta']) ? $tel['etiqueta'] : '(sin etiqueta)') ?></span></td></tr>
                 <tr><th>Marca</th>           <td><?= htmlspecialchars($tel['marca'] ?? '') ?></td></tr>
                 <tr><th>Modelo</th>          <td><?= htmlspecialchars($tel['modelo'] ?? '') ?></td></tr>
                 <tr><th>IMEI</th>            <td><?= htmlspecialchars($tel['imei'] ?? '') ?></td></tr>
                 <tr><th>Número de serie</th> <td><?= htmlspecialchars($tel['numero_serie'] ?? '') ?></td></tr>
-                <tr><th>Usuario asignado</th><td><?= htmlspecialchars($tel['usuario_asignado'] ?? '') ?></td></tr>
+                <tr><th>Usuario asignado</th><td><span class="dato-contacto-destacado<?= trim((string)($tel['usuario_asignado'] ?? '')) === '' ? ' dato-contacto-destacado-vacio' : '' ?>"><?= htmlspecialchars(($tel['usuario_asignado'] ?? '') !== '' ? $tel['usuario_asignado'] : '-') ?></span></td></tr>
                 <tr><th>Departamento</th>    <td><?= htmlspecialchars($tel['departamento'] ?? '') ?></td></tr>
                 <tr><th>Ubicación</th>       <td><?= htmlspecialchars($tel['ubicacion'] ?? '') ?></td></tr>
                 <tr><th>Sección</th>         <td><?= htmlspecialchars($tel['seccion'] ?? '') ?></td></tr>

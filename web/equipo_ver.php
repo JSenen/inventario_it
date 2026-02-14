@@ -373,7 +373,7 @@ require_once __DIR__ . '/includes/header.php';
 
     <h4>Información del equipo</h4>
     <table class="table table-bordered">
-        <tr><th>ID</th> <td> (id) <?= htmlspecialchars($equipo['id']) ?> (etiqueta) <span class="etiqueta-ok"> <?= htmlspecialchars($equipo['etiqueta'] ?? '') ?></span></td></tr>
+        <tr><th>ID</th> <td> (id) <?= htmlspecialchars($equipo['id']) ?> (etiqueta) <span class="<?= !empty($equipo['etiqueta']) ? 'etiqueta-ok' : 'etiqueta-missing' ?>"><?= htmlspecialchars(!empty($equipo['etiqueta']) ? $equipo['etiqueta'] : '(sin etiqueta)') ?></span></td></tr>
         <?php if (!empty($equipo['imagen'])): ?>
         <tr>
             <th>Imagen</th>
@@ -389,7 +389,7 @@ require_once __DIR__ . '/includes/header.php';
         <tr><th>Modelo</th> <td><?= htmlspecialchars($equipo['modelo']) ?></td></tr>
         <tr><th>Número de serie</th> <td><?= htmlspecialchars($equipo['numero_serie']) ?></td></tr>
         <tr><th>Servicio</th> <td><?= htmlspecialchars($equipo['hostname']) ?></td></tr>
-        <tr><th>Usuario asignado</th> <td><?= htmlspecialchars($equipo['usuario_asignado']) ?></td></tr>
+        <tr><th>Usuario asignado</th> <td><span class="dato-contacto-destacado<?= trim((string)($equipo['usuario_asignado'] ?? '')) === '' ? ' dato-contacto-destacado-vacio' : '' ?>"><?= htmlspecialchars($equipo['usuario_asignado'] ?: '-') ?></span></td></tr>
         <tr><th>Departamento</th> <td><?= htmlspecialchars($equipo['departamento']) ?></td></tr>
         <tr><th>Ubicación</th> <td><?= htmlspecialchars($equipo['ubicacion']) ?></td></tr>
         <?php if ($simActual): ?>

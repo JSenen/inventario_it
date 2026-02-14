@@ -122,22 +122,35 @@
 
 /* Resalta etiquetas visibles en selects/listados */
 .etiqueta-ok {
-    font-weight: 600;
-    color: #0d6efd;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.2rem 0.45rem;
+    background: linear-gradient(180deg, #2f85ff 0%, #175fce 100%) !important;
+    color: #fff !important;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.15), 0 1px 2px rgba(0, 0, 0, 0.18);
+    border-radius: 0.35rem;
 }
 .etiqueta-missing {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.2rem 0.45rem;
+    background: #f1f3f5;
     color: #6c757d;
     font-style: italic;
+    text-align: center;
+    border-radius: 0.35rem;
+}
+.etiqueta-inline {
+    display: inline-block;
+    width: auto;
 }
 .estado-provado {
     background-color: #d876cfff !important;  /* cyan */
-    color: white !important;
-    font-weight: bold;
-    text-align: center;
-}
-
-.etiqueta-ok {
-    background-color: #2c7ee2ff !important;  /* azul */
     color: white !important;
     font-weight: bold;
     text-align: center;
@@ -201,6 +214,36 @@
 .campo-etiqueta {
     background-color: #2c7ee2ff !important;
     color: white !important;
+}
+
+/* Resalte de datos sensibles de usuario/telefono */
+.dato-contacto-destacado {
+    display: inline-block;
+    padding: 0.2rem 0.45rem;
+    border-radius: 0.35rem;
+    background: #050505;
+    color: #9cff8a;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+}
+.dato-contacto-destacado-vacio {
+    background: #1f1f1f;
+    color: #bfc6c9;
+}
+
+.sim-numero-destacado {
+    display: inline-block;
+    padding: 0.16rem 0.45rem;
+    border-radius: 0.35rem;
+    background: #c81e1e;
+    color: #fff;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.sim-numero-destacado-vacio {
+    background: #5e5e5e;
+    color: #f0f0f0;
 }
 #tablaEquipos
 #tablaTelefonos

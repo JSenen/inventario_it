@@ -151,20 +151,22 @@ foreach ($rows as $r) {
         <a href="telefono_parte.php?id=' . (int)$r['id'] . '" class="btn btn-sm btn-secondary" target="_blank">Parte</a>
     ';
 
-    $simNumero   = $r['sim_numero'] ?? '';
+    $simNumero   = trim((string)($r['sim_numero'] ?? ''));
     $simOperador = $r['sim_operador'] ?? '';
     $numeroSerie = $r['numero_serie'] ?? '';
+    $usuarioAsignado = trim((string)($r['usuario_asignado'] ?? ''));
+    $etiquetaTel = trim((string)($r['etiqueta'] ?? ''));
 
     $data[] = [
         'id'               => (int)$r['id'],
-        'etiqueta'         => htmlspecialchars($r['etiqueta'] ?? ''),
+        'etiqueta'         => $etiquetaTel !== '' ? '<span class="etiqueta-ok">' . htmlspecialchars($etiquetaTel) . '</span>' : '<span class="etiqueta-missing">(sin etiqueta)</span>',
         'marca'            => htmlspecialchars($r['marca']),
         'modelo'           => htmlspecialchars($r['modelo']),
         'numero_serie'     => $numeroSerie !== '' ? htmlspecialchars($numeroSerie) : '-',
         'imei'             => htmlspecialchars($r['imei']),
-        'usuario_asignado' => htmlspecialchars($r['usuario_asignado']),
+        'usuario_asignado' => '<span class="dato-contacto-destacado' . ($usuarioAsignado === '' ? ' dato-contacto-destacado-vacio' : '') . '">' . htmlspecialchars($usuarioAsignado !== '' ? $usuarioAsignado : '-') . '</span>',
         'departamento'     => htmlspecialchars($r['departamento']),
-        'sim_numero'       => $simNumero !== '' ? htmlspecialchars($simNumero) : '-',
+        'sim_numero'       => '<span class="sim-numero-destacado' . ($simNumero === '' ? ' sim-numero-destacado-vacio' : '') . '">' . htmlspecialchars($simNumero !== '' ? $simNumero : '-') . '</span>',
         'sim_operador'     => $simOperador !== '' ? htmlspecialchars($simOperador) : '-',
         'estado'           => htmlspecialchars($r['estado']),
         'acciones'         => $acciones

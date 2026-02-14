@@ -651,17 +651,7 @@ $(document).ready(function () {
         createdRow: function (row, data, dataIndex) {
 
 
-            //  1. Obtener la celda y el valor real de la etiqueta
-            var indiceEtiqueta = 1; 
-            var $celdaEtiqueta = $('td:eq(' + indiceEtiqueta + ')', row);
-            var etiqueta = $celdaEtiqueta.text().trim();
-
-            //  2. Si tiene etiqueta -> aplicar CSS especial
-            if (etiqueta !== '') {
-                $celdaEtiqueta.addClass('etiqueta-ok'); 
-            }
-
-            // 3. Colorear celda de estado según su valor
+            // 1. Colorear celda de estado según su valor
             var indiceEstado = 13; // índice de la columna "Estado"
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             if ($celda.find('.badge').length === 0) {

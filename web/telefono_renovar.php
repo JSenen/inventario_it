@@ -171,7 +171,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: recibo_renovacion_telefono.php?id=' . $renovacionId);
             exit;
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             $errores[] = "No se pudo completar la renovación: " . $e->getMessage();
         }
     }
@@ -206,7 +208,7 @@ require_once __DIR__ . '/includes/header.php';
                     <div><b>Etiqueta:</b> <?= htmlspecialchars($telefono_origen['etiqueta'] ?: '-') ?></div>
                     <div><b>IMEI:</b> <?= htmlspecialchars($telefono_origen['imei']) ?></div>
                     <div><b>Nº Serie:</b> <?= htmlspecialchars($telefono_origen['numero_serie'] ?: '-') ?></div>
-                    <div><b>Usuario:</b> <?= htmlspecialchars($telefono_origen['usuario_asignado'] ?: '-') ?></div>
+                    <div><b>Usuario:</b> <span class="dato-contacto-destacado<?= trim((string)($telefono_origen['usuario_asignado'] ?? '')) === '' ? ' dato-contacto-destacado-vacio' : '' ?>"><?= htmlspecialchars($telefono_origen['usuario_asignado'] ?: '-') ?></span></div>
                     <div><b>Departamento / Ubicación / Sección:</b><br>
                         <?= htmlspecialchars($telefono_origen['departamento'] ?: '-') ?> /
                         <?= htmlspecialchars($telefono_origen['ubicacion'] ?: '-') ?> /
@@ -278,12 +280,12 @@ require_once __DIR__ . '/includes/header.php';
 
             <div class="card mt-2" id="resumen-nuevo" style="display:none;">
                 <div class="card-body p-2">
-                    <div><strong>Etiqueta:</strong> <span id="r-etiqueta">-</span></div>
+                    <div><strong>Etiqueta:</strong> <span id="r-etiqueta" class="etiqueta-missing">(sin etiqueta)</span></div>
                     <div><strong>Marca / Modelo:</strong> <span id="r-modelo">-</span></div>
                     <div><strong>IMEI:</strong> <span id="r-imei">-</span></div>
                     <div><strong>N.º serie:</strong> <span id="r-sn">-</span></div>
                     <div><strong>Estado:</strong> <span id="r-estado">-</span></div>
-                    <div><strong>Usuario:</strong> <span id="r-usuario">-</span></div>
+                    <div><strong>Usuario:</strong> <span id="r-usuario" class="dato-contacto-destacado dato-contacto-destacado-vacio">-</span></div>
                 </div>
             </div>
         </div>
@@ -316,11 +318,14 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         campos.etiqueta.textContent = opt.dataset.etiqueta || '(sin etiqueta)';
+        campos.etiqueta.classList.toggle('etiqueta-ok', !!opt.dataset.etiqueta);
+        campos.etiqueta.classList.toggle('etiqueta-missing', !opt.dataset.etiqueta);
         campos.modelo.textContent = (opt.dataset.marca || '') + ' ' + (opt.dataset.modelo || '');
         campos.imei.textContent   = opt.dataset.imei || '-';
         campos.sn.textContent     = opt.dataset.sn || '-';
         campos.estado.textContent = opt.dataset.estado || '-';
-        campos.usuario.textContent= opt.dataset.usuario || '-';
+        campos.usuario.textContent = opt.dataset.usuario || '-';
+        campos.usuario.classList.toggle('dato-contacto-destacado-vacio', !opt.dataset.usuario);
         resumen.style.display = 'block';
     }
 

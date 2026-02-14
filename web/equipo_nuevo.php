@@ -353,7 +353,9 @@ if ($numero_serie !== '') {
             exit;
 
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->intTransaction()) {
+                $pdo->rollBack();
+            }
             $errores[] = "Error al guardar el equipo: " . $e->getMessage();
         }
 
@@ -561,7 +563,7 @@ usort($imagenes_existentes, function ($a, $b) {
                                     ?>
                                     <?php
                                         // La clase en <option> no siempre aplica en todos los navegadores; añadimos color inline si tiene etiqueta
-                                        $styleEtiqueta = $sim['etiqueta'] ? 'style="color:#0d6efd;font-weight:600;"' : '';
+                                        $styleEtiqueta = $sim['etiqueta'] ? 'style="color:#175fce;font-weight:700;"' : '';
                                     ?>
                                     <option value="<?= (int)$sim['id'] ?>" <?= $selected ?> class="<?= $sim['etiqueta'] ? 'etiqueta-ok' : '' ?>" <?= $styleEtiqueta ?>>
                                         <?= $sim['etiqueta'] ? '[' . htmlspecialchars($sim['etiqueta']) . '] ' : '' ?><?= htmlspecialchars($sim['numero']) ?> · <?= htmlspecialchars($sim['operador']) ?> (ICCID: <?= htmlspecialchars($sim['iccid']) ?>)

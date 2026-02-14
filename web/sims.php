@@ -179,19 +179,6 @@ $(document).ready(function () {
             // Usuario(5), Servicio(6), Ubicación(7),
             // IP principal(8), Red(9), Estado(10), Acciones(11)
 
-            // ---- Etiqueta (columna 1) -> clase etiqueta-ok si tiene valor ----
-            var indiceEtiqueta = 1;
-            var $celdaEtiqueta = $('td:eq(' + indiceEtiqueta + ')', row);
-
-            // En serverSide, normalmente viene en data.etiqueta
-            var etiqueta = (data.etiqueta || '').toString().trim();
-
-            if (etiqueta !== '') {
-                $celdaEtiqueta.addClass('etiqueta-ok');
-                // opcional: si quieres que parezca "badge"
-                // $celdaEtiqueta.html('<span class="etiqueta-ok">' + etiqueta + '</span>');
-                // (si haces esto, NO hace falta addClass al td)
-            }
             var indiceEstado = 6;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);

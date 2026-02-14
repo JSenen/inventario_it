@@ -239,7 +239,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: recibo_renovacion.php?id=' . $renovacionId);
             exit;
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->intTransaction()) {
+                $pdo->rollBack();
+            }
             $errores[] = "No se pudo completar la renovación: " . $e->getMessage();
         }
     }
@@ -305,7 +307,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <div class="card mt-2" id="resumen-nuevo" style="display:none;">
                 <div class="card-body p-2">
-                    <div><strong>Etiqueta:</strong> <span id="r-etiqueta">-</span></div>
+                    <div><strong>Etiqueta:</strong> <span id="r-etiqueta" class="etiqueta-missing">(sin etiqueta)</span></div>
                     <div><strong>Tipo / Estado:</strong> <span id="r-tipo">-</span> · <span id="r-estado">-</span></div>
                     <div><strong>Marca / Modelo:</strong> <span id="r-marca">-</span> <span id="r-modelo">-</span></div>
                     <div><strong>Serie:</strong> <span id="r-sn">-</span></div>
@@ -408,6 +410,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         campos.etiqueta.textContent = opt.dataset.etiqueta || '(sin etiqueta)';
+        campos.etiqueta.classList.toggle('etiqueta-ok', !!opt.dataset.etiqueta);
+        campos.etiqueta.classList.toggle('etiqueta-missing', !opt.dataset.etiqueta);
         campos.tipo.textContent     = opt.dataset.tipo || '-';
         campos.estado.textContent   = opt.dataset.estado || '-';
         campos.marca.textContent    = opt.dataset.marca || '';

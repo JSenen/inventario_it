@@ -242,8 +242,10 @@ $sqlData = "
             '<small class="text-muted">' . htmlspecialchars($row['modelo'] ?? '') . '</small>' .
             '</div>';
 
+        $usuarioAsignado = trim((string)($row['usuario_asignado'] ?? ''));
+        $usuarioClass = $usuarioAsignado === '' ? 'dato-contacto-destacado dato-contacto-destacado-vacio' : 'dato-contacto-destacado';
         $colUsuarioDepto =
-            htmlspecialchars($row['usuario_asignado'] ?? '') . '<br>' .
+            '<span class="' . $usuarioClass . '">' . htmlspecialchars($usuarioAsignado !== '' ? $usuarioAsignado : '-') . '</span><br>' .
             '<small class="text-muted">' . htmlspecialchars($row['departamento'] ?? '') . '</small>'. '<br>' .
             '<small class="text-muted">' . htmlspecialchars($row['seccion_nombre'] ?? '') . '</small>';
 
@@ -394,7 +396,9 @@ $sqlData = "
 
         $data[] = [
             $colId,
-            $colEtiqueta = '<span class="etiqueta-ok">' . htmlspecialchars($row['etiqueta'] ?? '') . '</span>',
+            $colEtiqueta = !empty($row['etiqueta'])
+                ? '<span class="etiqueta-ok">' . htmlspecialchars($row['etiqueta']) . '</span>'
+                : '<span class="etiqueta-missing">(sin etiqueta)</span>',
             $colImagen,
             $colNumSerie,
             $colTipo,

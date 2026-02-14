@@ -101,7 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
 
         } catch (Exception $e) {
-            $pdo->rollBack();
+            $if ($pdo->intTransaction()) {
+                $pdo->rollBack();
+            }
             $errores[] = "Error al guardar el teléfono: " . $e->getMessage();
         }
     }
@@ -125,7 +127,7 @@ require_once 'includes/header.php';
         <div class="row">
             <div class="col-md-4 mb-3">
                 <label class="form-label">Etiqueta</label>
-                <input type="text" name="etiqueta" class="form-control" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
+                <input type="text" name="etiqueta" class="form-control campo-etiqueta" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
             </div>
             <div class="col-md-4 mb-3">
                 <label class="form-label">Marca</label>

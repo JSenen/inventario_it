@@ -305,23 +305,7 @@ $(document).ready(function () {
             { data: 'estado' },
             { data: 'acciones', orderable: false, searchable: false }
         ],
-           // 👇 AÑADIMOS ESTO
         createdRow: function (row, data, dataIndex) {
-
-        // ---- Etiqueta (columna 1) -> clase etiqueta-ok si tiene valor ----
-            var indiceEtiqueta = 1;
-            var $celdaEtiqueta = $('td:eq(' + indiceEtiqueta + ')', row);
-
-            // En serverSide, normalmente viene en data.etiqueta
-            var etiqueta = (data.etiqueta || '').toString().trim();
-
-            if (etiqueta !== '') {
-                $celdaEtiqueta.addClass('etiqueta-ok');
-                // opcional: si quieres que parezca "badge"
-                // $celdaEtiqueta.html('<span class="etiqueta-ok">' + etiqueta + '</span>');
-                // (si haces esto, NO hace falta addClass al td)
-            }
-            
             // Índice de la columna "Estado"
             var indiceEstado = 10;
 
