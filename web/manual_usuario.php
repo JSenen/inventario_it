@@ -37,9 +37,12 @@ require_once __DIR__ . '/includes/header.php';
         <div class="card-body">
             <ul class="mb-0">
                 <li><strong>Alta:</strong> entra en Equipos y pulsa nuevo equipo. Completa tipo, etiqueta, serie, ubicación, departamento, sección, estado y usuario si procede.</li>
+                <li><strong>Entrada de equipo nuevo:</strong> cuando llega un equipo nuevo, regístralo inicialmente en estado <strong>Almacén</strong>. En el momento de asignarlo a una unidad, completa departamento, sección, ubicación y usuario; cambia el estado a <strong>Activo</strong> y genera el recibo de movimiento.</li>
                 <li><strong>Edición:</strong> desde la ficha del equipo puedes cambiar datos, estado, red/IP, monitores y relaciones PTI.</li>
                 <li><strong>PTI:</strong> los equipos PTI permiten asignar SIM y DOCK de forma opcional.</li>
-                <li><strong>Ficha:</strong> en detalle verás datos técnicos, relaciones (SIM/DOCK/monitores), IP y acciones rápidas.</li>
+                <li><strong>Ficha:</strong> en detalle verás datos técnicos, relaciones (SIM/DOCK/monitores), IP y acciones rápidas. Si hay SIM asignada en un PTI, su etiqueta enlaza a la ficha de esa SIM.</li>
+                <li><strong>Renovación:</strong> desde la ficha del equipo puedes iniciar la renovación para crear/asociar el nuevo equipo, trasladar relaciones cuando aplique y generar el recibo de renovación.</li>
+                <li><strong>Estado visual:</strong> en listados y fichas, el estado se muestra con colores para identificar rápidamente activo, averiado, baja, almacén, prestado o privado.</li>
             </ul>
         </div>
     </div>
@@ -62,6 +65,7 @@ require_once __DIR__ . '/includes/header.php';
                 <li>Gestiona teléfonos y tarjetas SIM desde su menú específico.</li>
                 <li>Asigna, cambia o libera SIMs en teléfonos según disponibilidad.</li>
                 <li>Consulta historial de SIM y operaciones de renovación cuando corresponda.</li>
+                <li>Desde la ficha del teléfono puedes renovar para crear/asociar el nuevo terminal, mantener la trazabilidad de la asignación y generar el recibo de renovación.</li>
             </ul>
         </div>
     </div>

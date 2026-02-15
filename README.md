@@ -8,15 +8,20 @@ Implementado:
 
 - Gestión de equipos:
   - Alta, edición, ficha y baja lógica.
+  - Flujo recomendado de alta/asignación: registrar equipos nuevos en `Almacén` y, al asignarlos a una unidad, completar datos de destino (departamento/sección/ubicación/usuario), pasar a `Activo` y emitir recibo de movimiento.
   - Asociación de IP principal.
   - Asociación de monitores (`pc_monitores`).
   - Renovación de equipos y generación de recibos.
+  - Ficha de equipo con estado visual por color y acceso directo a SIM asociada en equipos PTI.
+  - Renovación iniciable desde la ficha para transferir relaciones al nuevo equipo cuando aplica.
 - PTI:
   - Asignación de SIM (`equipo_sim`).
   - Asignación de DOCK (`equipo_dock`).
 - Móviles/SIM:
   - Altas, edición, historial y renovaciones de teléfonos.
   - Asignación/liberación/cambio de SIM en teléfono.
+  - Ficha de teléfono con estado visual por color.
+  - Renovación iniciable desde la ficha para mantener trazabilidad y generar recibo.
 - Redes:
   - Catálogo de redes.
   - Control de IP y búsqueda de IP.
