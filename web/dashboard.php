@@ -521,7 +521,7 @@ $ultimosEquipos = $pdo->query("
                         <li class="mb-1">Sin etiqueta: <strong><?= $equiposSinEtiqueta ?></strong></li>
                         <li class="mb-1">Sin usuario asignado: <strong><?= $equiposSinUsuario ?></strong></li>
                         <li class="mb-1">Sin departamento: <strong><?= $equiposSinDept ?></strong></li>
-                        <li class="mb-1">Sin hostname: <strong><?= $equiposSinHostname ?></strong></li>
+                        <li class="mb-1">Sin tipo servicio: <strong><?= $equiposSinHostname ?></strong></li>
                         <li class="mb-1">En uso: <strong><?= $equiposEnUso ?></strong></li>
                     </ul>
                 </div>
@@ -761,7 +761,7 @@ $redesCalculadas = array_slice($redesCalculadas, 0, 5);
                 </div>
                 <div class="col-md-6">
                     <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header bg-light"><strong>Top departamentos</strong></div>
+                        <div class="card-header bg-light"><strong>Top teléfonos departamentos</strong></div>
                         <div class="card-body">
                             <?php if (empty($topDeptTelefonos)): ?>
                                 <small class="text-muted">Sin datos.</small>

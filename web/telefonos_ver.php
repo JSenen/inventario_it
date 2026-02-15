@@ -16,6 +16,29 @@ if (!$tel) {
     die("Teléfono no encontrado.");
 }
 
+$estadoTelefono = (string)($tel['estado'] ?? '');
+$estadoKey = strtr(trim($estadoTelefono), [
+    'Á' => 'A',
+    'É' => 'E',
+    'Í' => 'I',
+    'Ó' => 'O',
+    'Ú' => 'U',
+    'á' => 'a',
+    'é' => 'e',
+    'í' => 'i',
+    'ó' => 'o',
+    'ú' => 'u',
+]);
+$estadoKey = strtolower($estadoKey);
+$estadoClase = match ($estadoKey) {
+    'activo'   => 'estado-activo',
+    'averiado' => 'estado-averiado',
+    'baja'     => 'estado-baja',
+    'almacen'  => 'estado-almacen',
+    'prestado' => 'estado-prestado',
+    default    => '',
+};
+
 // SIM actual (si la hay)
 $sqlSimActual = "
     SELECT ts.id AS rel_id, s.*
@@ -37,9 +60,9 @@ require_once 'includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>
             Teléfono móvil -
-            <?php if (!empty($tel['etiqueta'])): ?>
+            <!-- <?php if (!empty($tel['etiqueta'])): ?>
                 <span class="etiqueta-ok etiqueta-inline">[<?= htmlspecialchars($tel['etiqueta']) ?>]</span>
-            <?php endif; ?>
+            <?php endif; ?> -->
             <?= htmlspecialchars($tel['marca'] . ' ' . $tel['modelo']) ?>
         </h2>
         <div>
@@ -69,7 +92,7 @@ require_once 'includes/header.php';
                 <tr><th>Departamento</th>    <td><?= htmlspecialchars($tel['departamento'] ?? '') ?></td></tr>
                 <tr><th>Ubicación</th>       <td><?= htmlspecialchars($tel['ubicacion'] ?? '') ?></td></tr>
                 <tr><th>Sección</th>         <td><?= htmlspecialchars($tel['seccion'] ?? '') ?></td></tr>
-                <tr><th>Estado</th>          <td><?= htmlspecialchars($tel['estado'] ?? '') ?></td></tr>
+                <tr><th>Estado</th>          <td class="<?= $estadoClase ?>"><?= htmlspecialchars($estadoTelefono) ?></td></tr>
                 <tr><th>Fecha alta</th>      <td><?= htmlspecialchars($tel['fecha_alta'] ?? '') ?></td></tr>
                 <tr><th>Fecha baja</th>      <td><?= htmlspecialchars($tel['fecha_baja'] ?? '') ?></td></tr>
                 <!-- <tr><th>Proveedor</th>       <td><?= htmlspecialchars($tel['proveedor']) ?></td></tr>
@@ -84,7 +107,11 @@ require_once 'includes/header.php';
         <!-- Bloque SIM actual + imagen -->
         <div class="col-md-4">
             <div class="card mb-3">
-                <div class="card-header"><b>SIM actual</b></div>
+                <div class="card-header"><b>SIM actual </b>
+                <span class="etiqueta-numero">
+                    <?= htmlspecialchars($simActual['etiqueta'] ?? '') ?>
+                </span>
+            </div>
                 <div class="card-body">
                     <?php if ($simActual): ?>
                         <p><b>Número:</b> <span class="etiqueta-numero"><?= htmlspecialchars($simActual['numero']) ?></span></p>

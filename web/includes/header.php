@@ -157,11 +157,14 @@
 }
 
 .etiqueta-numero {
+    display: block;
     background-color: #d65252ff !important;  /* rojo */
     color: white !important;
     font-weight: bold;
     text-align: center;
     font-size: 18px;
+    padding: 0.2rem 0.45rem;
+    border-radius: 0.35rem;
 }
 
 .custom-dropdown-menu {

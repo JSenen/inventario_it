@@ -27,6 +27,39 @@ if (!$equipo) {
     die('Equipo no encontrado');
 }
 
+$estadoRaw = trim((string)($equipo['estado'] ?? ''));
+$estadoLower = strtolower($estadoRaw);
+$estadoClass = 'bg-secondary';
+$estadoIcon  = 'bi-info-circle-fill';
+
+switch ($estadoLower) {
+    case 'activo':
+        $estadoClass = 'bg-success';
+        $estadoIcon  = 'bi-check-circle-fill';
+        break;
+    case 'averiado':
+        $estadoClass = 'bg-warning text-dark';
+        $estadoIcon  = 'bi-exclamation-triangle-fill';
+        break;
+    case 'baja':
+        $estadoClass = 'bg-danger';
+        $estadoIcon  = 'bi-x-circle-fill';
+        break;
+    case 'almacen':
+    case 'almacén':
+        $estadoClass = 'bg-secondary';
+        $estadoIcon  = 'bi-archive-fill';
+        break;
+    case 'prestado':
+        $estadoClass = 'bg-info text-dark';
+        $estadoIcon  = 'bi-clock-history';
+        break;
+    case 'privado':
+        $estadoClass = 'bg-dark';
+        $estadoIcon  = 'bi-shield-lock-fill';
+        break;
+}
+
 // Asegurar tabla de relación SIM↔equipo para PTI
 $pdo->exec("
     CREATE TABLE IF NOT EXISTS equipo_sim (
@@ -373,7 +406,9 @@ require_once __DIR__ . '/includes/header.php';
 
     <h4>Información del equipo</h4>
     <table class="table table-bordered">
-        <tr><th>ID</th> <td> (id) <?= htmlspecialchars($equipo['id']) ?> (etiqueta) <span class="<?= !empty($equipo['etiqueta']) ? 'etiqueta-ok' : 'etiqueta-missing' ?>"><?= htmlspecialchars(!empty($equipo['etiqueta']) ? $equipo['etiqueta'] : '(sin etiqueta)') ?></span></td></tr>
+        <tr>
+            <th>ID</th>
+             <td> <span class="<?= !empty($equipo['etiqueta']) ? 'etiqueta-ok' : 'etiqueta-missing' ?>"><?= htmlspecialchars(!empty($equipo['etiqueta']) ? $equipo['etiqueta'] : '(sin etiqueta)') ?></span></td></tr>
         <?php if (!empty($equipo['imagen'])): ?>
         <tr>
             <th>Imagen</th>
@@ -396,7 +431,12 @@ require_once __DIR__ . '/includes/header.php';
             <tr>
                 <th>SIM (PTI)</th>
                 <td>
-                    Nº <?= htmlspecialchars($simActual['numero']) ?> · <?= htmlspecialchars($simActual['operador']) ?><br>
+                    <?php if (!empty($simActual['etiqueta'])): ?>
+                        <a href="sims_ver.php?id=<?= (int)$simActual['id'] ?>">
+                            <span class="etiqueta-numero"><?= htmlspecialchars($simActual['etiqueta']) ?></span>
+                        </a>
+                    <?php endif; ?>
+                    Nº <?= htmlspecialchars($simActual['numero']) ?> · <br>
                     ICCID: <?= htmlspecialchars($simActual['iccid']) ?>
                 </td>
             </tr>
@@ -490,7 +530,15 @@ require_once __DIR__ . '/includes/header.php';
         <?php endif; ?>
     </td>
 </tr> -->
-        <tr><th>Estado</th> <td><?= htmlspecialchars($equipo['estado']) ?></td></tr>
+        <tr>
+            <th>Estado</th>
+            <td>
+                <span class="badge rounded-pill <?= $estadoClass ?> d-inline-flex align-items-center gap-1">
+                    <i class="bi <?= $estadoIcon ?>"></i>
+                    <?= htmlspecialchars($estadoRaw !== '' ? $estadoRaw : '-') ?>
+                </span>
+            </td>
+        </tr>
         <tr><th>Creado en</th> <td><?= htmlspecialchars($equipo['creado_en']) ?></td></tr>
     </table>
 <h4 class="mt-4">Material instalado / consumido</h4>
