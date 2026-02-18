@@ -624,7 +624,7 @@ $ultimosEquipos = $pdo->query("
             <div class="card shadow-sm border-0 mt-3">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <strong>Equipos en almacén</strong>
-                    <a href="equipos.php" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                    <a href="index.php?estado=Almac%C3%A9n" class="btn btn-sm btn-outline-primary">Ver todos</a>
                 </div>
                 <div class="card-body">
                     <?php if (empty($equiposAlmacenLista)): ?>

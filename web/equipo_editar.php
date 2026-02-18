@@ -656,9 +656,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 */
             }
-                        logActividad($pdo, 'EDITAR_EQUIPO', 'Equipo editado: ID=' . $id);
-
             $pdo->commit();
+            logActividad($pdo, 'EDITAR_EQUIPO', 'Equipo editado: ID=' . $id);
 
             // 👇 Registrar movimiento (si procede: Almacén <-> Activo/Prestado)
             try {
@@ -692,7 +691,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
         } catch (Exception $e) {
-             if ($pdo->intTransaction()) {
+             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
             $errores[] = "Error al actualizar el equipo: " . $e->getMessage();

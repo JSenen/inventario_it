@@ -11,6 +11,9 @@ $totalTelefonos = (int)$pdo->query("SELECT COUNT(*) FROM telefonos")->fetchColum
 // Teléfonos activos
 $totalTelefonosActivos = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Activo'")->fetchColumn();
 
+// Teléfonos almacén
+$totalTelefonosAlmacen = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Almacén'")->fetchColumn();
+
 // Telefonos Averiados
 $totalTelefonosAveriados = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Averiado'")->fetchColumn();
 
@@ -65,6 +68,15 @@ $telPorDept = $pdo->query($sqlDept)->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card-body">
                     <h5 class="card-title">Teléfonos totales</h5>
                     <p class="fs-3"><?= $totalTelefonos ?></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2 col-sm-4 mb-2">
+            <div class="card text-bg-secondary h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Teléfonos almacén</h5>
+                    <p class="fs-3"><?= $totalTelefonosAlmacen ?></p>
                 </div>
             </div>
         </div>
@@ -218,8 +230,7 @@ $telPorDept = $pdo->query($sqlDept)->fetchAll(PDO::FETCH_ASSOC);
             <tr>
                 <th>ID</th>
                 <th>Etiqueta</th>
-                <th>Marca</th>
-                <th>Modelo</th>
+                <th>Marca / Modelo</th>
                 <th>Nº Serie</th>
                 <th>IMEI</th>
                 <th>Usuario</th>
@@ -294,8 +305,7 @@ $(document).ready(function () {
         columns: [
             { data: 'id' },
             { data: 'etiqueta' },
-            { data: 'marca' },
-            { data: 'modelo' },
+            { data: 'marca_modelo' },
             { data: 'numero_serie' },
             { data: 'imei' },
             { data: 'usuario_asignado' },
@@ -307,7 +317,7 @@ $(document).ready(function () {
         ],
         createdRow: function (row, data, dataIndex) {
             // Índice de la columna "Estado"
-            var indiceEstado = 10;
+            var indiceEstado = 9;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();

@@ -1,6 +1,9 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once __DIR__ . '/includes/sims_schema.php';
+
+ensureSimsSchema($pdo);
 
 function jsonError(string $msg): void {
     header('Content-Type: application/json; charset=utf-8');
@@ -15,7 +18,7 @@ $length = $_GET['length'] ?? 25;
 $search = $_GET['search']['value'] ?? '';
 
 // Columnas permitidas para ordenar
-$columns = ['id', 'etiqueta', 'numero', 'iccid', 'operador', 'puk', 'estado'];
+$columns = ['id', 'etiqueta', 'numero', 'numero_corto', 'iccid', 'operador', 'puk', 'estado'];
 $orderColIndex = $_GET['order'][0]['column'] ?? 0;
 $orderDir      = $_GET['order'][0]['dir'] ?? 'asc';
 $orderColumn   = $columns[$orderColIndex] ?? 'id';
@@ -30,6 +33,7 @@ $params     = [];
 if (!empty($search)) {
     $whereParts[] = "(etiqueta LIKE :search 
               OR numero LIKE :search 
+              OR numero_corto LIKE :search
               OR iccid LIKE :search 
               OR operador LIKE :search 
               OR puk LIKE :search)";
@@ -63,7 +67,7 @@ try {
     }
 
     // Datos
-    $sql = "SELECT id, etiqueta, numero, iccid, operador, puk, estado 
+    $sql = "SELECT id, etiqueta, numero, numero_corto, iccid, operador, puk, estado 
             FROM sims
             $where
             ORDER BY $orderColumn $orderDir
@@ -97,6 +101,7 @@ foreach ($rows as $r) {
         'id'       => $r['id'],
         'etiqueta' => $etiquetaSim !== '' ? '<span class="etiqueta-ok">' . htmlspecialchars($etiquetaSim) . '</span>' : '<span class="etiqueta-missing">(sin etiqueta)</span>',
         'numero'   => '<span class="sim-numero-destacado">' . htmlspecialchars((string)($r['numero'])) . '</span>',
+        'numero_corto' => htmlspecialchars((string)($r['numero_corto'] ?? '')),
         'iccid'    => htmlspecialchars((string)($r['iccid'])),
         'operador' => htmlspecialchars((string)($r['operador'])),
         'puk'      => htmlspecialchars((string)($r['puk'])),

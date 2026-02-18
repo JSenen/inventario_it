@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
 
         } catch (Exception $e) {
-            if ($pdo->intTransaction()) {
+            if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
             $errores[] = "Error al guardar el teléfono: " . $e->getMessage();

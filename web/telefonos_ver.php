@@ -114,7 +114,11 @@ require_once 'includes/header.php';
             </div>
                 <div class="card-body">
                     <?php if ($simActual): ?>
-                        <p><b>Número:</b> <span class="etiqueta-numero"><?= htmlspecialchars($simActual['numero']) ?></span></p>
+                        <p><b>Número:</b>
+                            <a href="sims_ver.php?id=<?= (int)$simActual['id'] ?>" class="etiqueta-numero text-decoration-none">
+                                <?= htmlspecialchars($simActual['numero']) ?>
+                            </a>
+                        </p>
                         <p><b>Operador:</b> <?= htmlspecialchars($simActual['operador']) ?></p>
                         <p><b>ICCID:</b> <?= htmlspecialchars($simActual['iccid']) ?></p>
                         <p><b>Estado SIM:</b> <?= htmlspecialchars($simActual['estado']) ?></p>

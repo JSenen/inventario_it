@@ -239,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: recibo_renovacion.php?id=' . $renovacionId);
             exit;
         } catch (Exception $e) {
-            if ($pdo->intTransaction()) {
+            if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
             $errores[] = "No se pudo completar la renovación: " . $e->getMessage();

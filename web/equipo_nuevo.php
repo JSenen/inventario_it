@@ -324,9 +324,8 @@ if ($numero_serie !== '') {
                 ]);
             }
 
-                        logActividad($pdo, 'CREAR_EQUIPO', 'Nuevo equipo creado: ID=' . $equipoId);
-
             $pdo->commit();
+            logActividad($pdo, 'CREAR_EQUIPO', 'Nuevo equipo creado: ID=' . $equipoId);
 
             // 👇 Si se crea ya como Activo/Prestado con usuario, consideramos salida desde almacén
             try {
@@ -353,7 +352,7 @@ if ($numero_serie !== '') {
             exit;
 
         } catch (Exception $e) {
-            if ($pdo->intTransaction()) {
+            if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
             $errores[] = "Error al guardar el equipo: " . $e->getMessage();

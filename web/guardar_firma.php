@@ -45,7 +45,14 @@ if (!is_dir($dirFirmas)) {
     mkdir($dirFirmas, 0775, true);
 }
 
-$fileName = $mov ? ('firma_mov_' . $mov['id'] . '.png') : ('firma_renov_' . $ren['id'] . '.png');
+$fileName = '';
+if ($mov) {
+    $fileName = 'firma_mov_' . $mov['id'] . '.png';
+} elseif ($ren) {
+    $fileName = 'firma_renov_' . $ren['id'] . '.png';
+} else {
+    $fileName = 'firma_renov_tel_' . $renTel['id'] . '.png';
+}
 $rutaFisica = $dirFirmas . $fileName;
 file_put_contents($rutaFisica, $imgBin);
 

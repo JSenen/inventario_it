@@ -25,7 +25,6 @@ $columns = [
     't.id',
     't.etiqueta',
     't.marca',
-    't.modelo',
     't.numero_serie',
     't.imei',
     't.usuario_asignado',
@@ -119,6 +118,7 @@ $sql = "SELECT
             t.usuario_asignado,
             t.departamento,
             t.estado,
+            s.id       AS sim_id,
             s.numero   AS sim_numero,
             s.operador AS sim_operador
         $fromClause
@@ -152,21 +152,26 @@ foreach ($rows as $r) {
     ';
 
     $simNumero   = trim((string)($r['sim_numero'] ?? ''));
+    $simId       = isset($r['sim_id']) ? (int)$r['sim_id'] : 0;
     $simOperador = $r['sim_operador'] ?? '';
     $numeroSerie = $r['numero_serie'] ?? '';
     $usuarioAsignado = trim((string)($r['usuario_asignado'] ?? ''));
     $etiquetaTel = trim((string)($r['etiqueta'] ?? ''));
+    $marca = trim((string)($r['marca'] ?? ''));
+    $modelo = trim((string)($r['modelo'] ?? ''));
+    $marcaModelo = trim($marca . ' ' . $modelo);
 
     $data[] = [
         'id'               => (int)$r['id'],
         'etiqueta'         => $etiquetaTel !== '' ? '<span class="etiqueta-ok">' . htmlspecialchars($etiquetaTel) . '</span>' : '<span class="etiqueta-missing">(sin etiqueta)</span>',
-        'marca'            => htmlspecialchars($r['marca']),
-        'modelo'           => htmlspecialchars($r['modelo']),
+        'marca_modelo'     => htmlspecialchars($marcaModelo !== '' ? $marcaModelo : '-'),
         'numero_serie'     => $numeroSerie !== '' ? htmlspecialchars($numeroSerie) : '-',
         'imei'             => htmlspecialchars($r['imei']),
         'usuario_asignado' => '<span class="dato-contacto-destacado' . ($usuarioAsignado === '' ? ' dato-contacto-destacado-vacio' : '') . '">' . htmlspecialchars($usuarioAsignado !== '' ? $usuarioAsignado : '-') . '</span>',
         'departamento'     => htmlspecialchars($r['departamento']),
-        'sim_numero'       => '<span class="sim-numero-destacado' . ($simNumero === '' ? ' sim-numero-destacado-vacio' : '') . '">' . htmlspecialchars($simNumero !== '' ? $simNumero : '-') . '</span>',
+        'sim_numero'       => ($simNumero !== '' && $simId > 0)
+            ? '<a href="sims_ver.php?id=' . $simId . '" class="sim-numero-destacado text-decoration-none">' . htmlspecialchars($simNumero) . '</a>'
+            : '<span class="sim-numero-destacado sim-numero-destacado-vacio">-</span>',
         'sim_operador'     => $simOperador !== '' ? htmlspecialchars($simOperador) : '-',
         'estado'           => htmlspecialchars($r['estado']),
         'acciones'         => $acciones

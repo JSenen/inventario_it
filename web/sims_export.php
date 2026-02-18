@@ -1,6 +1,9 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once __DIR__ . '/includes/sims_schema.php';
+
+ensureSimsSchema($pdo);
 
 header("Content-Type: application/vnd.ms-excel");
 header("Content-Disposition: attachment; filename=sims.xls");
@@ -9,7 +12,7 @@ header("Expires: 0");
 
 // Columnas
 
-echo "ID\tEtiqueta\tNúmero\tICCID\tOperador\tPUK\tEstado\n";
+echo "ID\tEtiqueta\tNúmero\tNúmero corto\tICCID\tOperador\tPUK\tEstado\n";
 
 
 // Filtros
@@ -19,6 +22,7 @@ $params = [];
 if (!empty($_GET['search'] ?? '')) {
     $whereParts[] = "(etiqueta LIKE :search 
               OR numero LIKE :search 
+              OR numero_corto LIKE :search
               OR iccid LIKE :search 
               OR operador LIKE :search 
               OR puk LIKE :search)";
@@ -37,7 +41,7 @@ if (!empty($_GET['operador'] ?? '')) {
 
 $where = $whereParts ? ('WHERE ' . implode(' AND ', $whereParts)) : '';
 
-$sql = "SELECT id, etiqueta, numero, iccid, operador, puk, estado
+$sql = "SELECT id, etiqueta, numero, numero_corto, iccid, operador, puk, estado
         FROM sims
         $where
         ORDER BY id ASC";
@@ -58,6 +62,7 @@ $iccidExcel = '="' . str_replace('"', '""', $iccid) . '"';
     echo $row['id'] . "\t" .
      ($row['etiqueta'] ?? '') . "\t" .
      ($row['numero'] ?? '') . "\t" .
+     ($row['numero_corto'] ?? '') . "\t" .
      $iccidExcel . "\t" .          // 👈 aquí
      ($row['operador'] ?? '') . "\t" .
      ($row['puk'] ?? '') . "\t" .

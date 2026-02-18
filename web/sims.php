@@ -1,7 +1,10 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once __DIR__ . '/includes/sims_schema.php';
 require_once 'includes/header.php';
+
+ensureSimsSchema($pdo);
 
 
 // Total SIMs
@@ -93,6 +96,7 @@ $operadores = $pdo->query("
                 <th>ID</th>
                 <th>Etiqueta</th>
                 <th>Número</th>
+                <th>Número corto</th>
                 <th>ICCID</th>
                 <th>Operador</th>
                 <th>PUK</th>
@@ -158,6 +162,7 @@ $(document).ready(function () {
             { data: 'id' },
             { data: 'etiqueta' },
             { data: 'numero' },
+            { data: 'numero_corto' },
             { data: 'iccid' },
             { data: 'operador' },
             { data: 'puk' },
@@ -179,7 +184,7 @@ $(document).ready(function () {
             // Usuario(5), Servicio(6), Ubicación(7),
             // IP principal(8), Red(9), Estado(10), Acciones(11)
 
-            var indiceEstado = 6;
+            var indiceEstado = 7;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();

@@ -131,7 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    SET usuario_asignado = :usuario,
                        departamento = :depart,
                        ubicacion = :ubic,
-                       seccion = :seccion
+                       seccion = :seccion,
+                       estado = 'Activo',
+                       fecha_baja = NULL
                  WHERE id = :id
             ");
             $stmtUpdTel->execute([
@@ -184,7 +186,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="container mt-4">
     <h2>Renovar teléfono <?= htmlspecialchars($telefono_origen['marca'] . ' ' . $telefono_origen['modelo']) ?></h2>
-    <p class="text-muted mb-1">El teléfono renovado pasará a <strong>Baja</strong> y el nuevo heredará su SIM, usuario y ubicaciones.</p>
+    <p class="text-muted mb-1">El teléfono renovado pasará a <strong>Baja</strong> y el nuevo heredará su SIM, usuario y ubicaciones, quedando en estado <strong>Activo</strong>.</p>
     <?php if (!$sim_origen): ?>
         <div class="alert alert-warning">Este teléfono no tiene SIM asignada actualmente. No es posible trasladar la SIM.</div>
     <?php endif; ?>

@@ -1,6 +1,9 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once __DIR__ . '/includes/sims_schema.php';
+
+ensureSimsSchema($pdo);
 
 // Obtener ID de la SIM
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -75,8 +78,9 @@ require_once 'includes/header.php';
 
     <table class="table table-bordered">
         <tr><th>ID</th> <td><?= (int)$sim['id'] ?></td></tr>
-        <tr><th>Etiqueta</th> <td><?= htmlspecialchars($sim['etiqueta'] ?? '') ?></td></tr>
-        <tr><th>Número</th> <td><?= htmlspecialchars($sim['numero']) ?></td></tr>
+        <tr><th>Etiqueta</th> <td><span class="etiqueta-ok"><?= htmlspecialchars($sim['etiqueta'] ?? '') ?></span></td></tr>
+        <tr><th>Número</th> <td><span class="sim-numero-destacado"><?= htmlspecialchars($sim['numero']) ?></span></td></tr>
+        <tr><th>Número corto</th> <td><?= htmlspecialchars($sim['numero_corto'] ?: '-') ?></td></tr>
         <tr><th>ICCID</th> <td><?= htmlspecialchars($sim['iccid']) ?></td></tr>
         <tr><th>Operador</th> <td><?= htmlspecialchars($sim['operador']) ?></td></tr>
         <tr><th>Tarifa</th> <td><?= htmlspecialchars($sim['tarifa']) ?></td></tr>

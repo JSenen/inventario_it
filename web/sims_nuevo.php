@@ -1,12 +1,16 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once __DIR__ . '/includes/sims_schema.php';
+
+ensureSimsSchema($pdo);
 
 $errores = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $etiqueta  = trim($_POST['etiqueta'] ?? '');
     $numero    = trim($_POST['numero'] ?? '');
+    $numeroCorto = trim($_POST['numero_corto'] ?? '');
     $iccid     = trim($_POST['iccid'] ?? '');
     $operador  = trim($_POST['operador'] ?? '');
     $tarifa    = trim($_POST['tarifa'] ?? '');
@@ -21,12 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errores) {
         $stmt = $pdo->prepare("
-            INSERT INTO sims (etiqueta, numero, iccid, operador, tarifa, pin, puk, estado, observaciones)
-            VALUES (:etiqueta, :numero, :iccid, :operador, :tarifa, :pin, :puk, :estado, :obs)
+            INSERT INTO sims (etiqueta, numero, numero_corto, iccid, operador, tarifa, pin, puk, estado, observaciones)
+            VALUES (:etiqueta, :numero, :numero_corto, :iccid, :operador, :tarifa, :pin, :puk, :estado, :obs)
         ");
         $stmt->execute([
             ':etiqueta' => $etiqueta ?: null,
             ':numero'   => $numero,
+            ':numero_corto' => $numeroCorto !== '' ? $numeroCorto : null,
             ':iccid'    => $iccid,
             ':operador' => $operador,
             ':tarifa'   => $tarifa,
@@ -63,6 +68,10 @@ require_once 'includes/header.php';
         <div class="mb-3">
             <label class="form-label">Número</label>
             <input type="text" name="numero" class="form-control" >
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Número corto</label>
+            <input type="text" name="numero_corto" class="form-control" value="<?= htmlspecialchars($_POST['numero_corto'] ?? '') ?>">
         </div>
 
         <div class="mb-3">

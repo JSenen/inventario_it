@@ -1,6 +1,9 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once __DIR__ . '/includes/sims_schema.php';
+
+ensureSimsSchema($pdo);
 
 $errores = [];
 
@@ -35,6 +38,7 @@ $telefonoActual = $stmtTel->fetch(PDO::FETCH_ASSOC);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $etiqueta  = trim($_POST['etiqueta'] ?? '');
     $numero    = trim($_POST['numero'] ?? '');
+    $numeroCorto = trim($_POST['numero_corto'] ?? '');
     $iccid     = trim($_POST['iccid'] ?? '');
     $operador  = trim($_POST['operador'] ?? '');
     $tarifa    = trim($_POST['tarifa'] ?? '');
@@ -53,8 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmtUpd = $pdo->prepare("
                 UPDATE sims
-                   SET etiqueta    = :etiqueta,
+                       SET etiqueta    = :etiqueta,
                        numero      = :numero,
+                       numero_corto = :numero_corto,
                        iccid       = :iccid,
                        operador    = :operador,
                        tarifa      = :tarifa,
@@ -70,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtUpd->execute([
                 ':etiqueta'   => $etiqueta ?: null,
                 ':numero'     => $numero,
+                ':numero_corto' => $numeroCorto !== '' ? $numeroCorto : null,
                 ':iccid'      => $iccid,
                 ':operador'   => $operador,
                 ':tarifa'     => $tarifa,
@@ -92,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Recargar datos en $sim con lo del POST para mantener valores del formulario
     $sim['numero']        = $numero;
+    $sim['numero_corto']  = $numeroCorto;
     $sim['etiqueta']      = $etiqueta;
     $sim['iccid']         = $iccid;
     $sim['operador']      = $operador;
@@ -143,6 +150,11 @@ require_once 'includes/header.php';
                 <label class="form-label">Número</label>
                 <input type="text" name="numero" class="form-control"
                        value="<?= htmlspecialchars((string)($sim['numero'])) ?>">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Número corto</label>
+                <input type="text" name="numero_corto" class="form-control"
+                       value="<?= htmlspecialchars((string)($sim['numero_corto'] ?? '')) ?>">
             </div>
 
             <div class="col-md-4 mb-3">

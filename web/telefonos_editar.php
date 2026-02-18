@@ -279,6 +279,25 @@ require_once 'includes/header.php';
             </div>
             <div class="row">
     <div class="col-md-4 mb-3">
+        <label class="form-label">Ubicación</label>
+        <select name="ubicacion" class="form-select">
+            <option value="">-- Seleccione ubicación --</option>
+            <?php 
+            $valorUbic = isset($_POST['ubicacion']) 
+                ? $_POST['ubicacion'] 
+                : $telefono['ubicacion'];
+            foreach ($ubicaciones as $u): 
+                $nombre = $u['nombre'];
+                $selected = ($valorUbic === $nombre) ? 'selected' : '';
+            ?>
+                <option value="<?= htmlspecialchars($nombre) ?>" <?= $selected ?>>
+                    <?= htmlspecialchars($nombre) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+
+    <div class="col-md-4 mb-3">
         <label class="form-label">Departamento</label>
         <select name="departamento" class="form-select">
             <option value="">-- Seleccione departamento --</option>
@@ -297,24 +316,7 @@ require_once 'includes/header.php';
         </select>
     </div>
 
-    <div class="col-md-4 mb-3">
-        <label class="form-label">Ubicación</label>
-        <select name="ubicacion" class="form-select">
-            <option value="">-- Seleccione ubicación --</option>
-            <?php 
-            $valorUbic = isset($_POST['ubicacion']) 
-                ? $_POST['ubicacion'] 
-                : $telefono['ubicacion'];
-            foreach ($ubicaciones as $u): 
-                $nombre = $u['nombre'];
-                $selected = ($valorUbic === $nombre) ? 'selected' : '';
-            ?>
-                <option value="<?= htmlspecialchars($nombre) ?>" <?= $selected ?>>
-                    <?= htmlspecialchars($nombre) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+    
 
     <div class="col-md-4 mb-3">
         <label class="form-label">Sección</label>
@@ -361,7 +363,7 @@ require_once 'includes/header.php';
                 <input type="date" name="fecha_baja" class="form-control"
                        value="<?= htmlspecialchars($telefono['fecha_baja']) ?>">
             </div>
-            <div class="col-md-3 mb-3">
+            <!-- <div class="col-md-3 mb-3">
                 <label class="form-label">Proveedor</label>
                 <input type="text" name="proveedor" class="form-control"
                        value="<?= htmlspecialchars($telefono['proveedor']) ?>">
@@ -370,7 +372,7 @@ require_once 'includes/header.php';
                 <label class="form-label">Coste (€)</label>
                 <input type="number" step="0.01" name="coste" class="form-control"
                        value="<?= htmlspecialchars($telefono['coste']) ?>">
-            </div>
+            </div> -->
         </div>
 
         <!-- Select de SIM -->
@@ -387,7 +389,7 @@ require_once 'includes/header.php';
 
                 <?php foreach ($simsDisponibles as $sim): ?>
                     <option value="<?= (int)$sim['id'] ?>">
-                        <?= htmlspecialchars($sim['numero']) ?> (<?= htmlspecialchars($sim['operador']) ?>)
+                        <?= htmlspecialchars($sim['numero']) . (!empty($sim['etiqueta']) ? '-' . htmlspecialchars($sim['etiqueta']) : '')?> (<?= htmlspecialchars($sim['operador']) ?>)
                     </option>
                 <?php endforeach; ?>
             </select>
