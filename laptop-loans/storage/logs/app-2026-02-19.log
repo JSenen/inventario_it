@@ -1,0 +1,48 @@
+[2026-02-19 19:55:35] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"127.0.0.1"}
+[2026-02-19 19:55:35] ERROR   Uncaught exception: SQLSTATE[HY000] [2002] Connection refused {"msg":"SQLSTATE[HY000] [2002] Connection refused","file":"/var/www/html/laptop-loans/app/Models/DB.php","line":13,"trace":"#0 /var/www/html/laptop-loans/app/Models/DB.php(13): PDO->__construct('mysql:host=127....', 'gati', Object(SensitiveParameterValue), Array)\n#1 /var/www/html/laptop-loans/app/Controllers/HandoversController.php(65): App\\Models\\DB::pdo()\n#2 /var/www/html/laptop-loans/public/index.php(52): App\\Controllers\\HandoversController->index()\n#3 {main}"}
+[2026-02-19 19:55:52] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 19:55:52] ERROR   Uncaught exception: SQLSTATE[HY000] [2002] Connection refused {"msg":"SQLSTATE[HY000] [2002] Connection refused","file":"/var/www/html/laptop-loans/app/Models/DB.php","line":13,"trace":"#0 /var/www/html/laptop-loans/app/Models/DB.php(13): PDO->__construct('mysql:host=127....', 'gati', Object(SensitiveParameterValue), Array)\n#1 /var/www/html/laptop-loans/app/Controllers/HandoversController.php(65): App\\Models\\DB::pdo()\n#2 /var/www/html/laptop-loans/public/index.php(52): App\\Controllers\\HandoversController->index()\n#3 {main}"}
+[2026-02-19 19:56:01] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 19:56:01] ERROR   Uncaught exception: SQLSTATE[HY000] [2002] Connection refused {"msg":"SQLSTATE[HY000] [2002] Connection refused","file":"/var/www/html/laptop-loans/app/Models/DB.php","line":13,"trace":"#0 /var/www/html/laptop-loans/app/Models/DB.php(13): PDO->__construct('mysql:host=127....', 'gati', Object(SensitiveParameterValue), Array)\n#1 /var/www/html/laptop-loans/app/Controllers/HandoversController.php(65): App\\Models\\DB::pdo()\n#2 /var/www/html/laptop-loans/public/index.php(52): App\\Controllers\\HandoversController->index()\n#3 {main}"}
+[2026-02-19 19:58:45] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"127.0.0.1"}
+[2026-02-19 19:59:04] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 19:59:07] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"192.168.65.1"}
+[2026-02-19 19:59:08] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-19 19:59:13] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"192.168.65.1"}
+[2026-02-19 20:05:30] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"192.168.65.1"}
+[2026-02-19 20:05:35] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"192.168.65.1"}
+[2026-02-19 20:05:37] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-19 20:05:40] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/devolucion","ip":"192.168.65.1"}
+[2026-02-19 20:05:42] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"192.168.65.1"}
+[2026-02-19 20:05:45] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"192.168.65.1"}
+[2026-02-19 20:05:46] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"192.168.65.1"}
+[2026-02-19 20:05:48] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"courses/index","ip":"192.168.65.1"}
+[2026-02-19 20:05:50] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"192.168.65.1"}
+[2026-02-19 20:06:00] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/download","ip":"192.168.65.1"}
+[2026-02-19 20:06:11] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"192.168.65.1"}
+[2026-02-19 20:06:17] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 20:06:21] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"locations/index","ip":"192.168.65.1"}
+[2026-02-19 20:06:21] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php:17 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/locations/index.php","line":17,"severity":8192}
+[19-Feb-2026 20:06:21 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php on line 17
+[2026-02-19 20:06:21] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php:17 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/locations/index.php","line":17,"severity":8192}
+[19-Feb-2026 20:06:21 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php on line 17
+[2026-02-19 20:06:27] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/entrega","ip":"192.168.65.1"}
+[2026-02-19 20:06:33] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"192.168.65.1"}
+[2026-02-19 20:07:55] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"192.168.65.1"}
+[2026-02-19 20:07:59] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 20:08:57] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 20:09:01] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"192.168.65.1"}
+[2026-02-19 20:09:10] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 20:09:53] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 20:09:53] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 20:09:59] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"192.168.65.1"}
+[2026-02-19 20:09:59] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 20:10:03] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-19 20:10:06] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"courses/index","ip":"192.168.65.1"}
+[2026-02-19 20:10:07] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"locations/index","ip":"192.168.65.1"}
+[2026-02-19 20:10:07] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php:17 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/locations/index.php","line":17,"severity":8192}
+[19-Feb-2026 20:10:07 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php on line 17
+[2026-02-19 20:10:07] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php:17 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/locations/index.php","line":17,"severity":8192}
+[19-Feb-2026 20:10:07 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php on line 17
+[2026-02-19 20:14:10] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-19 20:16:55] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}

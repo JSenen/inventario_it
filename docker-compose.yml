@@ -30,6 +30,7 @@ services:
       MAIL_FROM_NAME: "Inventario IT"
     volumes:
       - ./web:/var/www/html
+      - ./laptop-loans:/var/www/html/laptop-loans
     ports:
       - "8080:80"
     networks:
