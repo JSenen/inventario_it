@@ -1,6 +1,6 @@
 # Inventario IT
 
-Aplicación web en PHP para la gestión interna de inventario IT: equipos, redes/IP, móviles/SIM, averías, materiales, verificaciones y recibos con firma.
+Aplicación web en PHP para la gestión interna de inventario IT: equipos, redes/IP, móviles/SIM, averías, materiales, verificaciones, recibos con firma y trazabilidad operativa.
 
 ## Estado actual del proyecto
 
@@ -20,7 +20,11 @@ Implementado:
 - Móviles/SIM:
   - Altas, edición, historial y renovaciones de teléfonos.
   - Asignación/liberación/cambio de SIM en teléfono.
+  - Gestión de SIM con `etiqueta`, `número`, `número corto`, `ICCID`, operador, estado y observaciones.
+  - Filtros por estado y operador en listado de SIMs.
+  - Exportación de SIMs (Excel), además de copia/CSV/impresión desde DataTables.
   - Ficha de teléfono con estado visual por color.
+  - Ficha de SIM con acceso directo a teléfono o equipo PTI asignado.
   - Renovación iniciable desde la ficha para mantener trazabilidad y generar recibo.
 - Redes:
   - Catálogo de redes.
@@ -135,6 +139,7 @@ php -r "echo hash('sha3-256', 'TuClaveSegura') . PHP_EOL;"
 - Ficha equipo: `web/equipo_ver.php`
 - Redes/IP: `web/redes.php`, `web/redes_gestion.php`, `web/buscar_ip.php`
 - Móviles/SIM: `web/telefonos.php`, `web/sims.php`
+- Ficha SIM: `web/sims_ver.php`
 - Averías: `web/averias_list.php`
 - Materiales: `web/materiales.php`
 - Verificaciones: `web/verificaciones.php`
@@ -173,6 +178,7 @@ Eventos destacados:
 - Configuración DB actual en `web/config.php`.
 - Varias tablas auxiliares se crean/ajustan en runtime para compatibilidad (`equipo_sim`, `equipo_dock`, `equipos_verificaciones`, `actividad_logs`, ajustes de `secciones`).
 - Este `README.md` raíz es la referencia principal del proyecto.
+- El manual operativo para usuarios finales está integrado en `web/manual_usuario.php`.
 
 ## Mejoras recomendadas
 

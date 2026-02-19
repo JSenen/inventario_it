@@ -63,8 +63,10 @@ require_once __DIR__ . '/includes/header.php';
         <div class="card-body">
             <ul class="mb-0">
                 <li>Gestiona teléfonos y tarjetas SIM desde su menú específico.</li>
+                <li>En SIM puedes registrar: etiqueta, número, número corto, ICCID, operador, PIN/PUK, estado y observaciones.</li>
+                <li>El listado de SIM incluye filtros por estado y operador, y permite exportar resultados.</li>
                 <li>Asigna, cambia o libera SIMs en teléfonos según disponibilidad.</li>
-                <li>Consulta historial de SIM y operaciones de renovación cuando corresponda.</li>
+                <li>Si una SIM está vinculada, en su ficha tendrás acceso directo al teléfono o al equipo PTI asociado.</li>
                 <li>Desde la ficha del teléfono puedes renovar para crear/asociar el nuevo terminal, mantener la trazabilidad de la asignación y generar el recibo de renovación.</li>
             </ul>
         </div>
@@ -99,6 +101,7 @@ require_once __DIR__ . '/includes/header.php';
                 <li>Consulta recibos de movimientos y renovaciones desde el menú <strong>Recibos</strong>.</li>
                 <li>Los recibos se pueden imprimir/guardar en PDF.</li>
                 <li>Cuando aplica, puedes gestionar firma digital desde los enlaces de firma.</li>
+                <li>En renovaciones/movimientos puede mostrarse opción de envío por correo al destino si está configurado.</li>
             </ul>
         </div>
     </div>
@@ -109,6 +112,7 @@ require_once __DIR__ . '/includes/header.php';
             <ul class="mb-0">
                 <li>Gestiona maestros: usuarios, tipos de equipo, servicios, ubicaciones, departamentos y secciones.</li>
                 <li>Mantener estos catálogos actualizados mejora la calidad de datos en toda la aplicación.</li>
+                <li>Revisa el correo de cada sección para habilitar envíos automáticos de recibos cuando corresponda.</li>
             </ul>
         </div>
     </div>
