@@ -143,6 +143,7 @@ logActividad(
     <?php if ($sim): ?>
         <table class="table table-bordered">
             <tr><th>Número</th><td><?= htmlspecialchars($sim['numero']) ?></td></tr>
+            <tr><th>Número Corto:</th><td><?= htmlspecialchars($sim['numero_corto']) ?></td></tr>
             <tr><th>Operador</th><td><?= htmlspecialchars($sim['operador']) ?></td></tr>
             <tr><th>ICCID</th><td><?= htmlspecialchars($sim['iccid']) ?></td></tr>
             <tr><th>PIN</th><td><?= htmlspecialchars($sim['pin'] ?: '-') ?></td></tr>

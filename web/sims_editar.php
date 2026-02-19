@@ -142,13 +142,13 @@ require_once 'includes/header.php';
     <form method="post">
         <div class="row">
             <div class="col-md-3 mb-3">
-                <label class="form-label">Etiqueta</label>
-                <input type="text" name="etiqueta" class="form-control"
+                <label class="form-label ">Etiqueta</label>
+                <input type="text" name="etiqueta" class="form-control campo-etiqueta"
                        value="<?= htmlspecialchars((string)($sim['etiqueta'])) ?>">
             </div>
             <div class="col-md-4 mb-3">
-                <label class="form-label">Número</label>
-                <input type="text" name="numero" class="form-control"
+                <label class="form-label ">Número</label>
+                <input type="text" name="numero" class="form-control sim-numero-destacado"
                        value="<?= htmlspecialchars((string)($sim['numero'])) ?>">
             </div>
             <div class="col-md-4 mb-3">

@@ -80,7 +80,7 @@ require_once 'includes/header.php';
         <tr><th>ID</th> <td><?= (int)$sim['id'] ?></td></tr>
         <tr><th>Etiqueta</th> <td><span class="etiqueta-ok"><?= htmlspecialchars($sim['etiqueta'] ?? '') ?></span></td></tr>
         <tr><th>Número</th> <td><span class="sim-numero-destacado"><?= htmlspecialchars($sim['numero']) ?></span></td></tr>
-        <tr><th>Número corto</th> <td><?= htmlspecialchars($sim['numero_corto'] ?: '-') ?></td></tr>
+        <tr><th>Número corto</th><span class="sim-numero-destacado"> <td><?= htmlspecialchars($sim['numero_corto'] ?: '-') ?></span></td></tr>
         <tr><th>ICCID</th> <td><?= htmlspecialchars($sim['iccid']) ?></td></tr>
         <tr><th>Operador</th> <td><?= htmlspecialchars($sim['operador']) ?></td></tr>
         <tr><th>Tarifa</th> <td><?= htmlspecialchars($sim['tarifa']) ?></td></tr>

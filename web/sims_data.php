@@ -101,7 +101,7 @@ foreach ($rows as $r) {
         'id'       => $r['id'],
         'etiqueta' => $etiquetaSim !== '' ? '<span class="etiqueta-ok">' . htmlspecialchars($etiquetaSim) . '</span>' : '<span class="etiqueta-missing">(sin etiqueta)</span>',
         'numero'   => '<span class="sim-numero-destacado">' . htmlspecialchars((string)($r['numero'])) . '</span>',
-        'numero_corto' => htmlspecialchars((string)($r['numero_corto'] ?? '')),
+        'numero_corto' => '<span class="sim-numero-destacado">' . htmlspecialchars((string)($r['numero_corto'] ?? '')). '</span>',
         'iccid'    => htmlspecialchars((string)($r['iccid'])),
         'operador' => htmlspecialchars((string)($r['operador'])),
         'puk'      => htmlspecialchars((string)($r['puk'])),

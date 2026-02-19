@@ -63,7 +63,7 @@ require_once 'includes/header.php';
     <form method="post">
         <div class="mb-3">
             <label class="form-label">Etiqueta</label>
-            <input type="text" name="etiqueta" class="form-control" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
+            <input type="text" name="etiqueta" class="form-control campo-etiqueta" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
         </div>
         <div class="mb-3">
             <label class="form-label">Número</label>
