@@ -164,14 +164,14 @@ $mostrarPopupEnvio = ($_SERVER['REQUEST_METHOD'] !== 'POST')
             <th style="width:40%;">Teléfono renovado</th>
             <td><?= htmlspecialchars(($ren['old_etiqueta'] ? '['.$ren['old_etiqueta'].'] ' : '') . ($ren['old_marca'] ?? '') . ' ' . ($ren['old_modelo'] ?? '')) ?></td>
         </tr>
-        <tr><th>IMEI / Nº serie</th><td><?= htmlspecialchars($ren['old_imei'] ?? '-') ?> / <?= htmlspecialchars($ren['old_sn'] ?? '-') ?></td></tr>
+        <tr><th>IMEI / Nº serie</th><td><?= htmlspecialchars($ren['old_imei'] ?? '-') ?> / <strong><?= htmlspecialchars($ren['old_sn'] ?? '-') ?></strong></td></tr>
         <tr><th>Usuario</th><td><?= htmlspecialchars($ren['old_usuario'] ?? '-') ?></td></tr>
         <tr><th>Estado tras renovación</th><td><?= htmlspecialchars($ren['estado_old'] ?? 'Baja') ?></td></tr>
         <tr>
             <th>Teléfono que se queda</th>
             <td><?= htmlspecialchars(($ren['new_etiqueta'] ? '['.$ren['new_etiqueta'].'] ' : '') . ($ren['new_marca'] ?? '') . ' ' . ($ren['new_modelo'] ?? '')) ?></td>
         </tr>
-        <tr><th>IMEI / Nº serie</th><td><?= htmlspecialchars($ren['new_imei'] ?? '-') ?> / <?= htmlspecialchars($ren['new_sn'] ?? '-') ?></td></tr>
+        <tr><th>IMEI / Nº serie</th><td><?= htmlspecialchars($ren['new_imei'] ?? '-') ?> / <strong><?= htmlspecialchars($ren['new_sn'] ?? '-') ?></strong></td></tr>
         <tr><th>Usuario</th><td><?= htmlspecialchars($ren['new_usuario'] ?? '-') ?></td></tr>
         <tr><th>Ubicación / Departamento / Sección</th><td><?= htmlspecialchars($ren['new_ubicacion'] ?? '-') ?> / <?= htmlspecialchars($ren['new_departamento'] ?? '-') ?> / <?= htmlspecialchars($ren['new_seccion'] ?? '-') ?></td></tr>
     </table>
@@ -180,7 +180,7 @@ $mostrarPopupEnvio = ($_SERVER['REQUEST_METHOD'] !== 'POST')
     <ul>
         <li>SIM: Se trasladó la SIM del teléfono renovado al nuevo.</li>
         <?php if ($simNueva): ?>
-            <li>SIM actual del nuevo: Nº <?= htmlspecialchars($simNueva['numero']) ?> (<?= htmlspecialchars($simNueva['operador']) ?>) · ICCID <?= htmlspecialchars($simNueva['iccid']) ?>.</li>
+            <li>SIM actual del nuevo: Nº <strong><?= htmlspecialchars($simNueva['numero']) ?></strong> (<?= htmlspecialchars($simNueva['operador']) ?>) · ICCID <strong><?= htmlspecialchars($simNueva['iccid']) ?></strong>.</li>
         <?php endif; ?>
         <li>El teléfono renovado queda en estado <strong>Baja</strong>.</li>
         <li>Se mantienen usuario, ubicación, departamento y sección del dispositivo renovado.</li>

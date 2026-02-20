@@ -173,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } elseif ($monitores_accion === 'baja') {
                     $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :origen");
                     $stmtDel->execute([':origen' => $id_origen]);
-                    $stmtBaja = $pdo->prepare("UPDATE equipos SET estado = 'Baja' WHERE id IN ($placeholders)");
+                    $stmtBaja = $pdo->prepare("UPDATE equipos SET estado = 'Baja', fecha_baja = COALESCE(fecha_baja, NOW()) WHERE id IN ($placeholders)");
                     $stmtBaja->execute($idsMon);
                 } elseif ($monitores_accion === 'almacen') {
                     $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :origen");
@@ -208,11 +208,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
             // 5) Marcar estado final del equipo renovado
-            $stmtEstadoViejo = $pdo->prepare("UPDATE equipos SET estado = :estado WHERE id = :id");
-            $stmtEstadoViejo->execute([
-                ':estado' => $estado_viejo,
-                ':id'     => $id_origen,
-            ]);
+            if (strcasecmp((string)$estado_viejo, 'Baja') === 0) {
+                $stmtEstadoViejo = $pdo->prepare("
+                    UPDATE equipos
+                    SET estado = :estado,
+                        fecha_baja = COALESCE(fecha_baja, NOW())
+                    WHERE id = :id
+                ");
+                $stmtEstadoViejo->execute([
+                    ':estado' => $estado_viejo,
+                    ':id'     => $id_origen,
+                ]);
+            } else {
+                $stmtEstadoViejo = $pdo->prepare("UPDATE equipos SET estado = :estado WHERE id = :id");
+                $stmtEstadoViejo->execute([
+                    ':estado' => $estado_viejo,
+                    ':id'     => $id_origen,
+                ]);
+            }
 
             // 6) Guardar registro de renovación para recibo y firma
             $firmaToken = bin2hex(random_bytes(32));

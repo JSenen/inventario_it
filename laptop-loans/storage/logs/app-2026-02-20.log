@@ -4,3 +4,14 @@
 [2026-02-20 14:18:05] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"courses/index","ip":"172.18.0.1"}
 [2026-02-20 14:18:07] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/devolucion","ip":"172.18.0.1"}
 [2026-02-20 14:18:07] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"172.18.0.1"}
+[2026-02-20 18:32:14] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"172.18.0.1"}
+[2026-02-20 18:32:17] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"172.18.0.1"}
+[2026-02-20 18:38:18] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"172.18.0.1"}
+[2026-02-20 18:38:22] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"172.18.0.1"}
+[2026-02-20 18:38:23] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"locations/index","ip":"172.18.0.1"}
+[2026-02-20 18:38:23] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php:17 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/locations/index.php","line":17,"severity":8192}
+[20-Feb-2026 18:38:23 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php on line 17
+[2026-02-20 18:38:23] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php:17 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/locations/index.php","line":17,"severity":8192}
+[20-Feb-2026 18:38:23 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/locations/index.php on line 17
+[2026-02-20 18:38:37] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"172.18.0.1"}
+[2026-02-20 18:38:41] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"172.18.0.1"}

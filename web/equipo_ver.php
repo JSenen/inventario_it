@@ -121,12 +121,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar_verificacio
         if (!empty($_POST['actualizar_equipo'])) {
             $stmtUpdateEq = $pdo->prepare("
                 UPDATE equipos
-                SET ubicacion = :ubicacion, estado = :estado
+                SET ubicacion = :ubicacion,
+                    estado = :estado,
+                    fecha_baja = CASE
+                        WHEN :estado_baja = 1 AND fecha_baja IS NULL THEN NOW()
+                        ELSE fecha_baja
+                    END
                 WHERE id = :id
             ");
             $stmtUpdateEq->execute([
                 ':ubicacion' => $ubicacionVerificada,
                 ':estado'    => $estadoVerificado,
+                ':estado_baja' => strcasecmp((string)$estadoVerificado, 'Baja') === 0 ? 1 : 0,
                 ':id'        => $id_equipo,
             ]);
         }

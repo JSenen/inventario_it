@@ -57,6 +57,7 @@ require_once 'includes/header.php';
 
         <div>
             <a href="sims_editar.php?id=<?= (int)$id ?>" class="btn btn-warning">Editar</a>
+            <a href="sims_historial.php?id=<?= (int)$id ?>" class="btn btn-secondary">Historial</a>
 
             <?php if ($telefonoActual): ?>
                 <a href="telefonos_ver.php?id=<?= (int)$telefonoActual['id'] ?>" class="btn btn-info">
@@ -67,10 +68,6 @@ require_once 'includes/header.php';
                     Ver equipo asignado
                 </a>
             <?php endif; ?>
-
-            <!-- Cuando implementemos histórico SIM:
-            <a href="sim_historial.php?id=<?= (int)$id ?>" class="btn btn-secondary">Historial</a>
-            -->
 
             <a href="sims.php" class="btn btn-secondary">Volver</a>
         </div>

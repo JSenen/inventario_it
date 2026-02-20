@@ -182,7 +182,7 @@ $mostrarPopupEnvio = ($_SERVER['REQUEST_METHOD'] !== 'POST')
         </tr>
         <tr>
             <th>N.º serie / Servicio</th>
-            <td><?= htmlspecialchars($ren['old_sn'] ?? '-') ?> / <?= htmlspecialchars($ren['old_host'] ?? '-') ?></td>
+            <td><strong><?= htmlspecialchars($ren['old_sn'] ?? '-') ?></strong> / <?= htmlspecialchars($ren['old_host'] ?? '-') ?></td>
         </tr>
         <tr>
             <th>Estado tras renovación</th>
@@ -194,7 +194,7 @@ $mostrarPopupEnvio = ($_SERVER['REQUEST_METHOD'] !== 'POST')
         </tr>
         <tr>
             <th>N.º serie / Servicio</th>
-            <td><?= htmlspecialchars($ren['new_sn'] ?? '-') ?> / <?= htmlspecialchars($ren['new_host'] ?? '-') ?></td>
+            <td><strong><?= htmlspecialchars($ren['new_sn'] ?? '-') ?></strong> / <?= htmlspecialchars($ren['new_host'] ?? '-') ?></td>
         </tr>
         <tr>
             <th>Ubicación / Departamento / Sección</th>
@@ -210,13 +210,24 @@ $mostrarPopupEnvio = ($_SERVER['REQUEST_METHOD'] !== 'POST')
             <li>Monitores actualmente vinculados al nuevo:
                 <ul>
                     <?php foreach ($monitores_nuevos as $m): ?>
-                        <li><?= htmlspecialchars(($m['marca'] ?? '').' '.($m['modelo'] ?? '').($m['numero_serie'] ? ' SN:'.$m['numero_serie'] : '')) ?></li>
+                        <li>
+                            <?= htmlspecialchars(($m['marca'] ?? '') . ' ' . ($m['modelo'] ?? '')) ?>
+                            <?php if (!empty($m['numero_serie'])): ?>
+                                SN:<strong><?= htmlspecialchars($m['numero_serie']) ?></strong>
+                            <?php endif; ?>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             </li>
         <?php endif; ?>
         <?php if ($monitor_extra): ?>
-            <li>Monitor adicional vinculado: <?= htmlspecialchars(($monitor_extra['marca'] ?? '').' '.($monitor_extra['modelo'] ?? '').($monitor_extra['numero_serie'] ? ' SN:'.$monitor_extra['numero_serie'] : '')) ?></li>
+            <li>
+                Monitor adicional vinculado:
+                <?= htmlspecialchars(($monitor_extra['marca'] ?? '') . ' ' . ($monitor_extra['modelo'] ?? '')) ?>
+                <?php if (!empty($monitor_extra['numero_serie'])): ?>
+                    SN:<strong><?= htmlspecialchars($monitor_extra['numero_serie']) ?></strong>
+                <?php endif; ?>
+            </li>
         <?php endif; ?>
         <li>El resto de datos (ubicación, departamento y sección) se mantienen respecto al equipo renovado.</li>
     </ul>

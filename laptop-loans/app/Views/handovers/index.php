@@ -1,6 +1,9 @@
 <?php $title='Histórico de movimientos'; $view='handovers/index'; ?>
 <div class="card">
-  <h2>Histórico de entregas / devoluciones</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <h2 style="margin:0">Histórico de entregas / devoluciones</h2>
+    <a class="btn btn-sm btn-outline-secondary" href="<?= url('handovers/index') ?>">Volver al inicio</a>
+  </div>
   <table class="table">
     <thead><tr><th>Fecha</th><th>Tipo</th><th>Serie</th><th>Persona</th><th>Curso</th><th>Observaciones</th></tr></thead>
     <tbody>

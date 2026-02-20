@@ -53,6 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     //     $errores[] = "Número, ICCID y Operador son obligatorios.";
     // }
 
+    if (strcasecmp($estado, 'Baja') === 0 && empty($fechaBaja)) {
+        $fechaBaja = date('Y-m-d');
+    }
+
     if (!$errores) {
         try {
             $stmtUpd = $pdo->prepare("

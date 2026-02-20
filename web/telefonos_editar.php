@@ -75,6 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errores[] = "Marca, Modelo e IMEI son obligatorios.";
     }
 
+    if (strcasecmp($estado, 'Baja') === 0 && empty($fecha_baja)) {
+        $fecha_baja = date('Y-m-d');
+    }
+
     if (!$errores) {
 
         try {

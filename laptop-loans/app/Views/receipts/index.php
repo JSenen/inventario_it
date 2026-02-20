@@ -1,8 +1,8 @@
 <?php $title='Recibos'; $view='receipts/index'; ?>
 <div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
     <h2>Recibos</h2>
-    <!-- Si se  quiere abrir la carpeta publicada (opción symlink), poner también un botón aquí -->
+    <a class="btn btn-sm btn-outline-secondary" href="<?= url('handovers/index') ?>">Volver al inicio</a>
   </div>
 
   <table class="table">

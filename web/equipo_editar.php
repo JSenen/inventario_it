@@ -359,22 +359,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // Si el estado pasa a BAJA por primera vez → guardar fecha_baja
-            if ($estado === 'Baja') {
-
-                $sql_check = "SELECT fecha_baja FROM equipos WHERE id = :id";
-                $stmt_check = $pdo->prepare($sql_check);
-                $stmt_check->execute([':id' => $id_equipo]);
-                $check = $stmt_check->fetch(PDO::FETCH_ASSOC);
-
-                // Solo insertar fecha_baja si está vacía (evita sobrescritura)
-                if (empty($check['fecha_baja'])) {
-                    $sql_baja = "UPDATE equipos SET fecha_baja = NOW() WHERE id = :id";
-                    $stmt_baja = $pdo->prepare($sql_baja);
-                    $stmt_baja->execute([':id' => $id_equipo]);
-                }
-            }
-
             // Verificar número de serie único si se ha proporcionado
             // Comprobar duplicado de número de serie (excluyendo el propio)
             if ($numero_serie !== '') {
@@ -425,6 +409,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         proveedor = :proveedor,
                         coste = :coste,
                         estado = :estado,
+                        fecha_baja = CASE
+                            WHEN :estado_baja = 1 AND fecha_baja IS NULL THEN NOW()
+                            ELSE fecha_baja
+                        END,
                         notas = :notas,
                         imagen = :imagen,
                         seccion_id = :seccion_id,
@@ -445,6 +433,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':proveedor'        => $proveedor,
                         ':coste'            => $coste !== '' ? $coste : null,
                         ':estado'           => $estado,
+                        ':estado_baja'      => strcasecmp($estado, 'Baja') === 0 ? 1 : 0,
                         ':notas'            => $notas,
                         ':imagen'           => $imagenRuta,   
                         ':id'               => $id,
@@ -1744,10 +1733,17 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('formEditarEquipo');
     if (!form) return;
+    let confirmacionAceptada = false;
 
     const selectUbicacion = form.querySelector('select[name="ubicacion"]');
     const selectDepartamento = form.querySelector('select[name="departamento"]');
     const selectSeccion = form.querySelector('select[name="seccion_id"]');
+    const selectIp = form.querySelector('select[name="ip"]');
+    const resumenCambios = document.getElementById('resumenCambioCampos');
+    const resumenDestino = document.getElementById('resumenDestinoMovimiento');
+    const avisoIp = document.getElementById('avisoIpMovimiento');
+    const textoIp = document.getElementById('textoIpMovimiento');
+    const btnConfirmar = document.getElementById('btnConfirmarMovimiento');
 
     if (!selectUbicacion || !selectDepartamento || !selectSeccion) return;
 
@@ -1775,26 +1771,82 @@ document.addEventListener('DOMContentLoaded', function () {
             cambios.push('Sección');
         }
 
-        if (cambios.length === 0) return;
+        if (cambios.length === 0 || confirmacionAceptada) return;
 
         const txtUbicacion = selectUbicacion.selectedOptions[0]?.textContent?.trim() || '-';
         const txtDepartamento = selectDepartamento.selectedOptions[0]?.textContent?.trim() || '-';
         const txtSeccion = selectSeccion.selectedOptions[0]?.textContent?.trim() || '-';
 
-        const mensaje =
-            'Has cambiado: ' + cambios.join(', ') + '.\n\n' +
-            'Nuevo destino del equipo:\n' +
-            '- Ubicación: ' + txtUbicacion + '\n' +
-            '- Departamento: ' + txtDepartamento + '\n' +
-            '- Sección: ' + txtSeccion + '\n\n' +
-            '¿Confirmas el movimiento?';
+        e.preventDefault();
 
-        if (!window.confirm(mensaje)) {
-            e.preventDefault();
+        if (!window.bootstrap || !btnConfirmar || !resumenCambios || !resumenDestino) {
+            const mensaje =
+                'Has cambiado: ' + cambios.join(', ') + '.\n\n' +
+                'Nuevo destino del equipo:\n' +
+                '- Ubicación: ' + txtUbicacion + '\n' +
+                '- Departamento: ' + txtDepartamento + '\n' +
+                '- Sección: ' + txtSeccion + '\n\n' +
+                '¿Confirmas el movimiento?';
+            if (window.confirm(mensaje)) {
+                confirmacionAceptada = true;
+                form.submit();
+            }
+            return;
         }
+
+        resumenCambios.innerHTML = cambios.map(c => '<span class="badge bg-warning text-dark me-1">' + c + '</span>').join('');
+        resumenDestino.innerHTML =
+            '<li><strong>Ubicación:</strong> ' + txtUbicacion + '</li>' +
+            '<li><strong>Departamento:</strong> ' + txtDepartamento + '</li>' +
+            '<li><strong>Sección:</strong> ' + txtSeccion + '</li>';
+
+        const ipActual = (selectIp?.value || '').trim();
+        if (ipActual !== '' && avisoIp && textoIp) {
+            textoIp.textContent = ipActual;
+            avisoIp.classList.remove('d-none');
+        } else if (avisoIp && textoIp) {
+            textoIp.textContent = '';
+            avisoIp.classList.add('d-none');
+        }
+
+        const modalEl = document.getElementById('confirmarMovimientoModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+
+        btnConfirmar.onclick = function () {
+            confirmacionAceptada = true;
+            modal.hide();
+            form.submit();
+        };
     });
 });
 </script>
+
+<div class="modal fade" id="confirmarMovimientoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Confirmar movimiento interno</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Se detectaron cambios en:</p>
+                <div id="resumenCambioCampos" class="mb-3"></div>
+                <p class="mb-2">Nuevo destino del equipo:</p>
+                <ul id="resumenDestinoMovimiento" class="mb-0"></ul>
+                <div id="avisoIpMovimiento" class="alert alert-warning mt-3 mb-0 d-none">
+                    IP principal detectada: <strong id="textoIpMovimiento"></strong>.<br>
+                    Esta IP se mantendrá con el equipo tras el movimiento.<br>
+                    Si no quieres mantenerla, pulsa <strong>Cancelar</strong>, cambia la IP y vuelve a guardar.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnConfirmarMovimiento">Confirmar y guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <?php

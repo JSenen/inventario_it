@@ -266,7 +266,7 @@ h1 {
     <tr><td><strong>Tipo de equipo:</strong></td><td><?= htmlspecialchars($mov['tipo_equipo'] ?? '-') ?></td></tr>
     <tr><td><strong>Marca:</strong></td><td><?= htmlspecialchars($mov['marca'] ?? '-') ?></td></tr>
     <tr><td><strong>Modelo:</strong></td><td><?= htmlspecialchars($mov['modelo'] ?? '-') ?></td></tr>
-    <tr><td><strong>N.º de serie:</strong></td><td><?= htmlspecialchars($mov['numero_serie'] ?? '-') ?></td></tr>
+    <tr><td><strong>N.º de serie:</strong></td><td><strong><?= htmlspecialchars($mov['numero_serie'] ?? '-') ?></strong></td></tr>
     <tr><td><strong>Servicio:</strong></td><td><?= htmlspecialchars($mov['hostname'] ?? '-') ?></td></tr>
     <tr><td><strong>Ubicación:</strong></td><td><?= htmlspecialchars($mov['ubicacion'] ?? '-') ?></td></tr>
     <tr><td><strong>Departamento:</strong></td><td><?= htmlspecialchars($mov['departamento'] ?? '-') ?></td></tr>
