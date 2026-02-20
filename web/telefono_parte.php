@@ -26,6 +26,27 @@ $stmtSim = $pdo->prepare($sqlSim);
 $stmtSim->execute([':id' => $id]);
 $sim = $stmtSim->fetch(PDO::FETCH_ASSOC);
 
+// Si el teléfono actual proviene de una renovación, recuperar el teléfono retirado
+$stmtRen = $pdo->prepare("
+    SELECT r.id AS renovacion_id,
+           r.fecha AS renovacion_fecha,
+           told.id AS old_id,
+           told.etiqueta AS old_etiqueta,
+           told.marca AS old_marca,
+           told.modelo AS old_modelo,
+           told.imei AS old_imei,
+           told.numero_serie AS old_numero_serie,
+           told.estado AS old_estado,
+           told.fecha_baja AS old_fecha_baja
+    FROM renovaciones_telefonos r
+    JOIN telefonos told ON told.id = r.tel_old_id
+    WHERE r.tel_new_id = :id
+    ORDER BY r.fecha DESC, r.id DESC
+    LIMIT 1
+");
+$stmtRen->execute([':id' => $id]);
+$renovacion = $stmtRen->fetch(PDO::FETCH_ASSOC);
+
 // Guardar log
 logActividad(
     $pdo,
@@ -138,12 +159,26 @@ logActividad(
         <tr><th>SIM heredada</th><td><?= $sim ? 'Sí' : 'No' ?></td></tr>
     </table>
 
+    <?php if ($renovacion): ?>
+        <h4>Teléfono retirado en la renovación</h4>
+        <table class="table table-bordered">
+            <tr><th>ID</th><td><?= (int)$renovacion['old_id'] ?></td></tr>
+            <tr><th>Etiqueta</th><td><?= htmlspecialchars($renovacion['old_etiqueta'] ?: '-') ?></td></tr>
+            <tr><th>Marca / Modelo</th><td><?= htmlspecialchars(trim(($renovacion['old_marca'] ?? '') . ' ' . ($renovacion['old_modelo'] ?? ''))) ?></td></tr>
+            <tr><th>IMEI</th><td><?= htmlspecialchars($renovacion['old_imei'] ?: '-') ?></td></tr>
+            <tr><th>Número de serie</th><td><?= htmlspecialchars($renovacion['old_numero_serie'] ?: '-') ?></td></tr>
+            <tr><th>Estado</th><td><?= htmlspecialchars($renovacion['old_estado'] ?: 'Baja') ?></td></tr>
+            <tr><th>Fecha de baja</th><td><?= htmlspecialchars($renovacion['old_fecha_baja'] ?: '-') ?></td></tr>
+            <tr><th>Fecha renovación</th><td><?= htmlspecialchars($renovacion['renovacion_fecha'] ?: '-') ?></td></tr>
+        </table>
+    <?php endif; ?>
+
     <!-- SIM -->
     <h4>Datos de la tarjeta SIM</h4>
     <?php if ($sim): ?>
         <table class="table table-bordered">
             <tr><th>Número</th><td><?= htmlspecialchars($sim['numero']) ?></td></tr>
-            <tr><th>Número Corto:</th><td><?= htmlspecialchars($sim['numero_corto']) ?></td></tr>
+            <tr><th>Número Corto:</th><td><?= htmlspecialchars($sim['numero_corto'] ?? '-') ?></td></tr>
             <tr><th>Operador</th><td><?= htmlspecialchars($sim['operador']) ?></td></tr>
             <tr><th>ICCID</th><td><?= htmlspecialchars($sim['iccid']) ?></td></tr>
             <tr><th>PIN</th><td><?= htmlspecialchars($sim['pin'] ?: '-') ?></td></tr>

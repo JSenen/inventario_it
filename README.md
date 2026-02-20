@@ -9,6 +9,7 @@ Implementado:
 - Gestión de equipos:
   - Alta, edición, ficha y baja lógica.
   - Flujo recomendado de alta/asignación: registrar equipos nuevos en `Almacén` y, al asignarlos a una unidad, completar datos de destino (departamento/sección/ubicación/usuario), pasar a `Activo` y emitir recibo de movimiento.
+  - En edición, si se cambia `ubicación`, `departamento` o `sección`, el sistema pide confirmación y genera doble recibo de movimiento por traslado interno (`baja` + `alta`).
   - Asociación de IP principal.
   - Asociación de monitores (`pc_monitores`).
   - Renovación de equipos y generación de recibos.
@@ -26,6 +27,7 @@ Implementado:
   - Ficha de teléfono con estado visual por color.
   - Ficha de SIM con acceso directo a teléfono o equipo PTI asignado.
   - Renovación iniciable desde la ficha para mantener trazabilidad y generar recibo.
+  - Parte de entrega de teléfono ampliado: si el equipo actual proviene de una renovación, incluye el teléfono retirado y dado de baja.
 - Redes:
   - Catálogo de redes.
   - Control de IP y búsqueda de IP.
@@ -41,6 +43,8 @@ Implementado:
   - Exportación en CSV, Excel (`.xls`) y vista imprimible PDF.
 - Recibos:
   - Recibos de movimiento, renovación de equipo y renovación de teléfono.
+  - En renovaciones de teléfono, la tabla de renovaciones muestra la SIM trasladada (etiqueta o número) con enlace directo a su ficha.
+  - Listados de renovaciones y movimientos sin límite fijo de 500; se consulta histórico completo con búsqueda y paginación de DataTables.
   - Firma digital por token.
   - Envío opcional por correo a la sección con popup de confirmación.
   - Fallback a `mailto:` si falla el envío desde servidor.

@@ -20,6 +20,9 @@ $equipo = $stmtEq->fetch(PDO::FETCH_ASSOC);
 // Guardamos el estado original para saber si sale / entra de almacén
 $estadoOriginal   = $equipo['estado'] ?? null;
 $usuarioOriginal  = $equipo['usuario_asignado'] ?? null;
+$ubicacionOriginal = strtoupper(trim((string)($equipo['ubicacion'] ?? '')));
+$departamentoOriginal = strtoupper(trim((string)($equipo['departamento'] ?? '')));
+$seccionOriginalId = isset($equipo['seccion_id']) ? (int)$equipo['seccion_id'] : 0;
 
 // Cargar listas tipos equipo para los selects
 $tiposStmt = $pdo->query("SELECT nombre FROM tipos_equipo ORDER BY nombre ASC");
@@ -36,6 +39,11 @@ $ubicaciones = $ubicacionesStmt->fetchAll(PDO::FETCH_ASSOC);
 // Cargar secciones desde la tabla secciones
 $seccionesStmt = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC");
 $secciones = $seccionesStmt->fetchAll(PDO::FETCH_ASSOC);
+$seccionesPorId = [];
+foreach ($secciones as $sec) {
+    $seccionesPorId[(int)$sec['id']] = (string)$sec['nombre'];
+}
+$seccionOriginalNombre = strtoupper(trim((string)($seccionesPorId[$seccionOriginalId] ?? '')));
 // Cargar departamentos desde la tabla departamentos
 $departamentosStmt = $pdo->query("SELECT nombre FROM departamentos ORDER BY nombre ASC");       
 $departamentos = $departamentosStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -674,9 +682,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // logActividad($pdo, 'ERROR_MOVIMIENTO', $eMov->getMessage());
             }
 
+            $idsTraslado = [];
+            if (empty($idMov)) {
+                $seccionNuevaNombre = strtoupper(trim((string)($seccionesPorId[(int)($seccion_id ?? 0)] ?? '')));
+                try {
+                    $idsTraslado = registrarMovimientosTrasladoEquipo(
+                        $pdo,
+                        $id_equipo,
+                        $usuario_asignado,
+                        [
+                            'ubicacion'    => $ubicacionOriginal,
+                            'departamento' => $departamentoOriginal,
+                            'seccion'      => $seccionOriginalNombre,
+                        ],
+                        [
+                            'ubicacion'    => $ubicacion,
+                            'departamento' => $departamento,
+                            'seccion'      => $seccionNuevaNombre,
+                        ],
+                        $estado
+                    );
+                } catch (Exception $eTraslado) {
+                    $idsTraslado = [];
+                    // logActividad($pdo, 'ERROR_MOV_TRASLADO', $eTraslado->getMessage());
+                }
+            }
+
             // 🔁 Si se ha generado un movimiento, vamos a la ficha del equipo con aviso
             if (!empty($idMov)) {
                 header('Location: equipo_ver.php?id=' . $id_equipo . '&mov=last');
+                exit;
+            }
+            if (!empty($idsTraslado) && count($idsTraslado) === 2) {
+                header(
+                    'Location: equipo_ver.php?id=' . $id_equipo .
+                    '&mov_baja=' . (int)$idsTraslado[0] .
+                    '&mov_alta=' . (int)$idsTraslado[1]
+                );
                 exit;
             }
 
@@ -758,7 +800,7 @@ require_once __DIR__ . '/includes/header.php';
 <?php endif; ?>
  
 
-<form method="post" class="row g-3" enctype="multipart/form-data">
+<form id="formEditarEquipo" method="post" class="row g-3" enctype="multipart/form-data">
 
   <div class="col-md-3">
         <label class="form-label">Etiqueta</label>
@@ -1695,6 +1737,62 @@ document.addEventListener("DOMContentLoaded", function () {
             opt.style.color = "#0d6efd";      // azul Bootstrap
             opt.style.fontWeight = "bold";
         });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('formEditarEquipo');
+    if (!form) return;
+
+    const selectUbicacion = form.querySelector('select[name="ubicacion"]');
+    const selectDepartamento = form.querySelector('select[name="departamento"]');
+    const selectSeccion = form.querySelector('select[name="seccion_id"]');
+
+    if (!selectUbicacion || !selectDepartamento || !selectSeccion) return;
+
+    const original = {
+        ubicacion: (<?= json_encode((string)($equipo['ubicacion'] ?? '')) ?> || '').toUpperCase().trim(),
+        departamento: (<?= json_encode((string)($equipo['departamento'] ?? '')) ?> || '').toUpperCase().trim(),
+        seccionId: String(<?= json_encode((string)((int)($equipo['seccion_id'] ?? 0))) ?> || '')
+    };
+
+    form.addEventListener('submit', function (e) {
+        const actual = {
+            ubicacion: (selectUbicacion.value || '').toUpperCase().trim(),
+            departamento: (selectDepartamento.value || '').toUpperCase().trim(),
+            seccionId: String(selectSeccion.value || '')
+        };
+
+        const cambios = [];
+        if (actual.ubicacion !== original.ubicacion) {
+            cambios.push('Ubicación');
+        }
+        if (actual.departamento !== original.departamento) {
+            cambios.push('Departamento');
+        }
+        if (actual.seccionId !== original.seccionId) {
+            cambios.push('Sección');
+        }
+
+        if (cambios.length === 0) return;
+
+        const txtUbicacion = selectUbicacion.selectedOptions[0]?.textContent?.trim() || '-';
+        const txtDepartamento = selectDepartamento.selectedOptions[0]?.textContent?.trim() || '-';
+        const txtSeccion = selectSeccion.selectedOptions[0]?.textContent?.trim() || '-';
+
+        const mensaje =
+            'Has cambiado: ' + cambios.join(', ') + '.\n\n' +
+            'Nuevo destino del equipo:\n' +
+            '- Ubicación: ' + txtUbicacion + '\n' +
+            '- Departamento: ' + txtDepartamento + '\n' +
+            '- Sección: ' + txtSeccion + '\n\n' +
+            '¿Confirmas el movimiento?';
+
+        if (!window.confirm(mensaje)) {
+            e.preventDefault();
+        }
+    });
 });
 </script>
 

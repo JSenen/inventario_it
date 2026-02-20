@@ -26,7 +26,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="card-body">
             <ul class="mb-0">
                 <li>Inicia sesión con tu TIP y contraseña.</li>
-                <li>En la barra superior tienes los módulos: Equipos, Redes, Móviles/SIMS, Material, Averías, Revistas, Administración y Recibos.</li>
+                <li>En el menú lateral tienes los módulos: Equipos, Redes, Móviles/SIMS, Material, Averías, Revistas, Administración y Recibos.</li>
                 <li>Tu usuario y rol aparecen arriba a la derecha.</li>
             </ul>
         </div>
@@ -39,6 +39,7 @@ require_once __DIR__ . '/includes/header.php';
                 <li><strong>Alta:</strong> entra en Equipos y pulsa nuevo equipo. Completa tipo, etiqueta, serie, ubicación, departamento, sección, estado y usuario si procede.</li>
                 <li><strong>Entrada de equipo nuevo:</strong> cuando llega un equipo nuevo, regístralo inicialmente en estado <strong>Almacén</strong>. En el momento de asignarlo a una unidad, completa departamento, sección, ubicación y usuario; cambia el estado a <strong>Activo</strong> y genera el recibo de movimiento.</li>
                 <li><strong>Edición:</strong> desde la ficha del equipo puedes cambiar datos, estado, red/IP, monitores y relaciones PTI.</li>
+                <li><strong>Traslado interno:</strong> si cambias ubicación, departamento o sección, el sistema pide confirmación antes de guardar y genera dos recibos de movimiento: <strong>baja</strong> en destino anterior y <strong>alta</strong> en destino nuevo.</li>
                 <li><strong>PTI:</strong> los equipos PTI permiten asignar SIM y DOCK de forma opcional.</li>
                 <li><strong>Ficha:</strong> en detalle verás datos técnicos, relaciones (SIM/DOCK/monitores), IP y acciones rápidas. Si hay SIM asignada en un PTI, su etiqueta enlaza a la ficha de esa SIM.</li>
                 <li><strong>Renovación:</strong> desde la ficha del equipo puedes iniciar la renovación para crear/asociar el nuevo equipo, trasladar relaciones cuando aplique y generar el recibo de renovación.</li>
@@ -68,6 +69,7 @@ require_once __DIR__ . '/includes/header.php';
                 <li>Asigna, cambia o libera SIMs en teléfonos según disponibilidad.</li>
                 <li>Si una SIM está vinculada, en su ficha tendrás acceso directo al teléfono o al equipo PTI asociado.</li>
                 <li>Desde la ficha del teléfono puedes renovar para crear/asociar el nuevo terminal, mantener la trazabilidad de la asignación y generar el recibo de renovación.</li>
+                <li>En el parte de entrega de teléfono, si el terminal procede de una renovación, se muestra también el teléfono retirado y dado de baja.</li>
             </ul>
         </div>
     </div>
@@ -99,7 +101,9 @@ require_once __DIR__ . '/includes/header.php';
         <div class="card-body">
             <ul class="mb-0">
                 <li>Consulta recibos de movimientos y renovaciones desde el menú <strong>Recibos</strong>.</li>
+                <li>En listados de renovaciones y movimientos se muestra el histórico completo con buscador y paginación.</li>
                 <li>Los recibos se pueden imprimir/guardar en PDF.</li>
+                <li>En renovaciones de teléfono, la columna SIM muestra la etiqueta/número de la SIM trasladada con enlace directo a su ficha.</li>
                 <li>Cuando aplica, puedes gestionar firma digital desde los enlaces de firma.</li>
                 <li>En renovaciones/movimientos puede mostrarse opción de envío por correo al destino si está configurado.</li>
             </ul>

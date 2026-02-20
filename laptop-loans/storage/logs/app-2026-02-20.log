@@ -1,0 +1,6 @@
+[2026-02-20 14:15:04] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"172.18.0.1"}
+[2026-02-20 14:18:04] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"172.18.0.1"}
+[2026-02-20 14:18:05] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"172.18.0.1"}
+[2026-02-20 14:18:05] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"courses/index","ip":"172.18.0.1"}
+[2026-02-20 14:18:07] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/devolucion","ip":"172.18.0.1"}
+[2026-02-20 14:18:07] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"172.18.0.1"}

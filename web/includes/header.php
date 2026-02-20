@@ -451,6 +451,11 @@ body.sidebar-collapsed > footer {
     margin-left: 0;
 }
 
+body.sidebar-collapsed .app-main {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 @media (max-width: 991.98px) {
     .app-main,
     body > footer {

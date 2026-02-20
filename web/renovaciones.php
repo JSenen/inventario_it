@@ -23,7 +23,10 @@ $sqlUnion = "
         enew.numero_serie AS new_sn,
         enew.hostname AS new_host,
         'equipo' AS tipo,
-        NULL AS sim_movida
+        NULL AS sim_movida,
+        NULL AS sim_id,
+        NULL AS sim_etiqueta,
+        NULL AS sim_numero
     FROM renovaciones r
     JOIN equipos eold ON eold.id = r.equipo_old_id
     JOIN equipos enew ON enew.id = r.equipo_new_id)
@@ -47,12 +50,23 @@ $sqlUnion = "
         tnew.imei AS new_sn,
         NULL AS new_host,
         'telefono' AS tipo,
-        rt.sim_movida
+        rt.sim_movida,
+        s.id AS sim_id,
+        s.etiqueta AS sim_etiqueta,
+        s.numero AS sim_numero
     FROM renovaciones_telefonos rt
     JOIN telefonos told ON told.id = rt.tel_old_id
-    JOIN telefonos tnew ON tnew.id = rt.tel_new_id)
+    JOIN telefonos tnew ON tnew.id = rt.tel_new_id
+    LEFT JOIN telefono_sim ts ON ts.id = (
+        SELECT ts2.id
+        FROM telefono_sim ts2
+        WHERE ts2.telefono_id = rt.tel_new_id
+          AND ts2.fecha_asignacion <= rt.fecha
+        ORDER BY ts2.fecha_asignacion DESC, ts2.id DESC
+        LIMIT 1
+    )
+    LEFT JOIN sims s ON s.id = ts.sim_id)
     ORDER BY fecha DESC
-    LIMIT 500
 ";
 
 // Si la tabla de renovaciones_telefonos aún no existe en la BD antigua, la creamos al vuelo
@@ -100,7 +114,7 @@ include __DIR__ . '/includes/header.php';
     <div class="card">
         <div class="card-body">
             <p class="mb-2 small text-muted">
-                Últimas 500 renovaciones registradas. Consulta los recibos sin necesidad de localizar antes el equipo.
+                Histórico completo de renovaciones registradas. Consulta los recibos sin necesidad de localizar antes el equipo.
             </p>
 
             <div class="table-responsive">
@@ -157,7 +171,18 @@ include __DIR__ . '/includes/header.php';
                                 </td>
                                 <td>
                                     <?php if ($r['tipo'] === 'telefono'): ?>
-                                        <span class="badge bg-success">SIM trasladada</span>
+                                        <?php if (!empty($r['sim_movida']) && !empty($r['sim_id'])): ?>
+                                            <?php $simTexto = trim((string)($r['sim_etiqueta'] ?? '')); ?>
+                                            <?php if ($simTexto === '') { $simTexto = trim((string)($r['sim_numero'] ?? '')); } ?>
+                                            <?php if ($simTexto === '') { $simTexto = 'SIM #' . (int)$r['sim_id']; } ?>
+                                            <a href="sims_ver.php?id=<?= (int)$r['sim_id'] ?>" class="sim-numero-destacado text-decoration-none">
+                                                <?= htmlspecialchars($simTexto) ?>
+                                            </a>
+                                        <?php elseif (!empty($r['sim_movida'])): ?>
+                                            <span class="badge bg-success">SIM trasladada</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Sin traslado</span>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <?php if (!empty($r['ip_move'])): ?>
                                             <span class="badge bg-success">IP trasladada</span>

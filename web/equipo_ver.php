@@ -251,6 +251,23 @@ if (isset($_GET['mov']) && $_GET['mov'] === 'last') {
     $stmtMov->execute([':id' => $id_equipo]);
     $ultimoMov = $stmtMov->fetch(PDO::FETCH_ASSOC);
 }
+$movBajaId = isset($_GET['mov_baja']) ? (int)$_GET['mov_baja'] : 0;
+$movAltaId = isset($_GET['mov_alta']) ? (int)$_GET['mov_alta'] : 0;
+$movimientosTraslado = [];
+if ($movBajaId > 0 && $movAltaId > 0) {
+    $stmtMovTraslado = $pdo->prepare("
+        SELECT id, tipo, fecha, firma_token
+        FROM equipos_movimientos
+        WHERE id_equipo = :id_equipo
+          AND id IN (:id_baja, :id_alta)
+        ORDER BY fecha DESC, id DESC
+    ");
+    $stmtMovTraslado->bindValue(':id_equipo', $id_equipo, PDO::PARAM_INT);
+    $stmtMovTraslado->bindValue(':id_baja', $movBajaId, PDO::PARAM_INT);
+    $stmtMovTraslado->bindValue(':id_alta', $movAltaId, PDO::PARAM_INT);
+    $stmtMovTraslado->execute();
+    $movimientosTraslado = $stmtMovTraslado->fetchAll(PDO::FETCH_ASSOC);
+}
 
 $ultimaVerificacion = obtenerUltimaVerificacionEquipo($pdo, $id_equipo);
 
@@ -274,6 +291,22 @@ require_once __DIR__ . '/includes/header.php';
 <div class="mt-4">
     <h2>Detalle del Equipo</h2>
     <hr>
+<?php if (!empty($movimientosTraslado)): ?>
+    <div class="alert alert-info d-flex justify-content-between align-items-center">
+        <div>
+            Se han generado recibos de <strong>baja</strong> y <strong>alta</strong> por traslado de ubicación/departamento/sección.
+        </div>
+        <div class="btn-group btn-group-sm">
+            <?php foreach ($movimientosTraslado as $movTras): ?>
+                <a href="recibo_movimiento.php?id=<?= (int)$movTras['id'] ?>"
+                   target="_blank"
+                   class="btn btn-outline-secondary">
+                    <?= htmlspecialchars(ucfirst($movTras['tipo'])) ?> #<?= (int)$movTras['id'] ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>
 <?php if ($ultimoMov): ?>
     <div class="alert alert-info d-flex justify-content-between align-items-center">
         <div>
