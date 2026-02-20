@@ -15,12 +15,22 @@ $mat = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Equipos para vincular (PC, PORTÁTIL, MONITOR, IMPRESORA, etc.)
 $equiposStmt = $pdo->query("
-    SELECT id, tipo, hostname, numero_serie, usuario_asignado
+    SELECT id, tipo, hostname, numero_serie, usuario_asignado, etiqueta, marca, modelo, departamento, ubicacion
     FROM equipos
     WHERE tipo IN ('PC','PORTÁTIL','MONITOR','IMPRESORA')
-    ORDER BY tipo, hostname, numero_serie
+    ORDER BY tipo, etiqueta, hostname, numero_serie
 ");
 $equipos = $equiposStmt->fetchAll(PDO::FETCH_ASSOC);
+$equiposConEtiqueta = [];
+$equiposSinEtiqueta = [];
+foreach ($equipos as $eqRow) {
+    $etq = trim((string)($eqRow['etiqueta'] ?? ''));
+    if ($etq !== '') {
+        $equiposConEtiqueta[] = $eqRow;
+    } else {
+        $equiposSinEtiqueta[] = $eqRow;
+    }
+}
 
 
 if (!$mat) {
@@ -110,22 +120,83 @@ include 'includes/header.php';
         <!-- Asociar a equipo -->
         <div class="col-md-6">
             <label class="form-label">Asociar a equipo (opcional)</label>
-            <select name="equipo_id" class="form-select">
+            <input
+                type="text"
+                id="filtro_equipo_movimiento"
+                class="form-control mb-2"
+                placeholder="Buscar por etiqueta, hostname, serie, usuario, tipo..."
+                autocomplete="off"
+            >
+            <select name="equipo_id" id="equipo_id_select" class="form-select">
                 <option value="0">-- Sin asociar --</option>
-                <?php foreach ($equipos as $eq): ?>
-                    <?php
-                        $label = trim(
-                            $eq['tipo'] . ' - ' .
-                            ($eq['hostname'] ?: 'sin hostname') .
-                            ($eq['numero_serie'] ? ' [SN: '.$eq['numero_serie'].']' : '') .
-                            ($eq['usuario_asignado'] ? ' ('.$eq['usuario_asignado'].')' : '')
-                        );
-                    ?>
-                    <option value="<?= (int)$eq['id'] ?>">
-                        <?= htmlspecialchars($label) ?>
-                    </option>
-                <?php endforeach; ?>
+                <optgroup label="Con etiqueta" id="grp_con_etiqueta">
+                    <?php foreach ($equiposConEtiqueta as $eq): ?>
+                        <?php
+                            $etiqueta = trim((string)($eq['etiqueta'] ?? ''));
+                            $label = trim(
+                                $eq['tipo'] . ' - ' .
+                                '[ETQ: '.$etiqueta.'] - ' .
+                                ($eq['hostname'] ?: 'sin hostname') .
+                                ($eq['numero_serie'] ? ' [SN: '.$eq['numero_serie'].']' : '') .
+                                ($eq['usuario_asignado'] ? ' ('.$eq['usuario_asignado'].')' : '')
+                            );
+                            $searchIndex = strtolower(trim(implode(' ', [
+                                (string)($eq['tipo'] ?? ''),
+                                (string)($eq['etiqueta'] ?? ''),
+                                (string)($eq['hostname'] ?? ''),
+                                (string)($eq['numero_serie'] ?? ''),
+                                (string)($eq['usuario_asignado'] ?? ''),
+                                (string)($eq['marca'] ?? ''),
+                                (string)($eq['modelo'] ?? ''),
+                                (string)($eq['departamento'] ?? ''),
+                                (string)($eq['ubicacion'] ?? ''),
+                                (string)($eq['id'] ?? ''),
+                            ])));
+                        ?>
+                        <option
+                            value="<?= (int)$eq['id'] ?>"
+                            data-search="<?= htmlspecialchars($searchIndex, ENT_QUOTES, 'UTF-8') ?>"
+                            data-etiqueta="<?= htmlspecialchars($etiqueta, ENT_QUOTES, 'UTF-8') ?>"
+                        >
+                            <?= htmlspecialchars($label) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </optgroup>
+                <optgroup label="Sin etiqueta" id="grp_sin_etiqueta">
+                    <?php foreach ($equiposSinEtiqueta as $eq): ?>
+                        <?php
+                            $label = trim(
+                                $eq['tipo'] . ' - ' .
+                                ($eq['hostname'] ?: 'sin hostname') .
+                                ($eq['numero_serie'] ? ' [SN: '.$eq['numero_serie'].']' : '') .
+                                ($eq['usuario_asignado'] ? ' ('.$eq['usuario_asignado'].')' : '')
+                            );
+                            $searchIndex = strtolower(trim(implode(' ', [
+                                (string)($eq['tipo'] ?? ''),
+                                (string)($eq['etiqueta'] ?? ''),
+                                (string)($eq['hostname'] ?? ''),
+                                (string)($eq['numero_serie'] ?? ''),
+                                (string)($eq['usuario_asignado'] ?? ''),
+                                (string)($eq['marca'] ?? ''),
+                                (string)($eq['modelo'] ?? ''),
+                                (string)($eq['departamento'] ?? ''),
+                                (string)($eq['ubicacion'] ?? ''),
+                                (string)($eq['id'] ?? ''),
+                            ])));
+                        ?>
+                        <option
+                            value="<?= (int)$eq['id'] ?>"
+                            data-search="<?= htmlspecialchars($searchIndex, ENT_QUOTES, 'UTF-8') ?>"
+                            data-etiqueta=""
+                        >
+                            <?= htmlspecialchars($label) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </optgroup>
             </select>
+            <div id="equipo_etiqueta_preview" class="mt-2" style="display:none;">
+                <span class="badge text-bg-primary">Etiqueta seleccionada: <span id="equipo_etiqueta_texto"></span></span>
+            </div>
         </div>
     </div>
 
@@ -144,5 +215,65 @@ include 'includes/header.php';
         <a href="material_ver.php?id=<?= (int)$mat['id'] ?>" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var filtro = document.getElementById('filtro_equipo_movimiento');
+    var select = document.getElementById('equipo_id_select');
+    var preview = document.getElementById('equipo_etiqueta_preview');
+    var previewTexto = document.getElementById('equipo_etiqueta_texto');
+    if (!filtro || !select) return;
+
+    function normalizar(texto) {
+        return (texto || '')
+            .toString()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function filtrarEquipos() {
+        var q = normalizar(filtro.value.trim());
+        Array.prototype.forEach.call(select.options, function (opt) {
+            if (opt.value === '0') {
+                opt.hidden = false;
+                return;
+            }
+            var idx = normalizar(opt.getAttribute('data-search') || opt.textContent || '');
+            opt.hidden = q !== '' && idx.indexOf(q) === -1;
+        });
+
+        Array.prototype.forEach.call(select.querySelectorAll('optgroup'), function (grp) {
+            var visibles = Array.prototype.some.call(grp.children, function (opt) {
+                return !opt.hidden;
+            });
+            grp.hidden = !visibles;
+        });
+    }
+
+    function actualizarEtiquetaSeleccionada() {
+        if (!preview || !previewTexto) return;
+        var selected = select.options[select.selectedIndex];
+        if (!selected || selected.value === '0') {
+            preview.style.display = 'none';
+            previewTexto.textContent = '';
+            return;
+        }
+        var etq = (selected.getAttribute('data-etiqueta') || '').trim();
+        if (etq === '') {
+            preview.style.display = 'none';
+            previewTexto.textContent = '';
+            return;
+        }
+        previewTexto.textContent = etq;
+        preview.style.display = '';
+    }
+
+    filtro.addEventListener('input', filtrarEquipos);
+    select.addEventListener('change', actualizarEtiquetaSeleccionada);
+    filtrarEquipos();
+    actualizarEtiquetaSeleccionada();
+});
+</script>
 
 <?php include 'includes/footer.php'; ?>

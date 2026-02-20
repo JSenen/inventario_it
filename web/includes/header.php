@@ -489,6 +489,7 @@ $isMateriales = ($currentPage === 'materiales.php');
 $isAverias = ($currentPage === 'averias_list.php') || str_starts_with($currentPage, 'averia_');
 $isRevistas = ($currentPage === 'verificaciones.php');
 $isManual = ($currentPage === 'manual_usuario.php');
+$isUsuarioAsociado = ($currentPage === 'usuario_asociado.php');
 $isAdmin = ($currentPage === 'admin_catalogos.php') || ($currentPage === 'verificaciones_reportes.php');
 $isRecibos = in_array($currentPage, ['renovaciones.php', 'movimientos.php', 'recibo_movimiento.php', 'recibo_renovacion.php', 'recibo_renovacion_telefono.php'], true);
 $isLogs = ($currentPage === 'actividad_logs.php');
@@ -552,6 +553,9 @@ $isLogs = ($currentPage === 'actividad_logs.php');
         </li>
         <li class="nav-item">
             <a class="nav-link <?= $isManual ? 'active' : '' ?>" href="manual_usuario.php">📘 Manual</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $isUsuarioAsociado ? 'active' : '' ?>" href="usuario_asociado.php">👤 Activos por TIP</a>
         </li>
 
         <li class="nav-item dropdown">

@@ -88,7 +88,20 @@ require_once 'includes/header.php';
                 <tr><th>Modelo</th>          <td><?= htmlspecialchars($tel['modelo'] ?? '') ?></td></tr>
                 <tr><th>IMEI</th>            <td><?= htmlspecialchars($tel['imei'] ?? '') ?></td></tr>
                 <tr><th>Número de serie</th> <td><?= htmlspecialchars($tel['numero_serie'] ?? '') ?></td></tr>
-                <tr><th>Usuario asignado</th><td><span class="dato-contacto-destacado<?= trim((string)($tel['usuario_asignado'] ?? '')) === '' ? ' dato-contacto-destacado-vacio' : '' ?>"><?= htmlspecialchars(($tel['usuario_asignado'] ?? '') !== '' ? $tel['usuario_asignado'] : '-') ?></span></td></tr>
+                <tr>
+                    <th>Usuario asignado</th>
+                    <td>
+                        <?php $usuarioAsignado = trim((string)($tel['usuario_asignado'] ?? '')); ?>
+                        <span class="dato-contacto-destacado<?= $usuarioAsignado === '' ? ' dato-contacto-destacado-vacio' : '' ?>">
+                            <?= htmlspecialchars($usuarioAsignado !== '' ? $usuarioAsignado : '-') ?>
+                        </span>
+                        <?php if ($usuarioAsignado !== ''): ?>
+                            <a class="btn btn-sm btn-outline-primary ms-2" href="usuario_asociado.php?tip=<?= urlencode($usuarioAsignado) ?>">
+                                Ver todo por TIP
+                            </a>
+                        <?php endif; ?>
+                    </td>
+                </tr>
                 <tr><th>Departamento</th>    <td><?= htmlspecialchars($tel['departamento'] ?? '') ?></td></tr>
                 <tr><th>Ubicación</th>       <td><?= htmlspecialchars($tel['ubicacion'] ?? '') ?></td></tr>
                 <tr><th>Sección</th>         <td><?= htmlspecialchars($tel['seccion'] ?? '') ?></td></tr>

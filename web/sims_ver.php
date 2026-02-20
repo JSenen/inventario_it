@@ -22,7 +22,7 @@ if (!$sim) {
 
 // Consultar si está asignada a algún teléfono
 $sqlTel = "
-    SELECT t.id, t.marca, t.modelo, t.imei
+    SELECT t.id, t.marca, t.modelo, t.imei, t.usuario_asignado
     FROM telefono_sim ts
     JOIN telefonos t ON t.id = ts.telefono_id
     WHERE ts.sim_id = :id
@@ -35,7 +35,7 @@ $telefonoActual = $stmtTel->fetch(PDO::FETCH_ASSOC);
 
 // Consultar si está asignada a un equipo PTI
 $sqlEquipo = "
-    SELECT e.id, e.marca, e.modelo, e.numero_serie, e.etiqueta, e.hostname
+    SELECT e.id, e.marca, e.modelo, e.numero_serie, e.etiqueta, e.hostname, e.usuario_asignado
     FROM equipo_sim es
     JOIN equipos e ON e.id = es.equipo_id
     WHERE es.sim_id = :id
@@ -101,6 +101,15 @@ require_once 'includes/header.php';
                 <?= htmlspecialchars($telefonoActual['marca'] . ' ' . $telefonoActual['modelo']) ?>
                 (IMEI: <?= htmlspecialchars($telefonoActual['imei']) ?>)
             </a>
+            <?php $usuarioTel = trim((string)($telefonoActual['usuario_asignado'] ?? '')); ?>
+            <?php if ($usuarioTel !== ''): ?>
+                <div class="mt-2">
+                    Usuario: <strong><?= htmlspecialchars($usuarioTel) ?></strong>
+                    <a class="btn btn-sm btn-outline-primary ms-2" href="usuario_asociado.php?tip=<?= urlencode($usuarioTel) ?>">
+                        Ver todo por TIP
+                    </a>
+                </div>
+            <?php endif; ?>
         </div>
     <?php elseif ($equipoActual): ?>
         <div class="alert alert-success mt-3">
@@ -115,6 +124,15 @@ require_once 'includes/header.php';
                     (SN: <?= htmlspecialchars($equipoActual['numero_serie']) ?>)
                 <?php endif; ?>
             </a>
+            <?php $usuarioEq = trim((string)($equipoActual['usuario_asignado'] ?? '')); ?>
+            <?php if ($usuarioEq !== ''): ?>
+                <div class="mt-2">
+                    Usuario: <strong><?= htmlspecialchars($usuarioEq) ?></strong>
+                    <a class="btn btn-sm btn-outline-primary ms-2" href="usuario_asociado.php?tip=<?= urlencode($usuarioEq) ?>">
+                        Ver todo por TIP
+                    </a>
+                </div>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <div class="alert alert-warning mt-3">

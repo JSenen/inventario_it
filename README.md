@@ -22,6 +22,7 @@ Implementado:
   - Altas, edición, historial y renovaciones de teléfonos.
   - Asignación/liberación/cambio de SIM en teléfono.
   - Gestión de SIM con `etiqueta`, `número`, `número corto`, `ICCID`, operador, estado y observaciones.
+  - UI mejorada en `Nueva SIM` y `Editar SIM` con formulario por bloques, ayudas visuales y sugerencias de operador.
   - Filtros por estado y operador en listado de SIMs.
   - Exportación de SIMs (Excel), además de copia/CSV/impresión desde DataTables.
   - Ficha de teléfono con estado visual por color.
@@ -35,6 +36,11 @@ Implementado:
   - Apertura/cierre/listado y parte imprimible.
 - Material/fungibles:
   - Gestión de stock y movimientos.
+  - En `material_movimiento.php`, asociación a equipo con buscador por múltiples campos (etiqueta, hostname, serie, usuario, tipo, marca, modelo, departamento, ubicación) y separación visual por grupos `Con etiqueta` / `Sin etiqueta`.
+- Vista por TIP:
+  - Nueva pantalla `Activos por TIP` con consolidado de equipos, teléfonos y SIMs activas asociadas a un usuario.
+  - Acceso directo desde fichas de equipo, teléfono y SIM con botón `Ver todo por TIP`.
+  - Bloque de `TIPs destacados` con ranking de uso, excluyendo explícitamente `VARIOS`.
 - Verificaciones (revistas):
   - Registro de verificaciones por equipo.
   - Buscador general (etiqueta, número de serie, etc.).
@@ -144,6 +150,7 @@ php -r "echo hash('sha3-256', 'TuClaveSegura') . PHP_EOL;"
 - Redes/IP: `web/redes.php`, `web/redes_gestion.php`, `web/buscar_ip.php`
 - Móviles/SIM: `web/telefonos.php`, `web/sims.php`
 - Ficha SIM: `web/sims_ver.php`
+- Activos por TIP: `web/usuario_asociado.php`
 - Averías: `web/averias_list.php`
 - Materiales: `web/materiales.php`
 - Verificaciones: `web/verificaciones.php`

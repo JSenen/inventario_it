@@ -26,7 +26,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="card-body">
             <ul class="mb-0">
                 <li>Inicia sesión con tu TIP y contraseña.</li>
-                <li>En el menú lateral tienes los módulos: Equipos, Redes, Móviles/SIMS, Material, Averías, Revistas, Administración y Recibos.</li>
+                <li>En el menú lateral tienes los módulos: Equipos, Redes, Móviles/SIMS, Material, Averías, Revistas, Activos por TIP, Administración y Recibos.</li>
                 <li>Tu usuario y rol aparecen arriba a la derecha.</li>
             </ul>
         </div>
@@ -65,6 +65,7 @@ require_once __DIR__ . '/includes/header.php';
             <ul class="mb-0">
                 <li>Gestiona teléfonos y tarjetas SIM desde su menú específico.</li>
                 <li>En SIM puedes registrar: etiqueta, número, número corto, ICCID, operador, PIN/PUK, estado y observaciones.</li>
+                <li>Las pantallas de <strong>Nueva SIM</strong> y <strong>Editar SIM</strong> están organizadas por bloques (identificación/estado, línea/operador, seguridad/notas) para agilizar la carga de datos.</li>
                 <li>El listado de SIM incluye filtros por estado y operador, y permite exportar resultados.</li>
                 <li>Asigna, cambia o libera SIMs en teléfonos según disponibilidad.</li>
                 <li>Si una SIM está vinculada, en su ficha tendrás acceso directo al teléfono o al equipo PTI asociado.</li>
@@ -75,7 +76,28 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
     <div class="card mb-3 shadow-sm">
-        <div class="card-header"><strong>5. Averías</strong></div>
+        <div class="card-header"><strong>5. Material / fungibles</strong></div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>En <strong>Nuevo movimiento de stock</strong>, al asociar a equipo tienes un buscador por etiqueta, hostname, serie, usuario, tipo, marca, modelo, departamento y ubicación.</li>
+                <li>El desplegable de equipos se organiza en <strong>Con etiqueta</strong> y <strong>Sin etiqueta</strong>, y al seleccionar uno con etiqueta se muestra un indicador visual de la etiqueta elegida.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header"><strong>6. Activos por TIP</strong></div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>Desde <strong>Activos por TIP</strong> puedes ver en una sola pantalla todo lo asociado a un usuario: equipos, teléfonos y SIMs activas.</li>
+                <li>Tienes accesos directos a esta vista desde fichas de equipo, teléfono y SIM mediante el botón <strong>Ver todo por TIP</strong>.</li>
+                <li>Incluye un bloque de <strong>TIPs destacados</strong> para acceso rápido; el valor <strong>VARIOS</strong> se excluye del ranking.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header"><strong>7. Averías</strong></div>
         <div class="card-body">
             <ul class="mb-0">
                 <li>Abre una avería desde el equipo o desde el listado de averías.</li>
@@ -86,7 +108,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
     <div class="card mb-3 shadow-sm">
-        <div class="card-header"><strong>6. Revistas y verificaciones</strong></div>
+        <div class="card-header"><strong>8. Revistas y verificaciones</strong></div>
         <div class="card-body">
             <ul class="mb-0">
                 <li>En <strong>Revistas</strong> puedes registrar verificaciones rápidas de inventario.</li>
@@ -97,7 +119,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
     <div class="card mb-3 shadow-sm">
-        <div class="card-header"><strong>7. Recibos y firma</strong></div>
+        <div class="card-header"><strong>9. Recibos y firma</strong></div>
         <div class="card-body">
             <ul class="mb-0">
                 <li>Consulta recibos de movimientos y renovaciones desde el menú <strong>Recibos</strong>.</li>
@@ -111,7 +133,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
     <div class="card mb-3 shadow-sm">
-        <div class="card-header"><strong>8. Administración y catálogos</strong></div>
+        <div class="card-header"><strong>10. Administración y catálogos</strong></div>
         <div class="card-body">
             <ul class="mb-0">
                 <li>Gestiona maestros: usuarios, tipos de equipo, servicios, ubicaciones, departamentos y secciones.</li>
@@ -122,7 +144,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
     <div class="card shadow-sm">
-        <div class="card-header"><strong>9. Buenas prácticas</strong></div>
+        <div class="card-header"><strong>11. Buenas prácticas</strong></div>
         <div class="card-body">
             <ul class="mb-0">
                 <li>Antes de crear un equipo, revisa si ya existe por número de serie o etiqueta.</li>
