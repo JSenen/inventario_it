@@ -161,6 +161,16 @@ foreach ($rows as $r) {
     $modelo = trim((string)($r['modelo'] ?? ''));
     $marcaModelo = trim($marca . ' ' . $modelo);
 
+    if ($simId > 0) {
+        $acciones .= '
+            <a
+                href="sim_liberar.php?telefono_id=' . (int)$r['id'] . '&return=' . rawurlencode('telefonos.php') . '"
+                class="btn btn-sm btn-outline-danger"
+                onclick="return confirm(\'Se quitara la SIM de este telefono. Continuar?\');"
+            >Quitar SIM</a>
+        ';
+    }
+
     $data[] = [
         'id'               => (int)$r['id'],
         'etiqueta'         => $etiquetaTel !== '' ? '<span class="etiqueta-ok">' . htmlspecialchars($etiquetaTel) . '</span>' : '<span class="etiqueta-missing">(sin etiqueta)</span>',

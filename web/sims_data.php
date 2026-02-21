@@ -18,7 +18,7 @@ $length = $_GET['length'] ?? 25;
 $search = $_GET['search']['value'] ?? '';
 
 // Columnas permitidas para ordenar
-$columns = ['id', 'etiqueta', 'numero', 'numero_corto', 'iccid', 'operador', 'puk', 'estado'];
+$columns = ['s.id', 's.etiqueta', 's.numero', 's.numero_corto', 's.iccid', 's.operador', 's.puk', 's.estado'];
 $orderColIndex = $_GET['order'][0]['column'] ?? 0;
 $orderDir      = $_GET['order'][0]['dir'] ?? 'asc';
 $orderColumn   = $columns[$orderColIndex] ?? 'id';
@@ -31,35 +31,49 @@ $whereParts = [];
 $params     = [];
 
 if (!empty($search)) {
-    $whereParts[] = "(etiqueta LIKE :search 
-              OR numero LIKE :search 
-              OR numero_corto LIKE :search
-              OR iccid LIKE :search 
-              OR operador LIKE :search 
-              OR puk LIKE :search)";
+    $whereParts[] = "(s.etiqueta LIKE :search 
+              OR s.numero LIKE :search 
+              OR s.numero_corto LIKE :search
+              OR s.iccid LIKE :search 
+              OR s.operador LIKE :search 
+              OR s.puk LIKE :search)";
     $params[':search'] = "%$search%";
 }
 
 if (!empty($_GET['estado'] ?? '')) {
-    $whereParts[] = "estado = :estado";
+    $whereParts[] = "s.estado = :estado";
     $params[':estado'] = $_GET['estado'];
 }
 
 if (!empty($_GET['operador'] ?? '')) {
-    $whereParts[] = "operador = :operador";
+    $whereParts[] = "s.operador = :operador";
     $params[':operador'] = $_GET['operador'];
 }
 
 $where = $whereParts ? ('WHERE ' . implode(' AND ', $whereParts)) : '';
 
 try {
+    $fromClause = "
+        FROM sims s
+        LEFT JOIN telefono_sim ts
+            ON ts.id = (
+                SELECT ts2.id
+                FROM telefono_sim ts2
+                WHERE ts2.sim_id = s.id
+                  AND ts2.fecha_liberacion IS NULL
+                ORDER BY ts2.fecha_asignacion DESC, ts2.id DESC
+                LIMIT 1
+            )
+        LEFT JOIN telefonos t ON t.id = ts.telefono_id
+    ";
+
     // Total registros
     $totalStmt = $pdo->query("SELECT COUNT(*) FROM sims");
     $recordsTotal = (int)$totalStmt->fetchColumn();
 
     // Total filtrados
     if ($where) {
-        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM sims $where");
+        $countStmt = $pdo->prepare("SELECT COUNT(*) $fromClause $where");
         $countStmt->execute($params);
         $recordsFiltered = (int)$countStmt->fetchColumn();
     } else {
@@ -67,8 +81,8 @@ try {
     }
 
     // Datos
-    $sql = "SELECT id, etiqueta, numero, numero_corto, iccid, operador, puk, estado 
-            FROM sims
+    $sql = "SELECT s.id, s.etiqueta, s.numero, s.numero_corto, s.iccid, s.operador, s.puk, s.estado, t.id AS telefono_id
+            $fromClause
             $where
             ORDER BY $orderColumn $orderDir
             LIMIT :start, :length";
@@ -95,6 +109,17 @@ foreach ($rows as $r) {
         <a href="sims_ver.php?id=' . (int)$r['id'] . '" class="btn btn-sm btn-info">Ver</a>
         <a href="sims_editar.php?id=' . (int)$r['id'] . '" class="btn btn-sm btn-warning">Editar</a>
     ';
+
+    $telefonoId = isset($r['telefono_id']) ? (int)$r['telefono_id'] : 0;
+    if ($telefonoId > 0) {
+        $acciones .= '
+            <a
+                href="sim_liberar.php?sim_id=' . (int)$r['id'] . '&return=' . rawurlencode('sims.php') . '"
+                class="btn btn-sm btn-outline-danger"
+                onclick="return confirm(\'Se liberara esta SIM del telefono actual. Continuar?\');"
+            >Liberar</a>
+        ';
+    }
 
     $etiquetaSim = trim((string)($r['etiqueta'] ?? ''));
     $data[] = [

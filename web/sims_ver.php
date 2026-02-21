@@ -63,6 +63,13 @@ require_once 'includes/header.php';
                 <a href="telefonos_ver.php?id=<?= (int)$telefonoActual['id'] ?>" class="btn btn-info">
                     Ver teléfono asignado
                 </a>
+                <a
+                    href="sim_liberar.php?sim_id=<?= (int)$id ?>&return=<?= urlencode('sims_ver.php?id=' . (int)$id) ?>"
+                    class="btn btn-outline-danger"
+                    onclick="return confirm('Se liberara esta SIM del telefono actual. Continuar?');"
+                >
+                    Liberar SIM
+                </a>
             <?php elseif ($equipoActual): ?>
                 <a href="equipo_ver.php?id=<?= (int)$equipoActual['id'] ?>" class="btn btn-info">
                     Ver equipo asignado

@@ -135,6 +135,13 @@ require_once 'includes/header.php';
                         <p><b>Operador:</b> <?= htmlspecialchars($simActual['operador']) ?></p>
                         <p><b>ICCID:</b> <?= htmlspecialchars($simActual['iccid']) ?></p>
                         <p><b>Estado SIM:</b> <?= htmlspecialchars($simActual['estado']) ?></p>
+                        <a
+                            href="sim_liberar.php?telefono_id=<?= (int)$id ?>&return=<?= urlencode('telefonos_ver.php?id=' . (int)$id) ?>"
+                            class="btn btn-sm btn-outline-danger mb-2"
+                            onclick="return confirm('Se quitara la SIM actual de este telefono. Continuar?');"
+                        >
+                            Quitar SIM de este telefono
+                        </a>
                     <?php else: ?>
                         <p class="text-muted">Este teléfono no tiene SIM asignada actualmente.</p>
                     <?php endif; ?>
