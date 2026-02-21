@@ -1,0 +1,84 @@
+/* ====== POCKETWATCH ANCLADO A LA CARD "MOVIMIENTOS" ====== */
+.card-movimientos {
+  position: relative;
+  overflow: visible;
+}
+
+.pocketwatch-card {
+  position: absolute;
+  top: 50%;
+  right: -150px; /* ajusta: -55 (más pegado) / -85 (más fuera) */
+  transform: translateY(-50%);
+  width: 120px; /* tamaño del reloj */
+  height: 120px;
+  pointer-events: none;
+  opacity: 0.95;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+}
+
+/* ====== RELOJ ====== */
+.pocketwatch {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  /* Centro del eje del PNG (ajusta solo esto si no cuadra) */
+  --cx: 50%;
+  --cy: 59%;
+}
+
+.pocketwatch-bg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ====== AGUJAS ====== */
+.hand {
+  position: absolute;
+  left: var(--cx);
+  top: var(--cy);
+  transform-origin: 50% 100%;
+  transform: translate(-50%, -100%) rotate(0deg);
+  border-radius: 999px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.hand.hour {
+  width: 4px;
+  height: 17px;
+  background: #1b1b1b;
+}
+
+.hand.minute {
+  width: 2px;
+  height: 25px;
+  background: #1b1b1b;
+}
+
+.hand.second {
+  width: 0.75px;
+  height: 25px;
+  background: #a12a1b;
+}
+
+/* Centro */
+.pin {
+  position: absolute;
+  left: var(--cx);
+  top: var(--cy);
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -59%);
+  background: #2a1b0c;
+  border: 2px solid #d4b06a;
+  border-radius: 50%;
+}
+
+/* En móvil mejor ocultarlo */
+@media (max-width: 768px) {
+  .pocketwatch-card {
+    display: none;
+  }
+}

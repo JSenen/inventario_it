@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Recibo de DEVOLUCIÓN</title>
+<style>
+  @page { size: A4; margin: 14mm 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 9pt; line-height: 1.25; color: #111; margin: 0; }
+
+  h1,h2,h3 { margin: 0 0 4mm; }
+  h1 { font-size: 11pt; }
+  h2 { font-size: 10pt; }
+  .sub { font-size: 8pt; color:#333; margin: 0 0 4mm; }
+
+  .titlebar { width:100%; border-collapse:collapse; margin-bottom:6mm; }
+  .titlebar td { vertical-align:middle; }
+  .titlebar .side { width:110px; }
+  .titlebar .title { text-align:center; font-size:11pt; font-weight:bold; }
+  .titlebar img { height:22px; width:auto; object-fit:contain; display:block; }
+
+  .box { border:1px solid #666; border-radius:5px; padding:4mm; margin:3.5mm 0; }
+  .label { font-weight:bold; }
+
+  .row { display:flex; gap:6mm; flex-wrap:wrap; }
+  .col { flex: 1 1 58mm; }
+
+  .items ul { margin: 1mm 0 0 5mm; padding:0; }
+  .items li { margin: 0.8mm 0; }
+
+  .signs { display:flex; justify-content:space-between; margin-top:6mm; gap:10mm; }
+  .sign { flex:1 1 45%; text-align:center; }
+  .line { border-top:1px solid #000; margin-top:12mm; }
+
+  .muted { color:#444; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+
+<table class="titlebar">
+  <tr>
+    <td class="side" style="text-align:left;"><img src="{{logo_izq}}" alt=""></td>
+    <td class="title">Documento de devolución de material</td>
+    <td class="side" style="text-align:right;"><img src="{{logo_der}}" alt=""></td>
+  </tr>
+</table>
+
+<div class="sub"><strong>{curso}</strong></div>
+
+<div class="box">
+  <div class="label">Datos del adjudicatario</div>
+  <div class="row" style="margin-top:2mm">
+    <div class="col"><span class="label">Nombre y apellidos:</span> {nombre} {apellidos}</div>
+  </div>
+  <div class="row">
+    <div class="col"><span class="label">DNI:</span> {dni}</div>
+    <div class="col"><span class="label">TIP:</span> {tip}</div>
+  </div>
+  <div class="row">
+    <div class="col"><span class="label">Teléfono:</span> {telefono}</div>
+    <div class="col"><span class="label">Email corporativo:</span> {email}</div>
+  </div>
+  <div class="row">
+    <div class="col"><span class="label">Empleo:</span> {empleo}</div>
+    <div class="col"><span class="label">Unidad:</span> {unidad}</div>
+  </div>
+</div>
+
+<div class="box">
+  <div class="label">Equipo devuelto</div>
+  <div class="row" style="margin-top:2mm">
+    <div class="col"><span class="label">Descripción:</span> {equipo_descripcion}</div>
+    <div class="col"><span class="label">Nº de serie:</span> {num_serie}</div>
+  </div>
+  <div class="row">
+    <div class="col"><span class="label">Curso:</span> {curso}</div>
+    <div class="col"><span class="label">Fecha de devolución:</span> {fecha_devolucion}</div>
+  </div>
+
+  <div class="row" style="margin-top:2mm">
+    <div class="col" style="flex:1 1 100%">
+      <span class="label">Se devuelve con:</span>
+      <div class="items">
+        <ul>
+          <li>{incluye_1}</li>
+          <li>{incluye_2}</li>
+          <li>{incluye_3}</li>
+          <li>{incluye_4}</li>
+          <li>{incluye_5}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="box">
+  <div class="muted">
+    Yo, {nombre} {apellidos}, con DNI {dni}, y con nº de TIP {tip}, en calidad de adjudicatario/autorizado, devolví en la Unidad del Grupo de Apoyo a Tecnologías de la Información de la Comandancia de San Andrés de la Barca (Barcelona) el ordenador portátil {num_serie} ({equipo_descripcion}). El equipo está serigrafiado con la leyenda “Plan de Recuperación, Transformación y Resiliencia. Financiado por la Unión Europea” y se devuelve con su cargador.
+  </div>
+</div>
+
+<div class="box">
+  <div class="muted">
+    <h3 style="font-size:9pt;margin:0 0 2mm;">Instrucciones de devolución</h3>
+    Los ordenadores deben devolverse en las mismas condiciones en que fueron entregados, sin software adicional ni documentos del usuario. El personal adjudicatario procederá a la devolución en un plazo máximo de dos semanas desde la finalización o baja en la acción formativa. Habiendo comprobado el estado y funcionamiento del material, firmo la presente.
+  </div>
+</div>
+
+<div class="signs">
+  <div class="sign">
+    <div class="line"></div>
+    <div>Firma del receptor</div>
+    <div class="muted">{firma_receptor_nombre}</div>
+  </div>
+  <div class="sign">
+    <div class="line"></div>
+    <div>Firma y sello</div>
+  </div>
+</div>
+
+</body>
+</html>
