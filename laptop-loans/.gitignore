@@ -1,0 +1,33 @@
+
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+# logs / storage
+./storage
+./storage/logs
+./storage/recibos
+schema.sql
+storage/uploads/people_68c166092505c7.91529068.xlsx
+storage/uploads/people_68c1663bafbf38.21130960.xlsx
+storage/uploads/people_68c1637b3f7b92.26979223.xlsx
+storage/recibos/entrega_adsasdasdasd_curso_1_37.pdf
+storage/logs/app-2025-09-12.log
+storage/logs/app-2025-09-10.log
+storage/logs/app-2025-09-10.log
