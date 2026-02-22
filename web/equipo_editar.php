@@ -898,7 +898,7 @@ require_once __DIR__ . '/includes/header.php';
 
                         <a href="monitor_desvincular.php?id=<?= $m['id'] ?>&pc=<?= $equipo['id'] ?>"
                            class="btn btn-warning btn-sm ms-3"
-                           onclick="return confirm('¿Desvincular este monitor y enviarlo a Almacén?');">
+                           data-confirm-message="¿Desvincular este monitor y enviarlo a Almacén?">
                             Desvincular y pasar a Almacén
                         </a>
                     </div>
@@ -1787,10 +1787,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 '- Departamento: ' + txtDepartamento + '\n' +
                 '- Sección: ' + txtSeccion + '\n\n' +
                 '¿Confirmas el movimiento?';
-            if (window.confirm(mensaje)) {
+            window.appDialogs.confirm(mensaje, {
+                title: 'Confirmar movimiento interno',
+                okText: 'Confirmar y guardar'
+            }).then(function (ok) {
+                if (!ok) return;
                 confirmacionAceptada = true;
                 form.submit();
-            }
+            });
             return;
         }
 

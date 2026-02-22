@@ -166,7 +166,7 @@ foreach ($rows as $r) {
             <a
                 href="sim_liberar.php?telefono_id=' . (int)$r['id'] . '&return=' . rawurlencode('telefonos.php') . '"
                 class="btn btn-sm btn-outline-danger"
-                onclick="return confirm(\'Se quitara la SIM de este telefono. Continuar?\');"
+                data-confirm-message="Se quitara la SIM de este telefono. Continuar?"
             >Quitar SIM</a>
         ';
     }

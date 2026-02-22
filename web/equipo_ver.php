@@ -448,7 +448,7 @@ require_once __DIR__ . '/includes/header.php';
         <tr>
             <th>ID</th>
              <td> <span class="<?= !empty($equipo['etiqueta']) ? 'etiqueta-ok' : 'etiqueta-missing' ?>"><?= htmlspecialchars(!empty($equipo['etiqueta']) ? $equipo['etiqueta'] : '(sin etiqueta)') ?></span></td></tr>
-        <?php if (!empty($equipo['imagen'])): ?>
+        <?php if (!empty($equipo['imagen']) && is_file(__DIR__ . '/' . ltrim((string)$equipo['imagen'], '/'))): ?>
         <tr>
             <th>Imagen</th>
             <td>

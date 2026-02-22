@@ -138,7 +138,7 @@ require_once 'includes/header.php';
                         <a
                             href="sim_liberar.php?telefono_id=<?= (int)$id ?>&return=<?= urlencode('telefonos_ver.php?id=' . (int)$id) ?>"
                             class="btn btn-sm btn-outline-danger mb-2"
-                            onclick="return confirm('Se quitara la SIM actual de este telefono. Continuar?');"
+                            data-confirm-message="Se quitara la SIM actual de este telefono. Continuar?"
                         >
                             Quitar SIM de este telefono
                         </a>
@@ -151,7 +151,7 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
-            <?php if (!empty($tel['imagen'])): ?>
+            <?php if (!empty($tel['imagen']) && is_file(__DIR__ . '/' . ltrim((string)$tel['imagen'], '/'))): ?>
                 <div class="card">
                     <div class="card-header"><b>Imagen</b></div>
                     <div class="card-body text-center">

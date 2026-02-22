@@ -343,6 +343,8 @@ h1 {
     Este recibo certifica que el usuario indicado ha recibido o entregado el equipo detallado en la fecha mostrada.
 </div>
 
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/app_popups.js"></script>
 <script>
 function copiarLink() {
     var input = document.getElementById('linkFirma');
@@ -350,9 +352,9 @@ function copiarLink() {
     input.setSelectionRange(0, 99999);
     try {
         document.execCommand('copy');
-        alert('Enlace copiado. Pégalo en un correo o chat al usuario.');
+        window.appDialogs.alert('Enlace copiado. Pégalo en un correo o chat al usuario.');
     } catch (e) {
-        alert('No se ha podido copiar automáticamente. Selecciona el texto y cópialo manualmente.');
+        window.appDialogs.alert('No se ha podido copiar automáticamente. Selecciona el texto y cópialo manualmente.');
     }
 }
 
@@ -364,13 +366,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, '1');
 
-    const ok = window.confirm(
-        '¿Quieres enviar este recibo por correo a la sección (<?= addslashes($seccionCorreo) ?>) para su firma?'
-    );
-    if (ok) {
+    window.appDialogs.confirm(
+        '¿Quieres enviar este recibo por correo a la sección (<?= addslashes($seccionCorreo) ?>) para su firma?',
+        { title: 'Confirmar movimiento interno', okText: 'Enviar correo' }
+    ).then(function (ok) {
+        if (!ok) return;
         const f = document.getElementById('formEnviarCorreoSeccion');
         if (f) f.submit();
-    }
+    });
 });
 </script>
 </div> <!-- /.documento -->

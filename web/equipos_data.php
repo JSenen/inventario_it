@@ -218,8 +218,10 @@ $sqlData = "
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
         $colId       = htmlspecialchars($row['id']);
-        $colImagen   = !empty($row['imagen'])
-            ? '<img src="' . htmlspecialchars($row['imagen']) . '" style="width:50px;height:auto;">'
+        $rutaImagen = (string)($row['imagen'] ?? '');
+        $tieneImagen = ($rutaImagen !== '') && is_file(__DIR__ . '/' . ltrim($rutaImagen, '/'));
+        $colImagen   = $tieneImagen
+            ? '<img src="' . htmlspecialchars($rutaImagen) . '" style="width:50px;height:auto;">'
             : '<span class="text-muted">Sin imagen</span>';
         $colNumSerie = htmlspecialchars($row['numero_serie'] ?? '');
         $colTipo     = htmlspecialchars($row['tipo'] ?? '');
@@ -389,7 +391,7 @@ $sqlData = "
                 <a href="equipo_ver.php?id=' . $row['id'] . '" class="btn btn-outline-primary">Ver</a>
                 <a href="equipo_editar.php?id=' . $row['id'] . '" class="btn btn-outline-secondary">Editar</a>
                 <a href="equipo_borrar.php?id=' . $row['id'] . '" class="btn btn-outline-danger"
-                   onclick="return confirm(\'¿Seguro que quieres eliminar este equipo?\');">
+                   data-confirm-message="¿Seguro que quieres eliminar este equipo?">
                    Borrar
                 </a>
             </div>';

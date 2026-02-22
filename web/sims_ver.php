@@ -66,7 +66,7 @@ require_once 'includes/header.php';
                 <a
                     href="sim_liberar.php?sim_id=<?= (int)$id ?>&return=<?= urlencode('sims_ver.php?id=' . (int)$id) ?>"
                     class="btn btn-outline-danger"
-                    onclick="return confirm('Se liberara esta SIM del telefono actual. Continuar?');"
+                    data-confirm-message="Se liberara esta SIM del telefono actual. Continuar?"
                 >
                     Liberar SIM
                 </a>

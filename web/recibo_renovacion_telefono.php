@@ -197,6 +197,8 @@ $mostrarPopupEnvio = ($_SERVER['REQUEST_METHOD'] !== 'POST')
         <div style="border:1px solid #999; height:140px; margin-bottom:20px;"></div>
     <?php endif; ?>
 </div>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/app_popups.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const mostrarPopup = <?= $mostrarPopupEnvio ? 'true' : 'false' ?>;
@@ -206,13 +208,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, '1');
 
-    const ok = window.confirm(
-        '¿Quieres enviar este recibo por correo a la sección (<?= addslashes($seccionCorreo) ?>) para su firma?'
-    );
-    if (ok) {
+    window.appDialogs.confirm(
+        '¿Quieres enviar este recibo por correo a la sección (<?= addslashes($seccionCorreo) ?>) para su firma?',
+        { title: 'Confirmar movimiento interno', okText: 'Enviar correo' }
+    ).then(function (ok) {
+        if (!ok) return;
         const f = document.getElementById('formEnviarCorreoSeccion');
         if (f) f.submit();
-    }
+    });
 });
 </script>
 </body>
