@@ -3,7 +3,7 @@
 ?>
 </div> <!-- .container -->
 <footer class="bg-light text-center text-muted py-3 mt-4 border-top">
-    <small>Inventario Informático — &copy; By JSenen -- 2025 --</small>
+    <small>Inventario Informático — &copy; By JSenen - 2025 - <script>document.write(new Date().getFullYear())</script></small>
 </footer>
 
 <script src="assets/js/app_popups.js"></script>

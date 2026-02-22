@@ -112,6 +112,72 @@ docker compose up -d --build
 - Password: `InventarioPass123!`
 - Root: `rootpass123`
 
+## Copias de seguridad y traslado a otro equipo
+
+### 1. Exportar copias SQL obligatorias
+
+Crear carpeta de backups:
+
+```bash
+mkdir -p backups
+```
+
+Exportar `inventario_it.sql`:
+
+```bash
+docker exec inventario_db mariadb-dump -uroot -prootpass123 inventario_it > backups/inventario_it.sql
+```
+
+Exportar `laptop_loans.sql`:
+
+```bash
+docker exec inventario_db mariadb-dump -uroot -prootpass123 laptop_loans > backups/laptop_loans.sql
+```
+
+### 2. Crear imagen portable del entorno Docker
+
+Guardar las imagenes usadas por el proyecto en un unico archivo:
+
+```bash
+docker image save -o backups/inventario_it_docker_images.tar mariadb:11 lscr.io/linuxserver/phpmyadmin:latest inventario_php
+```
+
+`inventario_php` se genera al construir el proyecto con `docker compose up -d --build`.
+
+### 3. Cargar la imagen en el nuevo equipo
+
+Copiar la carpeta `backups/` al nuevo equipo y ejecutar:
+
+```bash
+docker image load -i backups/inventario_it_docker_images.tar
+```
+
+Despues, desde la raiz del proyecto:
+
+```bash
+docker compose up -d
+```
+
+### 4. Restaurar bases de datos en el nuevo equipo
+
+Crear base `laptop_loans` y permisos para `inventario_user`:
+
+```bash
+docker exec -i inventario_db mariadb -uroot -prootpass123 -e "CREATE DATABASE IF NOT EXISTS laptop_loans CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON laptop_loans.* TO 'inventario_user'@'%'; FLUSH PRIVILEGES;"
+```
+
+Importar `inventario_it.sql`:
+
+```bash
+docker exec -i inventario_db mariadb -uroot -prootpass123 inventario_it < backups/inventario_it.sql
+```
+
+Importar `laptop_loans.sql`:
+
+```bash
+docker exec -i inventario_db mariadb -uroot -prootpass123 laptop_loans < backups/laptop_loans.sql
+```
+
 ## Configuración de correo
 
 El envío de correo de recibos usa `web/includes/mail_helper.php` (función nativa `mail()` de PHP).

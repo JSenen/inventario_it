@@ -154,6 +154,20 @@ require_once __DIR__ . '/includes/header.php';
             </ul>
         </div>
     </div>
+
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header"><strong>12. Copias de seguridad y traslado a otro equipo</strong></div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>Antes de mover el sistema a otro equipo, genera siempre dos copias SQL: <code>inventario_it.sql</code> y <code>laptop_loans.sql</code>.</li>
+                <li>Para que la imagenes de los dispòsitivos contninuen. No olbide copiar tambien el directorio <code>/var/www/html/web/uploads/equipo</code> al nuevo equipo.</li>
+                <li>Exporta las imagenes Docker del entorno y copia el archivo resultante junto a los SQL al nuevo equipo.</li>
+                <li>En el nuevo equipo, carga las imagenes Docker, arranca <code>docker compose up -d</code> y restaura las dos bases.</li>
+                <li>Tras crear <code>laptop_loans</code>, concede permisos a <code>inventario_user</code> para operar sobre esa base con este GRANT:</li>
+                <li><code>GRANT ALL PRIVILEGES ON laptop_loans.* TO 'inventario_user'@'%'; FLUSH PRIVILEGES;</code></li>
+            </ul>
+        </div>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
