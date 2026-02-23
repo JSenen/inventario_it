@@ -528,8 +528,23 @@ $isLogs = ($currentPage === 'actividad_logs.php');
     </a>
 
     <ul class="navbar-nav flex-column">
+
         <li class="nav-item">
             <a class="nav-link <?= $isEquipos ? 'active' : '' ?>" href="index.php">👨🏽‍💻 Equipos</a>
+        </li>
+
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle <?= $isMoviles ? 'active' : '' ?>" href="#" id="movilesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?= $isMoviles ? 'true' : 'false' ?>">
+                📱 Móviles / SIMS
+            </a>
+            <ul class="dropdown-menu <?= $isMoviles ? 'show' : '' ?>" aria-labelledby="movilesDropdown">
+                <li><a class="dropdown-item <?= str_starts_with($currentPage, 'telefono') ? 'active' : '' ?>" href="telefonos.php">Teléfonos</a></li>
+                <li><a class="dropdown-item <?= str_starts_with($currentPage, 'sim') || $currentPage === 'sims.php' ? 'active' : '' ?>" href="sims.php">Tarjetas SIM</a></li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="/laptop-loans/public/?r=dashboard/index">💻 Portátiles Formación</a>
         </li>
 
         <li class="nav-item dropdown">
@@ -544,15 +559,7 @@ $isLogs = ($currentPage === 'actividad_logs.php');
             </ul>
         </li>
 
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle <?= $isMoviles ? 'active' : '' ?>" href="#" id="movilesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?= $isMoviles ? 'true' : 'false' ?>">
-                📱 Móviles / SIMS
-            </a>
-            <ul class="dropdown-menu <?= $isMoviles ? 'show' : '' ?>" aria-labelledby="movilesDropdown">
-                <li><a class="dropdown-item <?= str_starts_with($currentPage, 'telefono') ? 'active' : '' ?>" href="telefonos.php">Teléfonos</a></li>
-                <li><a class="dropdown-item <?= str_starts_with($currentPage, 'sim') || $currentPage === 'sims.php' ? 'active' : '' ?>" href="sims.php">Tarjetas SIM</a></li>
-            </ul>
-        </li>
+        
 
         <li class="nav-item">
             <a class="nav-link <?= $isMateriales ? 'active' : '' ?>" href="materiales.php">📦 Material / Fungibles</a>
@@ -563,9 +570,7 @@ $isLogs = ($currentPage === 'actividad_logs.php');
         <li class="nav-item">
             <a class="nav-link <?= $isRevistas ? 'active' : '' ?>" href="verificaciones.php">✅ Revistas</a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link <?= $isManual ? 'active' : '' ?>" href="manual_usuario.php">📘 Manual</a>
-        </li>
+        
         <li class="nav-item">
             <a class="nav-link <?= $isUsuarioAsociado ? 'active' : '' ?>" href="usuario_asociado.php">👤 Activos por TIP</a>
         </li>
@@ -597,8 +602,9 @@ $isLogs = ($currentPage === 'actividad_logs.php');
             </ul>
         </li>
 
+        
         <li class="nav-item">
-            <a class="nav-link" href="/laptop-loans/public/?r=dashboard/index">💻 Portátiles Formación</a>
+            <a class="nav-link <?= $isManual ? 'active' : '' ?>" href="manual_usuario.php">📘 Manual</a>
         </li>
         <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
             <li class="nav-item">
