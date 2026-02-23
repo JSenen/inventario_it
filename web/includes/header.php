@@ -598,7 +598,7 @@ $isLogs = ($currentPage === 'actividad_logs.php');
         </li>
 
         <li class="nav-item">
-            <a class="nav-link" href="/laptop-loans/public/">💻 Portátiles Formación</a>
+            <a class="nav-link" href="/laptop-loans/public/?r=dashboard/index">💻 Portátiles Formación</a>
         </li>
         <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
             <li class="nav-item">

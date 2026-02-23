@@ -2756,3 +2756,67 @@
 [2026-02-23 15:04:25] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"192.168.65.1"}
 [2026-02-23 15:04:28] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
 [2026-02-23 15:04:31] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-23 15:09:05] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:09:11] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-23 15:09:15] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"192.168.65.1"}
+[2026-02-23 15:09:17] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/download","ip":"192.168.65.1"}
+[2026-02-23 15:09:20] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/download","ip":"192.168.65.1"}
+[2026-02-23 15:09:36] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-23 15:10:02] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"courses/index","ip":"192.168.65.1"}
+[2026-02-23 15:10:04] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"192.168.65.1"}
+[2026-02-23 15:10:13] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/devolucion","ip":"192.168.65.1"}
+[2026-02-23 15:10:19] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"192.168.65.1"}
+[2026-02-23 15:10:19] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php:24 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/people/index.php","line":24,"severity":8192}
+[23-Feb-2026 15:10:19 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php on line 24
+[2026-02-23 15:10:19] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php:25 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/people/index.php","line":25,"severity":8192}
+[23-Feb-2026 15:10:19 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php on line 25
+[2026-02-23 15:10:22] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"192.168.65.1"}
+[2026-02-23 15:11:27] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"192.168.65.1"}
+[2026-02-23 15:11:27] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php:24 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/people/index.php","line":24,"severity":8192}
+[23-Feb-2026 15:11:27 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php on line 24
+[2026-02-23 15:11:27] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php:25 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/people/index.php","line":25,"severity":8192}
+[23-Feb-2026 15:11:27 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php on line 25
+[2026-02-23 15:11:31] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-23 15:11:44] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:11:48] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:11:49] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-23 15:12:16] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-23 15:12:21] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"192.168.65.1"}
+[2026-02-23 15:12:23] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-23 15:12:34] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"courses/index","ip":"192.168.65.1"}
+[2026-02-23 15:12:36] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"locations/index","ip":"192.168.65.1"}
+[2026-02-23 15:12:39] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/entrega","ip":"192.168.65.1"}
+[2026-02-23 15:12:40] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/devolucion","ip":"192.168.65.1"}
+[2026-02-23 15:19:21] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:19:25] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/ver","ip":"192.168.65.1"}
+[2026-02-23 15:24:40] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:24:42] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"people/index","ip":"192.168.65.1"}
+[2026-02-23 15:24:42] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php:24 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/people/index.php","line":24,"severity":8192}
+[23-Feb-2026 15:24:42 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php on line 24
+[2026-02-23 15:24:42] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php:25 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/people/index.php","line":25,"severity":8192}
+[23-Feb-2026 15:24:42 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php on line 25
+[2026-02-23 15:24:44] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/logout","ip":"192.168.65.1"}
+[2026-02-23 15:24:44] INFO    AUDIT logout {"user_id":null,"username":"anon","ip":"192.168.65.1","route":"auth/logout"}
+[2026-02-23 15:24:44] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/login","ip":"192.168.65.1"}
+[2026-02-23 15:24:46] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/login","ip":"192.168.65.1"}
+[2026-02-23 15:24:46] ERROR   Uncaught exception: SQLSTATE[HY000] [2002] Connection refused {"msg":"SQLSTATE[HY000] [2002] Connection refused","file":"/var/www/html/laptop-loans/app/Models/AuthService.php","line":11,"trace":"#0 /var/www/html/laptop-loans/app/Models/AuthService.php(11): PDO->__construct('mysql:host=127....', 'gati', Object(SensitiveParameterValue), Array)\n#1 /var/www/html/laptop-loans/app/Controllers/AuthController.php(13): App\\Models\\AuthService::attempt('A58656F', 'Guat3ma1a2025.-')\n#2 /var/www/html/laptop-loans/public/index.php(102): App\\Controllers\\AuthController->login()\n#3 {main}"}
+[2026-02-23 15:24:52] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:25:40] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:25:42] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/logout","ip":"192.168.65.1"}
+[2026-02-23 15:25:42] INFO    AUDIT logout {"user_id":null,"username":"anon","ip":"192.168.65.1","route":"auth/logout"}
+[2026-02-23 15:25:42] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/login","ip":"192.168.65.1"}
+[2026-02-23 15:25:44] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/login","ip":"192.168.65.1"}
+[2026-02-23 15:25:44] ERROR   Uncaught exception: SQLSTATE[HY000] [2002] Connection refused {"msg":"SQLSTATE[HY000] [2002] Connection refused","file":"/var/www/html/laptop-loans/app/Models/AuthService.php","line":11,"trace":"#0 /var/www/html/laptop-loans/app/Models/AuthService.php(11): PDO->__construct('mysql:host=127....', 'gati', Object(SensitiveParameterValue), Array)\n#1 /var/www/html/laptop-loans/app/Controllers/AuthController.php(13): App\\Models\\AuthService::attempt('A58656F', 'Guat3ma1a2025.-')\n#2 /var/www/html/laptop-loans/public/index.php(102): App\\Controllers\\AuthController->login()\n#3 {main}"}
+[2026-02-23 15:26:36] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:26:38] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:26:42] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:26:43] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/logout","ip":"192.168.65.1"}
+[2026-02-23 15:26:43] INFO    AUDIT logout {"user_id":null,"username":"anon","ip":"192.168.65.1","route":"auth/logout"}
+[2026-02-23 15:26:43] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/login","ip":"192.168.65.1"}
+[2026-02-23 15:26:45] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/login","ip":"192.168.65.1"}
+[2026-02-23 15:26:45] ERROR   Uncaught exception: SQLSTATE[HY000] [2002] Connection refused {"msg":"SQLSTATE[HY000] [2002] Connection refused","file":"/var/www/html/laptop-loans/app/Models/AuthService.php","line":11,"trace":"#0 /var/www/html/laptop-loans/app/Models/AuthService.php(11): PDO->__construct('mysql:host=127....', 'gati', Object(SensitiveParameterValue), Array)\n#1 /var/www/html/laptop-loans/app/Controllers/AuthController.php(13): App\\Models\\AuthService::attempt('A58656F', 'Guat3ma1a2025.-')\n#2 /var/www/html/laptop-loans/public/index.php(102): App\\Controllers\\AuthController->login()\n#3 {main}"}
+[2026-02-23 15:29:12] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/login","ip":"192.168.65.1"}
+[2026-02-23 15:29:15] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"auth/login","ip":"192.168.65.1"}
+[2026-02-23 15:29:15] INFO    AUDIT login_success {"user_id":1,"username":"A58656F","ip":"192.168.65.1","route":"auth/login","login":"A58656F"}
+[2026-02-23 15:29:15] INFO    AUDIT visit {"user_id":1,"username":"A58656F","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 15:29:20] INFO    AUDIT visit {"user_id":1,"username":"A58656F","route":"dashboard/index","ip":"192.168.65.1"}

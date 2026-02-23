@@ -27,6 +27,7 @@ require_once __DIR__ . '/includes/header.php';
             <ul class="mb-0">
                 <li>Inicia sesión con tu TIP y contraseña.</li>
                 <li>En el menú lateral tienes los módulos: Equipos, Redes, Móviles/SIMS, Material, Averías, Revistas, Activos por TIP, Administración y Recibos.</li>
+                <li>Si accedes al módulo de <strong>Portátiles formación (laptop-loans)</strong> desde Inventario IT con sesión activa, entrarás por SSO con tu TIP sin volver a autenticarte.</li>
                 <li>Tu usuario y rol aparecen arriba a la derecha.</li>
             </ul>
         </div>
@@ -124,7 +125,8 @@ require_once __DIR__ . '/includes/header.php';
             <ul class="mb-0">
                 <li>Consulta recibos de movimientos y renovaciones desde el menú <strong>Recibos</strong>.</li>
                 <li>En listados de renovaciones y movimientos se muestra el histórico completo con buscador y paginación.</li>
-                <li>Los recibos se pueden imprimir/guardar en PDF.</li>
+                <li>Los recibos se generan automáticamente en PDF y se guardan en servidor, además de poder imprimirse/descargarse.</li>
+                <li>Para cada recibo se conserva versión <strong>sin firma</strong> y, al firmar, se genera versión <strong>firmada</strong>; la versión vigente es la que se abre por defecto desde los listados.</li>
                 <li>En renovaciones de teléfono, la columna SIM muestra la etiqueta/número de la SIM trasladada con enlace directo a su ficha.</li>
                 <li>Cuando aplica, puedes gestionar firma digital desde los enlaces de firma.</li>
                 <li>En renovaciones/movimientos puede mostrarse opción de envío por correo al destino si está configurado.</li>

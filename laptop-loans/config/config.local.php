@@ -15,4 +15,11 @@ return [
     'app' => ['base_url' => '/laptop-loans/public']
 
   ],
+  'auth' => [
+    // inventario_it|helpdesk|auto
+    // - inventario_it: valida TIP+clave contra inventario_it.usuarios (SHA3-256)
+    // - helpdesk: valida contra hesk_users (bcrypt)
+    // - auto: intenta inventario_it y luego helpdesk
+    'provider' => 'inventario_it',
+  ],
 ];

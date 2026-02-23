@@ -52,3 +52,19 @@ body{
 }
 .col-actions .actions-wrap .btn{ white-space:nowrap; }
 .col-actions form{ display:inline; margin:0; }
+
+.table-search-wrap{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  margin:10px 0 12px;
+}
+
+.table-search-input{
+  max-width:360px;
+}
+
+.table-search-info{
+  font-size:.9rem;
+}

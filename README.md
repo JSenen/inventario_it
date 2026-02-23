@@ -41,6 +41,14 @@ Implementado:
   - Exportación en CSV, Excel (`.xls`) y vista imprimible PDF.
 - Recibos:
   - Recibos de movimiento, renovación de equipo y renovación de teléfono.
+  - Generación automática de PDF en servidor en `web/uploads/recibos/`:
+    - Movimientos: `uploads/recibos/movimientos/`
+    - Renovación equipos: `uploads/recibos/renovaciones/equipos/`
+    - Renovación teléfonos: `uploads/recibos/renovaciones/telefonos/`
+  - Doble versión de recibo:
+    - `pdf_unsigned_path`: versión inicial sin firma.
+    - `pdf_signed_path`: versión regenerada tras firma.
+    - `pdf_path`: ruta vigente (la que abre por defecto en listados).
   - Firma digital por token.
   - Envío opcional por correo a la sección con popup de confirmación.
   - Fallback a `mailto:` si falla el envío desde servidor.
@@ -74,6 +82,52 @@ inventario-it/
 ├── docker-compose.yml
 └── README.md
 ```
+
+## Instalación desde cero (completa)
+
+1. Clona el repositorio y entra en el proyecto:
+
+```bash
+git clone <URL_DEL_REPO>
+cd inventario-it
+```
+
+2. Levanta el entorno:
+
+```bash
+docker compose up -d --build
+```
+
+3. Crea/actualiza las bases de datos:
+- `inventario_it`: importa `db/inventario_schema.sql`.
+- `laptop_loans`: importa `laptop-loans/schema.sql` (o `laptop-loans/laptop_loans.sql` si partes de un dump completo).
+
+4. Concede permisos de `laptop_loans` al usuario de la app:
+
+```sql
+GRANT ALL PRIVILEGES ON laptop_loans.* TO 'inventario_user'@'%';
+FLUSH PRIVILEGES;
+```
+
+5. Crea el primer usuario administrador de `inventario_it`:
+
+```sql
+USE inventario_it;
+INSERT INTO usuarios (tip, password_hash, rol)
+VALUES (
+  'ADMIN001',
+  '2c0b0a3d08fb4e87e492809477aa16003510ac9e89083a2e4c78dcd78defacb7',
+  'admin'
+);
+```
+
+6. Verifica accesos:
+- Inventario IT: `http://localhost:8080`
+- phpMyAdmin: `http://localhost:8081`
+
+7. (Opcional) Si usas el módulo `laptop-loans` por separado, revisa `laptop-loans/config/config.local.php` para ajustar credenciales y `base_url`.
+  - Si accedes desde `inventario_it` con sesión iniciada (TIP en sesión), `laptop-loans` aplica SSO y entra directamente con ese usuario.
+  - Si no existe sesión SSO, `laptop-loans` solicita su login local en `auth/login`.
 
 ## Puesta en marcha (Docker)
 
@@ -177,6 +231,7 @@ Eventos destacados:
 
 - Configuración DB actual en `web/config.php`.
 - Varias tablas auxiliares se crean/ajustan en runtime para compatibilidad (`equipo_sim`, `equipo_dock`, `equipos_verificaciones`, `actividad_logs`, ajustes de `secciones`).
+- Para recibos, si faltan columnas PDF en tablas históricas, la app las crea en runtime (`pdf_path`, `pdf_unsigned_path`, `pdf_signed_path` en movimientos/renovaciones).
 - Este `README.md` raíz es la referencia principal del proyecto.
 - El manual operativo para usuarios finales está integrado en `web/manual_usuario.php`.
 
