@@ -3,6 +3,8 @@ require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/logger.php';
 require_once __DIR__ . '/includes/mail_helper.php';
+require_once __DIR__ . '/includes/recibos_pdf_helper.php';
+ensureRecibosSchema($pdo);
 
 $idRen  = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $tokenQ = $_GET['token'] ?? '';
@@ -34,6 +36,13 @@ $ren = $stmtRen->fetch(PDO::FETCH_ASSOC);
 
 if (!$ren) {
     die('Recibo de renovación no encontrado.');
+}
+
+if (empty($ren['pdf_unsigned_path'])) {
+    generarReciboRenovacionPdf($pdo, (int)$ren['id'], false);
+}
+if (!empty($ren['firmado']) && empty($ren['pdf_signed_path'])) {
+    generarReciboRenovacionPdf($pdo, (int)$ren['id'], true);
 }
 
 $id_old   = (int)$ren['equipo_old_id'];

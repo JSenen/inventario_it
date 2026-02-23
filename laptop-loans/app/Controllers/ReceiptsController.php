@@ -13,6 +13,35 @@ $data['logo_izq'] = $logoIzq;
 $data['logo_der'] = $logoDer;
 
 class ReceiptsController {
+    private function slug(string $s): string {
+        if (function_exists('iconv')) {
+            $s2 = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
+            if ($s2 !== false) {
+                $s = $s2;
+            }
+        }
+        $s = preg_replace('/[^A-Za-z0-9]+/', '_', $s);
+        $s = trim((string)$s, '_');
+        return strtolower($s ?: 'sin_nombre');
+    }
+
+    private function receiptFilename(array $row): string {
+        $serie = $this->slug((string)($row['num_serie'] ?? 'sin_serie'));
+        $curso = $this->slug((string)($row['curso'] ?? 'sin_curso'));
+        $idDoc = trim((string)($row['tip'] ?? '')) !== ''
+            ? (string)$row['tip']
+            : (string)($row['dni'] ?? 'sin_id');
+        $idDoc = $this->slug($idDoc);
+
+        $ts = strtotime((string)($row['fecha'] ?? ''));
+        if ($ts === false) {
+            $ts = time();
+        }
+        $fecha = date('Ymd_His', $ts);
+
+        return "{$serie}_{$curso}_{$idDoc}_{$fecha}.pdf";
+    }
+
     private function dataEntregaDevolucion(int $handoverId): ?array {
         $sql = "SELECT h.id,h.tipo,h.fecha,h.observaciones, h.recibo_pdf_path,
                        p.nombre,p.apellidos,p.dni,p.tip,p.telefono,p.email,
@@ -37,8 +66,9 @@ class ReceiptsController {
         if (!$path || !file_exists($path)) {
             return $row['tipo'] === 'entrega' ? $this->entrega() : $this->devolucion();
         }
+        $filename = $this->receiptFilename($row);
         header('Content-Type: application/pdf');
-        header('Content-Disposition: inline; filename="recibo_'.$row['tipo'].'_'.$id.'.pdf"');
+        header('Content-Disposition: inline; filename="'.$filename.'"');
         readfile($path);
     }
 
@@ -66,8 +96,9 @@ class ReceiptsController {
 
         $tpl = BASE_PATH . "/recibos_templates/entrega.html";
         $pdf = PdfService::renderTemplate($tpl, $data);
+        $filename = $this->receiptFilename($row);
         header('Content-Type: application/pdf');
-        header('Content-Disposition: inline; filename="recibo_entrega_'.$id.'.pdf"');
+        header('Content-Disposition: inline; filename="'.$filename.'"');
         echo $pdf;
     }
 
@@ -95,8 +126,9 @@ class ReceiptsController {
 
         $tpl = BASE_PATH . "/recibos_templates/devolucion.html";
         $pdf = PdfService::renderTemplate($tpl, $data);
+        $filename = $this->receiptFilename($row);
         header('Content-Type: application/pdf');
-        header('Content-Disposition: inline; filename="recibo_devolucion_'.$id.'.pdf"');
+        header('Content-Disposition: inline; filename="'.$filename.'"');
         echo $pdf;
     }
 

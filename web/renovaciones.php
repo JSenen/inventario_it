@@ -2,6 +2,8 @@
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/logger.php';
+require_once __DIR__ . '/includes/recibos_pdf_helper.php';
+ensureRecibosSchema($pdo);
 
 $sqlUnion = "
     (SELECT
@@ -12,6 +14,7 @@ $sqlUnion = "
         r.estado_old,
         r.firmado,
         r.firma_token,
+        r.pdf_path,
         eold.etiqueta AS old_etiqueta,
         eold.marca AS old_marca,
         eold.modelo AS old_modelo,
@@ -39,6 +42,7 @@ $sqlUnion = "
         rt.estado_old,
         rt.firmado,
         rt.firma_token,
+        rt.pdf_path,
         told.etiqueta AS old_etiqueta,
         told.marca AS old_marca,
         told.modelo AS old_modelo,
@@ -84,6 +88,9 @@ try {
                 fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
                 firma_token VARCHAR(64),
                 firma_path VARCHAR(255),
+                pdf_path VARCHAR(255),
+                pdf_unsigned_path VARCHAR(255),
+                pdf_signed_path VARCHAR(255),
                 firmado TINYINT(1) DEFAULT 0,
                 firmado_fecha DATETIME NULL,
                 KEY idx_token (firma_token)
@@ -212,18 +219,26 @@ include __DIR__ . '/includes/header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($r['tipo'] === 'telefono'): ?>
-                                        <a href="recibo_renovacion_telefono.php?id=<?= (int)$r['id'] ?>"
+                                    <?php if (!empty($r['pdf_path'])): ?>
+                                        <a href="<?= htmlspecialchars($r['pdf_path']) ?>"
                                            target="_blank"
                                            class="btn btn-sm btn-outline-secondary">
-                                            Recibo
+                                            Recibo PDF
                                         </a>
                                     <?php else: ?>
-                                        <a href="recibo_renovacion.php?id=<?= (int)$r['id'] ?>"
-                                           target="_blank"
-                                           class="btn btn-sm btn-outline-secondary">
-                                            Recibo
-                                        </a>
+                                        <?php if ($r['tipo'] === 'telefono'): ?>
+                                            <a href="recibo_renovacion_telefono.php?id=<?= (int)$r['id'] ?>"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary">
+                                                Recibo
+                                            </a>
+                                        <?php else: ?>
+                                            <a href="recibo_renovacion.php?id=<?= (int)$r['id'] ?>"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary">
+                                                Recibo
+                                            </a>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
                             </tr>

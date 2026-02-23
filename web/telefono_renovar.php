@@ -2,6 +2,7 @@
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/logger.php';
+require_once __DIR__ . '/includes/recibos_pdf_helper.php';
 
 $id_origen = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -55,6 +56,9 @@ $pdo->exec("
         fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
         firma_token VARCHAR(64),
         firma_path VARCHAR(255),
+        pdf_path VARCHAR(255),
+        pdf_unsigned_path VARCHAR(255),
+        pdf_signed_path VARCHAR(255),
         firmado TINYINT(1) DEFAULT 0,
         firmado_fecha DATETIME NULL,
         KEY idx_token (firma_token)
@@ -165,6 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':token' => $firmaToken,
             ]);
             $renovacionId = (int)$pdo->lastInsertId();
+            ensureRecibosSchema($pdo);
+            generarReciboRenovacionTelefonoPdf($pdo, $renovacionId, false);
 
             $pdo->commit();
 

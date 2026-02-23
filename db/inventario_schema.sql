@@ -430,6 +430,8 @@ CREATE TABLE equipos_movimientos (
     estado_destino VARCHAR(50),
     observaciones VARCHAR(255) DEFAULT NULL,
     pdf_path VARCHAR(255) DEFAULT NULL,
+    pdf_unsigned_path VARCHAR(255) DEFAULT NULL,
+    pdf_signed_path VARCHAR(255) DEFAULT NULL,
     firma_token VARCHAR(80) DEFAULT NULL,
     firma_path VARCHAR(255) DEFAULT NULL,
     firmado TINYINT(1) DEFAULT 0,
@@ -491,3 +493,24 @@ CREATE TABLE  equipos_verificaciones (
                 FOREIGN KEY (equipo_id) REFERENCES equipos(id)
                 ON DELETE CASCADE
         ) ;
+
+
+-- RECIBOS A PATH PDF EN MOVIMIENTOS DE EQUIPOS
+USE inventario_it;
+
+-- EQUIPOS_MOVIMIENTOS: ya tenía pdf_path, añadimos unsigned/signed si faltan
+ALTER TABLE equipos_movimientos
+  ADD COLUMN IF NOT EXISTS pdf_unsigned_path VARCHAR(255) DEFAULT NULL AFTER pdf_path,
+  ADD COLUMN IF NOT EXISTS pdf_signed_path   VARCHAR(255) DEFAULT NULL AFTER pdf_unsigned_path;
+
+-- RENOVACIONES (equipos): añadimos las 3 columnas
+ALTER TABLE renovaciones
+  ADD COLUMN IF NOT EXISTS pdf_path          VARCHAR(255) DEFAULT NULL AFTER firma_path,
+  ADD COLUMN IF NOT EXISTS pdf_unsigned_path VARCHAR(255) DEFAULT NULL AFTER pdf_path,
+  ADD COLUMN IF NOT EXISTS pdf_signed_path   VARCHAR(255) DEFAULT NULL AFTER pdf_unsigned_path;
+
+-- RENOVACIONES_TELEFONOS: añadimos las 3 columnas
+ALTER TABLE renovaciones_telefonos
+  ADD COLUMN IF NOT EXISTS pdf_path          VARCHAR(255) DEFAULT NULL AFTER firma_path,
+  ADD COLUMN IF NOT EXISTS pdf_unsigned_path VARCHAR(255) DEFAULT NULL AFTER pdf_path,
+  ADD COLUMN IF NOT EXISTS pdf_signed_path   VARCHAR(255) DEFAULT NULL AFTER pdf_unsigned_path;

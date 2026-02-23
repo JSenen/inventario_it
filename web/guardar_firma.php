@@ -2,6 +2,7 @@
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/movimientos_helper.php';
+require_once __DIR__ . '/includes/recibos_pdf_helper.php';
 
 $raw = file_get_contents('php://input');
 $data = json_decode($raw, true);
@@ -69,7 +70,7 @@ if ($mov) {
         ':id'    => $mov['id'],
     ]);
 
-    generarPdfMovimiento($pdo, (int)$mov['id']);
+    generarReciboMovimientoPdf($pdo, (int)$mov['id'], true);
 } elseif ($ren) {
     $stmtUp = $pdo->prepare("
         UPDATE renovaciones
@@ -80,6 +81,7 @@ if ($mov) {
         ':firma' => $rutaRelativa,
         ':id'    => $ren['id'],
     ]);
+    generarReciboRenovacionPdf($pdo, (int)$ren['id'], true);
 } else {
     $stmtUp = $pdo->prepare("
         UPDATE renovaciones_telefonos
@@ -90,6 +92,7 @@ if ($mov) {
         ':firma' => $rutaRelativa,
         ':id'    => $renTel['id'],
     ]);
+    generarReciboRenovacionTelefonoPdf($pdo, (int)$renTel['id'], true);
 }
 
 echo '<div class="alert alert-success">Firma guardada correctamente. Ya puedes cerrar esta ventana.</div>';

@@ -3,6 +3,8 @@ require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/logger.php';
 require_once __DIR__ . '/includes/mail_helper.php';
+require_once __DIR__ . '/includes/recibos_pdf_helper.php';
+ensureRecibosSchema($pdo);
 
 $idMov = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($idMov <= 0) {
@@ -36,6 +38,13 @@ $stmt->execute([':id' => $idMov]);
 $mov = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$mov) { die('Movimiento no encontrado'); }
+
+if (empty($mov['pdf_unsigned_path'])) {
+    generarReciboMovimientoPdf($pdo, (int)$mov['id'], false);
+}
+if (!empty($mov['firmado']) && empty($mov['pdf_signed_path'])) {
+    generarReciboMovimientoPdf($pdo, (int)$mov['id'], true);
+}
 
 // Texto resumen de equipo
 $equipoTxt = trim(($mov['marca'] ?? '') . ' ' . ($mov['modelo'] ?? ''));

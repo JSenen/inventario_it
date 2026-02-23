@@ -2,6 +2,7 @@
 // includes/movimientos_helper.php
 
 require_once __DIR__ . '/logger.php';
+require_once __DIR__ . '/recibos_pdf_helper.php';
 
 function tecnicoSesionMovimiento(): string
 {
@@ -188,7 +189,5 @@ function registrarMovimientosTrasladoEquipo(
 
 function generarPdfMovimiento(PDO $pdo, int $idMov): ?string
 {
-    // De momento ya no generamos PDF en servidor.
-    // Usaremos la página HTML recibo_movimiento.php para ver/imprimir el recibo.
-    return null;
+    return generarReciboMovimientoPdf($pdo, $idMov, false);
 }

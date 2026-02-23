@@ -6,6 +6,23 @@ use App\Services\PdfService;
 
 class HandoversController
 {
+    private function receiptFilename(array $row): string {
+        $serie = $this->slug((string)($row['num_serie'] ?? 'sin_serie'));
+        $curso = $this->slug((string)($row['curso'] ?? 'sin_curso'));
+        $idDoc = trim((string)($row['tip'] ?? '')) !== ''
+            ? (string)$row['tip']
+            : (string)($row['dni'] ?? 'sin_id');
+        $idDoc = $this->slug($idDoc);
+
+        $ts = strtotime((string)($row['fecha'] ?? ''));
+        if ($ts === false) {
+            $ts = time();
+        }
+        $fecha = date('Ymd_His', $ts);
+
+        return "{$serie}_{$curso}_{$idDoc}_{$fecha}.pdf";
+    }
+
     /** Localiza la plantilla (sirve en public/recibos_templates o recibos_templates) */
     private function tpl(string $nombre): string {
         $candidatas = [
@@ -154,9 +171,7 @@ private function logosIncludes(): array {
                     ]);
                     
                     // ------------------    RECIBO ENTREGA ---------------------------------
-                    $serieSlug = $this->slug($row['num_serie'] ?? 'sin_serie');
-                    $cursoSlug = $this->slug($row['curso'] ?? 'sin_curso');
-                    $filename  = "entrega_{$serieSlug}_{$cursoSlug}_{$hid}.pdf";
+                    $filename  = $this->receiptFilename($row);
                     
                     $pdf   = PdfService::renderTemplate($this->tpl('entrega'), $data);
                     $saved = PdfService::savePdf($pdf, BASE_PATH . "/storage/recibos", $filename);
@@ -247,9 +262,7 @@ private function logosIncludes(): array {
                 ]);
 
                 //-----------------   RECIBO ENTREGA B -----------------------------------------
-                $serieSlug = $this->slug($row['num_serie'] ?? 'sin_serie');
-                    $cursoSlug = $this->slug($row['curso'] ?? 'sin_curso');
-                    $filename  = "entrega_{$serieSlug}_{$cursoSlug}_{$hid}.pdf";
+                $filename  = $this->receiptFilename($row);
 
                     $pdf   = PdfService::renderTemplate($this->tpl('entrega'), $data);
                     $saved = PdfService::savePdf($pdf, BASE_PATH . "/storage/recibos", $filename);
@@ -336,9 +349,7 @@ private function logosIncludes(): array {
                     ]);
                     
                     //-------------------    RECIBO DEVOLUCION ----------------------------------------
-                    $serieSlug = $this->slug($row['num_serie'] ?? 'sin_serie');
-                    $cursoSlug = $this->slug($row['curso'] ?? 'sin_curso');
-                    $filename  = "devolucion_{$serieSlug}_{$cursoSlug}_{$hid}.pdf";
+                    $filename  = $this->receiptFilename($row);
 
                     $pdf   = PdfService::renderTemplate($this->tpl('devolucion'), $data);
                     $saved = PdfService::savePdf($pdf, BASE_PATH . "/storage/recibos", $filename);
@@ -409,9 +420,7 @@ private function logosIncludes(): array {
                 ]);
 
                 //-------------------    RECIBO DEVOLUCION ----------------------------------------
-                    $serieSlug = $this->slug($row['num_serie'] ?? 'sin_serie');
-                    $cursoSlug = $this->slug($row['curso'] ?? 'sin_curso');
-                    $filename  = "devolucion_{$serieSlug}_{$cursoSlug}_{$hid}.pdf";
+                    $filename  = $this->receiptFilename($row);
 
                     $pdf   = PdfService::renderTemplate($this->tpl('devolucion'), $data);
                     $saved = PdfService::savePdf($pdf, BASE_PATH . "/storage/recibos", $filename);

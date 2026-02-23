@@ -2745,3 +2745,14 @@
 [2026-02-23 08:38:24] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"10.52.2.5"}
 [2026-02-23 08:38:28] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/devolucion","ip":"10.52.2.5"}
 [2026-02-23 08:38:34] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/index","ip":"10.52.2.5"}
+[2026-02-23 14:42:06] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 14:57:39] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"192.168.65.1"}
+[2026-02-23 14:57:44] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"192.168.65.1"}
+[2026-02-23 14:57:47] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-23 14:57:54] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"192.168.65.1"}
+[2026-02-23 14:57:55] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/download","ip":"192.168.65.1"}
+[2026-02-23 15:04:19] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/download","ip":"192.168.65.1"}
+[2026-02-23 15:04:24] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"handovers/devolucion","ip":"192.168.65.1"}
+[2026-02-23 15:04:25] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"receipts/index","ip":"192.168.65.1"}
+[2026-02-23 15:04:28] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
+[2026-02-23 15:04:31] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"192.168.65.1"}
