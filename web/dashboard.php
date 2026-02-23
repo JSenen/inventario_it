@@ -116,6 +116,10 @@ $equiposBaja     = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado =
 $equiposPrestado = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Prestado'")->fetchColumn();
 $equiposPrivados = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Privado'")->fetchColumn();
 $equiposEtiquetados = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE etiqueta IS NOT NULL AND etiqueta <> ''")->fetchColumn();
+$equiposSinEtiqueta = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE etiqueta IS NULL OR etiqueta = ''")->fetchColumn();
+$equiposSinUsuario  = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE usuario_asignado IS NULL OR usuario_asignado = ''")->fetchColumn();
+$equiposSinDept     = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE departamento IS NULL OR departamento = ''")->fetchColumn();
+$equiposSinHostname = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE hostname IS NULL OR hostname = ''")->fetchColumn();
 
 // También puedes querer saber cuántos siguen en 'En uso'
 $equiposEnUso = (int)$pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'En uso'")->fetchColumn();
@@ -150,9 +154,24 @@ $ipsResumen = $pdo->query($sqlIps)->fetch(PDO::FETCH_ASSOC) ?: [
 if ($pdo->query("SHOW TABLES LIKE 'telefonos'")->rowCount() > 0) {
     $totalTelefonos   = (int)$pdo->query("SELECT COUNT(*) FROM telefonos")->fetchColumn();
     $telActivos       = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Activo'")->fetchColumn();
+    $telAveriados     = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Averiado'")->fetchColumn();
+    $telPrestados     = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Prestado'")->fetchColumn();
+    $telBaja          = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Baja'")->fetchColumn();
     $telAlmacen       = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Almacén'")->fetchColumn();
+    $telSinEtiqueta   = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE etiqueta IS NULL OR etiqueta = ''")->fetchColumn();
+
+    // Teléfonos sin SIM (sin relación activa en telefono_sim)
+    $telSinSimStmt = $pdo->query("
+        SELECT COUNT(*)
+        FROM telefonos t
+        LEFT JOIN telefono_sim ts
+               ON ts.telefono_id = t.id
+              AND ts.fecha_liberacion IS NULL
+        WHERE ts.id IS NULL
+    ");
+    $telSinSim = (int)$telSinSimStmt->fetchColumn();
 } else {
-    $totalTelefonos = $telActivos = $telAlmacen = 0;
+    $totalTelefonos = $telActivos = $telAveriados = $telPrestados = $telBaja = $telAlmacen = $telSinSim = $telSinEtiqueta = 0;
 }
 
 // SIMs
@@ -160,8 +179,19 @@ if ($pdo->query("SHOW TABLES LIKE 'sims'")->rowCount() > 0) {
     $totalSims      = (int)$pdo->query("SELECT COUNT(*) FROM sims")->fetchColumn();
     $simsAsignadas  = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado = 'Asignada'")->fetchColumn();
     $simsDisponibles = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado = 'Disponible'")->fetchColumn();
+    // SIMs sin teléfono (sin relación activa)
+    $simsSinTelefono = (int)$pdo->query("
+        SELECT COUNT(*)
+        FROM sims s
+        LEFT JOIN telefono_sim ts
+               ON ts.sim_id = s.id
+              AND ts.fecha_liberacion IS NULL
+        WHERE ts.id IS NULL
+    ")->fetchColumn();
+    // Placeholder: si se añade fecha de caducidad, ajustar aquí
+    $simsCaducadas = 0;
 } else {
-    $totalSims = $simsAsignadas = $simsDisponibles = 0;
+    $totalSims = $simsAsignadas = $simsDisponibles = $simsSinTelefono = $simsCaducadas = 0;
 }
 
 // =======================
@@ -176,6 +206,13 @@ if ($pdo->query("SHOW TABLES LIKE 'averias'")->rowCount() > 0) {
     ")->fetchColumn();
 } else {
     $averiasAbiertas = 0;
+}
+
+// Renovaciones de teléfonos pendientes de firma
+try {
+    $renovPendientes = (int)$pdo->query("SELECT COUNT(*) FROM renovaciones_telefonos WHERE firmado = 0")->fetchColumn();
+} catch (Exception $e) {
+    $renovPendientes = 0;
 }
 
 if ($pdo->query("SHOW TABLES LIKE 'materiales'")->rowCount() > 0) {
@@ -198,6 +235,92 @@ $tiposEquipos = $pdo->query("
     ORDER BY total DESC
     LIMIT 5
 ")->fetchAll(PDO::FETCH_ASSOC);
+
+// Rankings y pendientes de equipos
+$topDeptEquipos = $pdo->query("
+    SELECT departamento, COUNT(*) AS total
+    FROM equipos
+    WHERE departamento IS NOT NULL AND departamento <> ''
+    GROUP BY departamento
+    ORDER BY total DESC
+    LIMIT 5
+")->fetchAll(PDO::FETCH_ASSOC);
+
+$topModelosEquipos = $pdo->query("
+    SELECT modelo, COUNT(*) AS total
+    FROM equipos
+    GROUP BY modelo
+    ORDER BY total DESC
+    LIMIT 5
+")->fetchAll(PDO::FETCH_ASSOC);
+
+$equiposAlmacenLista = $pdo->query("
+    SELECT id, marca, modelo, etiqueta
+    FROM equipos
+    WHERE estado = 'Almacén'
+    ORDER BY id DESC
+    LIMIT 5
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// Rankings teléfonos/SIMs
+$topOperadores = $pdo->query("
+    SELECT s.operador, COUNT(*) AS total
+    FROM telefono_sim ts
+    JOIN sims s ON s.id = ts.sim_id
+    WHERE ts.fecha_liberacion IS NULL
+      AND s.operador IS NOT NULL AND s.operador <> ''
+    GROUP BY s.operador
+    ORDER BY total DESC
+    LIMIT 5
+" )->fetchAll(PDO::FETCH_ASSOC);
+
+$topDeptTelefonos = $pdo->query("
+    SELECT departamento, COUNT(*) AS total
+    FROM telefonos
+    WHERE departamento IS NOT NULL AND departamento <> ''
+    GROUP BY departamento
+    ORDER BY total DESC
+    LIMIT 5
+" )->fetchAll(PDO::FETCH_ASSOC);
+
+$topModelosTelefonos = $pdo->query("
+    SELECT modelo, COUNT(*) AS total
+    FROM telefonos
+    GROUP BY modelo
+    ORDER BY total DESC
+    LIMIT 5
+" )->fetchAll(PDO::FETCH_ASSOC);
+
+// Pendientes
+$telefonosAlmacen = $pdo->query("
+    SELECT id, marca, modelo, etiqueta
+    FROM telefonos
+    WHERE estado = 'Almacén'
+    ORDER BY id DESC
+    LIMIT 5
+" )->fetchAll(PDO::FETCH_ASSOC);
+
+$simsLibres = $pdo->query("
+    SELECT id, numero, operador
+    FROM sims
+    WHERE estado = 'Disponible'
+    ORDER BY id DESC
+    LIMIT 5
+" )->fetchAll(PDO::FETCH_ASSOC);
+
+// Porcentajes visuales
+$porcTelActivo   = $totalTelefonos > 0 ? round(($telActivos / $totalTelefonos) * 100) : 0;
+$porcTelBaja     = $totalTelefonos > 0 ? round(($telBaja / $totalTelefonos) * 100) : 0;
+$porcTelAveriado = $totalTelefonos > 0 ? round(($telAveriados / $totalTelefonos) * 100) : 0;
+
+$porcSimsAsign   = $totalSims > 0 ? round(($simsAsignadas / $totalSims) * 100) : 0;
+$porcSimsDisp    = $totalSims > 0 ? round(($simsDisponibles / $totalSims) * 100) : 0;
+
+$porcEqActivo   = $totalEquipos > 0 ? round(($equiposActivo / $totalEquipos) * 100) : 0;
+$porcEqAlmacen  = $totalEquipos > 0 ? round(($equiposAlmacen / $totalEquipos) * 100) : 0;
+$porcEqBaja     = $totalEquipos > 0 ? round(($equiposBaja / $totalEquipos) * 100) : 0;
+$porcEqPrestado = $totalEquipos > 0 ? round(($equiposPrestado / $totalEquipos) * 100) : 0;
+$porcEqPrivado  = $totalEquipos > 0 ? round(($equiposPrivados / $totalEquipos) * 100) : 0;
 
 // =======================
 // 6) Top 5 redes por uso (IPS USADAS + RESERVADAS)
@@ -289,52 +412,118 @@ $ultimosEquipos = $pdo->query("
         </div>
 
         <!-- Redes & IPs -->
-        <!-- Redes & IPs -->
-<div class="col-6 col-md-3">
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
-            <h6 class="card-title text-muted">Redes Intranet / IPs</h6>
-            <div class="display-6 fw-bold"><?= $totalRedes ?></div>
-
-            <small class="text-muted d-block">
-                IPs totales (posibles): <?= $totalIpsPosiblesGlobal ?>
-            </small>
-            <small class="text-muted d-block">
-                Libres: <?= $libresGlobal ?> · Usadas: <?= $usadasGlobal ?>
-            </small>
-            <small class="text-muted">
-                Reservadas: <?= $reservadasGlobal ?>
-            </small>
-        </div>
-    </div>
-</div>
-
-
-        <!-- Teléfonos -->
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h6 class="card-title text-muted">☎️ Teléfonos móviles</h6>
-                    <div class="display-6 fw-bold"><?= $totalTelefonos ?></div>
-                    <small class="text-muted d-block">
-                        Activos: <?= $telActivos ?> · Almacén: <?= $telAlmacen ?>
-                    </small>
+                    <h6 class="card-title text-muted">Redes Intranet / IPs</h6>
+                    <div class="display-6 fw-bold"><?= $totalRedes ?></div>
+                    <small class="text-muted d-block">IPs posibles: <?= $totalIpsPosiblesGlobal ?></small>
+                    <small class="text-muted d-block">Libres: <?= $libresGlobal ?> · Usadas: <?= $usadasGlobal ?></small>
+                    <small class="text-muted">Reservadas: <?= $reservadasGlobal ?></small>
                 </div>
             </div>
         </div>
 
-        <!-- SIM & Averías -->
+        <!-- Teléfonos -->
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h6 class="card-title text-muted">SIM / ⚠️ Averías</h6>
+                    <h6 class="card-title text-muted">☎️ Teléfonos</h6>
+                    <div class="display-6 fw-bold"><?= $totalTelefonos ?></div>
+                    <small class="text-muted d-block">Activos: <?= $telActivos ?> · Averiados: <?= $telAveriados ?></small>
+                    <small class="text-muted d-block">Prestados: <?= $telPrestados ?> · Baja: <?= $telBaja ?></small>
+                    <small class="text-muted">Almacén: <?= $telAlmacen ?> · Sin SIM: <?= $telSinSim ?></small>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIMs -->
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">SIMs</h6>
                     <div class="display-6 fw-bold"><?= $totalSims ?></div>
-                    <small class="text-muted d-block">
-                        SIM asignadas: <?= $simsAsignadas ?> · Disp.: <?= $simsDisponibles ?>
-                    </small>
-                    <small class="text-danger">
-                        Averías abiertas: <?= $averiasAbiertas ?>
-                    </small>
+                    <small class="text-muted d-block">Asignadas: <?= $simsAsignadas ?> · Disponibles: <?= $simsDisponibles ?></small>
+                    <small class="text-muted">Sin teléfono: <?= $simsSinTelefono ?> · Caducadas: <?= $simsCaducadas ?></small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Averías / Renovaciones -->
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">⚠️ Averías / Firmas</h6>
+                    <div class="display-6 fw-bold"><?= $averiasAbiertas ?></div>
+                    <small class="text-muted d-block">Averías abiertas</small>
+                    <small class="text-muted">Renovaciones pendientes firma: <?= $renovPendientes ?></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FILA 1b: BARRAS % TEL / SIM ========== -->
+    <div class="row g-3 mt-2">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-2">Uso teléfonos</h6>
+                    <div class="mb-2">Activo: <?= $porcTelActivo ?>% · Baja: <?= $porcTelBaja ?>% · Averiado: <?= $porcTelAveriado ?>%</div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" style="width: <?= $porcTelActivo ?>%"></div>
+                        <div class="progress-bar bg-warning" style="width: <?= $porcTelAveriado ?>%"></div>
+                        <div class="progress-bar bg-secondary" style="width: <?= $porcTelBaja ?>%"></div>
+                    </div>
+                    <small class="text-muted d-block mt-2">Sin etiqueta: <?= $telSinEtiqueta ?> · Sin SIM: <?= $telSinSim ?></small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-2">Uso SIMs</h6>
+                    <div class="mb-2">Asignadas: <?= $porcSimsAsign ?>% · Disponibles: <?= $porcSimsDisp ?>%</div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-primary" style="width: <?= $porcSimsAsign ?>%"></div>
+                        <div class="progress-bar bg-success" style="width: <?= $porcSimsDisp ?>%"></div>
+                    </div>
+                    <small class="text-muted d-block mt-2">Sin teléfono: <?= $simsSinTelefono ?> · Caducadas: <?= $simsCaducadas ?></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FILA 1c: EQUIPOS ========== -->
+    <div class="row g-3 mt-2">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-2">Uso equipos</h6>
+                    <div class="mb-2">Activo: <?= $porcEqActivo ?>% · Almacén: <?= $porcEqAlmacen ?>% · Baja: <?= $porcEqBaja ?>%</div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" style="width: <?= $porcEqActivo ?>%"></div>
+                        <div class="progress-bar bg-secondary" style="width: <?= $porcEqAlmacen ?>%"></div>
+                        <div class="progress-bar bg-dark" style="width: <?= $porcEqBaja ?>%"></div>
+                    </div>
+                    <div class="mb-2 mt-3">Prestado: <?= $porcEqPrestado ?>% · Privado: <?= $porcEqPrivado ?>%</div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-warning" style="width: <?= $porcEqPrestado ?>%"></div>
+                        <div class="progress-bar bg-info" style="width: <?= $porcEqPrivado ?>%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-2">Alertas equipos</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-1">Sin etiqueta: <strong><?= $equiposSinEtiqueta ?></strong></li>
+                        <li class="mb-1">Sin usuario asignado: <strong><?= $equiposSinUsuario ?></strong></li>
+                        <li class="mb-1">Sin departamento: <strong><?= $equiposSinDept ?></strong></li>
+                        <li class="mb-1">Sin tipo servicio: <strong><?= $equiposSinHostname ?></strong></li>
+                        <li class="mb-1">En uso: <strong><?= $equiposEnUso ?></strong></li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -410,9 +599,52 @@ $ultimosEquipos = $pdo->query("
                 </div>
             </div>
 
+            <!-- Top modelos de equipos -->
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-header bg-light">
+                    <strong>Top modelos de equipos</strong>
+                </div>
+                <div class="card-body">
+                    <?php if (empty($topModelosEquipos)): ?>
+                        <small class="text-muted">Sin datos.</small>
+                    <?php else: ?>
+                        <ul class="list-group list-group-flush">
+                            <?php foreach ($topModelosEquipos as $m): ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <?= htmlspecialchars($m['modelo']) ?>
+                                    <span class="badge bg-info rounded-pill"><?= (int)$m['total'] ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Equipos en almacén (pendientes asignar) -->
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <strong>Equipos en almacén</strong>
+                    <a href="index.php?estado=Almac%C3%A9n" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                </div>
+                <div class="card-body">
+                    <?php if (empty($equiposAlmacenLista)): ?>
+                        <small class="text-muted">Sin pendientes.</small>
+                    <?php else: ?>
+                        <ul class="list-group list-group-flush">
+                            <?php foreach ($equiposAlmacenLista as $eq): ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><?= htmlspecialchars($eq['marca'].' '.$eq['modelo']) ?><?= $eq['etiqueta'] ? ' ['.htmlspecialchars($eq['etiqueta']).']' : '' ?></span>
+                                    <a href="equipo_editar.php?id=<?= (int)$eq['id'] ?>" class="btn btn-sm btn-outline-success">Asignar</a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+            </div>
+
         </div>
 
-        <!-- Columna derecha: Redes + Alertas -->
+        <!-- Columna derecha: Redes + rankings + pendientes + alertas -->
         <div class="col-md-6">
             <!-- Redes con más uso -->
             <div class="card shadow-sm border-0">
@@ -502,6 +734,131 @@ $redesCalculadas = array_slice($redesCalculadas, 0, 5);
     <?php endforeach; ?>
 <?php endif; ?>
 
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Rankings Teléfonos/SIMs -->
+            <div class="row g-3 mt-3">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-light"><strong>Top operadores</strong></div>
+                        <div class="card-body">
+                            <?php if (empty($topOperadores)): ?>
+                                <small class="text-muted">Sin datos.</small>
+                            <?php else: ?>
+                                <ul class="list-group list-group-flush">
+                                    <?php foreach ($topOperadores as $op): ?>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <?= htmlspecialchars($op['operador']) ?>
+                                            <span class="badge bg-primary rounded-pill"><?= (int)$op['total'] ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-light"><strong>Top teléfonos departamentos</strong></div>
+                        <div class="card-body">
+                            <?php if (empty($topDeptTelefonos)): ?>
+                                <small class="text-muted">Sin datos.</small>
+                            <?php else: ?>
+                                <ul class="list-group list-group-flush">
+                                    <?php foreach ($topDeptTelefonos as $d): ?>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <?= htmlspecialchars($d['departamento']) ?>
+                                            <span class="badge bg-secondary rounded-pill"><?= (int)$d['total'] ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-light"><strong>Top modelos</strong></div>
+                        <div class="card-body">
+                            <?php if (empty($topModelosTelefonos)): ?>
+                                <small class="text-muted">Sin datos.</small>
+                            <?php else: ?>
+                                <ul class="list-group list-group-flush">
+                                    <?php foreach ($topModelosTelefonos as $m): ?>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <?= htmlspecialchars($m['modelo']) ?>
+                                            <span class="badge bg-info rounded-pill"><?= (int)$m['total'] ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pendientes asignar -->
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <strong>Pendientes</strong>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a class="btn btn-outline-primary" href="telefonos.php">Ver teléfonos</a>
+                                <a class="btn btn-outline-success" href="sims.php">Ver SIMs</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2 small text-muted">Teléfonos en almacén</div>
+                            <?php if (empty($telefonosAlmacen)): ?>
+                                <small class="text-muted d-block">Sin pendientes.</small>
+                            <?php else: ?>
+                                <ul class="list-group list-group-flush mb-3">
+                                    <?php foreach ($telefonosAlmacen as $t): ?>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><?= htmlspecialchars($t['marca'].' '.$t['modelo']) ?><?= $t['etiqueta'] ? ' ['.htmlspecialchars($t['etiqueta']).']' : '' ?></span>
+                                            <a href="telefonos_editar.php?id=<?= (int)$t['id'] ?>" class="btn btn-sm btn-outline-primary">Asignar</a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+
+                            <div class="mb-2 small text-muted">SIMs libres</div>
+                            <?php if (empty($simsLibres)): ?>
+                                <small class="text-muted d-block">Sin pendientes.</small>
+                            <?php else: ?>
+                                <ul class="list-group list-group-flush">
+                                    <?php foreach ($simsLibres as $s): ?>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><?= htmlspecialchars($s['numero']) ?> (<?= htmlspecialchars($s['operador']) ?>)</span>
+                                            <a href="sims_editar.php?id=<?= (int)$s['id'] ?>" class="btn btn-sm btn-outline-success">Asignar</a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Departamentos con más equipos -->
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-header bg-light"><strong>Departamentos con más equipos</strong></div>
+                <div class="card-body">
+                    <?php if (empty($topDeptEquipos)): ?>
+                        <small class="text-muted">Sin datos.</small>
+                    <?php else: ?>
+                        <ul class="list-group list-group-flush">
+                            <?php foreach ($topDeptEquipos as $d): ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <?= htmlspecialchars($d['departamento']) ?>
+                                    <span class="badge bg-secondary rounded-pill"><?= (int)$d['total'] ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
                     <?php endif; ?>
                 </div>
             </div>

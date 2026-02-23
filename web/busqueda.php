@@ -97,7 +97,10 @@ $q = isset($_GET['q']) ? trim($_GET['q']) : '';
                                 </td> -->
                                 <td><?= htmlspecialchars($e['hostname']) ?></td>
                                 <td>
-                                    <?= htmlspecialchars($e['usuario_asignado']) ?><br>
+                                    <?php $usuarioBusqueda = trim((string)($e['usuario_asignado'] ?? '')); ?>
+                                    <span class="dato-contacto-destacado<?= $usuarioBusqueda === '' ? ' dato-contacto-destacado-vacio' : '' ?>">
+                                        <?= htmlspecialchars($usuarioBusqueda !== '' ? $usuarioBusqueda : '-') ?>
+                                    </span><br>
                                     <small class="text-muted">
                                         <?= htmlspecialchars($e['departamento']) ?>
                                         <?php if (!empty($e['seccion_nombre'])): ?>

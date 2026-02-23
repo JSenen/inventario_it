@@ -54,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $marca      = trim($_POST['marca'] ?? '');
     $modelo     = trim($_POST['modelo'] ?? '');
     $imei       = trim($_POST['imei'] ?? '');
+    $etiqueta   = trim($_POST['etiqueta'] ?? '');
     $num_serie  = trim($_POST['numero_serie'] ?? '');
     $usuario    = trim($_POST['usuario_asignado'] ?? '');
     $depart     = trim($_POST['departamento'] ?? '');
@@ -74,6 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errores[] = "Marca, Modelo e IMEI son obligatorios.";
     }
 
+    if (strcasecmp($estado, 'Baja') === 0 && empty($fecha_baja)) {
+        $fecha_baja = date('Y-m-d');
+    }
+
     if (!$errores) {
 
         try {
@@ -85,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    SET marca = :marca,
                        modelo = :modelo,
                        imei = :imei,
+                       etiqueta = :etiqueta,
                        numero_serie = :num_serie,
                        usuario_asignado = :usuario,
                        departamento = :depart,
@@ -102,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':marca'      => $marca,
                 ':modelo'     => $modelo,
                 ':imei'       => $imei,
+                ':etiqueta'   => $etiqueta ?: null,
                 ':num_serie'  => $num_serie,
                 ':usuario'    => $usuario,
                 ':depart'     => $depart,
@@ -242,6 +249,11 @@ require_once 'includes/header.php';
     <form method="post">
         <div class="row">
             <div class="col-md-4 mb-3">
+                <label class="form-label">Etiqueta</label>
+                <input type="text" name="etiqueta" class="form-control campo-etiqueta"
+                       value="<?= htmlspecialchars((string)($telefono['etiqueta'])) ?>">
+            </div>
+            <div class="col-md-4 mb-3">
                 <label class="form-label">Marca</label>
                 <input type="text" name="marca" class="form-control"
                        value="<?= htmlspecialchars($telefono['marca']) ?>" required>
@@ -271,6 +283,25 @@ require_once 'includes/header.php';
             </div>
             <div class="row">
     <div class="col-md-4 mb-3">
+        <label class="form-label">Ubicación</label>
+        <select name="ubicacion" class="form-select">
+            <option value="">-- Seleccione ubicación --</option>
+            <?php 
+            $valorUbic = isset($_POST['ubicacion']) 
+                ? $_POST['ubicacion'] 
+                : $telefono['ubicacion'];
+            foreach ($ubicaciones as $u): 
+                $nombre = $u['nombre'];
+                $selected = ($valorUbic === $nombre) ? 'selected' : '';
+            ?>
+                <option value="<?= htmlspecialchars($nombre) ?>" <?= $selected ?>>
+                    <?= htmlspecialchars($nombre) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+
+    <div class="col-md-4 mb-3">
         <label class="form-label">Departamento</label>
         <select name="departamento" class="form-select">
             <option value="">-- Seleccione departamento --</option>
@@ -289,24 +320,7 @@ require_once 'includes/header.php';
         </select>
     </div>
 
-    <div class="col-md-4 mb-3">
-        <label class="form-label">Ubicación</label>
-        <select name="ubicacion" class="form-select">
-            <option value="">-- Seleccione ubicación --</option>
-            <?php 
-            $valorUbic = isset($_POST['ubicacion']) 
-                ? $_POST['ubicacion'] 
-                : $telefono['ubicacion'];
-            foreach ($ubicaciones as $u): 
-                $nombre = $u['nombre'];
-                $selected = ($valorUbic === $nombre) ? 'selected' : '';
-            ?>
-                <option value="<?= htmlspecialchars($nombre) ?>" <?= $selected ?>>
-                    <?= htmlspecialchars($nombre) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+    
 
     <div class="col-md-4 mb-3">
         <label class="form-label">Sección</label>
@@ -353,7 +367,7 @@ require_once 'includes/header.php';
                 <input type="date" name="fecha_baja" class="form-control"
                        value="<?= htmlspecialchars($telefono['fecha_baja']) ?>">
             </div>
-            <div class="col-md-3 mb-3">
+            <!-- <div class="col-md-3 mb-3">
                 <label class="form-label">Proveedor</label>
                 <input type="text" name="proveedor" class="form-control"
                        value="<?= htmlspecialchars($telefono['proveedor']) ?>">
@@ -362,7 +376,7 @@ require_once 'includes/header.php';
                 <label class="form-label">Coste (€)</label>
                 <input type="number" step="0.01" name="coste" class="form-control"
                        value="<?= htmlspecialchars($telefono['coste']) ?>">
-            </div>
+            </div> -->
         </div>
 
         <!-- Select de SIM -->
@@ -379,7 +393,7 @@ require_once 'includes/header.php';
 
                 <?php foreach ($simsDisponibles as $sim): ?>
                     <option value="<?= (int)$sim['id'] ?>">
-                        <?= htmlspecialchars($sim['numero']) ?> (<?= htmlspecialchars($sim['operador']) ?>)
+                        <?= htmlspecialchars($sim['numero']) . (!empty($sim['etiqueta']) ? '-' . htmlspecialchars($sim['etiqueta']) : '')?> (<?= htmlspecialchars($sim['operador']) ?>)
                     </option>
                 <?php endforeach; ?>
             </select>

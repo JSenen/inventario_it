@@ -536,12 +536,12 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log('Respuesta cambiar estado:', respuesta);
         }).fail(function (xhr) {
             console.error('Error cambiar estado:', xhr.responseText);
-            alert('Error al cambiar el estado de la IP.');
+            window.appDialogs.alert('Error al cambiar el estado de la IP.');
         });
     });
 
     // Reservar IP libre desde las sugeridas
-    $(document).on('click', '.reservar-ip', function (e) {
+    $(document).on('click', '.reservar-ip', async function (e) {
         e.preventDefault();
 
         var btn   = $(this);
@@ -552,7 +552,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!redId || !ip) return;
 
-        if (!confirm('¿Reservar la IP ' + ip + ' para pruebas?')) return;
+        const confirmarReserva = await window.appDialogs.confirm('¿Reservar la IP ' + ip + ' para pruebas?', {
+            title: 'Confirmar movimiento interno',
+            okText: 'Reservar'
+        });
+        if (!confirmarReserva) return;
 
         $.post('ip_reservar.php', {
             red_id: redId,
@@ -562,12 +566,12 @@ document.addEventListener('DOMContentLoaded', function () {
             location.reload();
         }).fail(function (xhr) {
             console.error('Error reservar:', xhr.responseText);
-            alert('Error al reservar la IP.');
+            window.appDialogs.alert('Error al reservar la IP.');
         });
     });
 
     // Liberar IP (borrar de ips_equipos)
-    $(document).on('click', '.liberar-ip', function (e) {
+    $(document).on('click', '.liberar-ip', async function (e) {
         e.preventDefault();
 
         var btn   = $(this);
@@ -578,7 +582,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!idIp) return;
 
-        if (!confirm('¿Liberar la IP ' + ip + '?\nDejará de estar asociada a equipo o reserva.')) return;
+        const confirmarLiberacion = await window.appDialogs.confirm(
+            '¿Liberar la IP ' + ip + '?\nDejará de estar asociada a equipo o reserva.',
+            {
+                title: 'Confirmar movimiento interno',
+                okText: 'Liberar',
+                okClass: 'btn btn-danger'
+            }
+        );
+        if (!confirmarLiberacion) return;
 
         $.post('ip_liberar.php', {
             id_ip: idIp
@@ -587,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function () {
             location.reload();
         }).fail(function (xhr) {
             console.error('Error liberar:', xhr.responseText);
-            alert('Error al liberar la IP.');
+            window.appDialogs.alert('Error al liberar la IP.');
         });
     });
 
@@ -704,12 +716,12 @@ $('#btnLimpiarBusquedaIp').on('click', function () {
 <!-- Modal IPs libres completas -->
 <div class="modal fade" id="modalIpsLibres" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-dark text-white">
         <h5 class="modal-title">
             IPs libres en <span id="modalNombreRed"></span>
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
 
       <div class="modal-body">

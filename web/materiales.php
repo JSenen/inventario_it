@@ -44,7 +44,7 @@ $materiales = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="material_editar.php?id=<?= (int)$m['id'] ?>" class="btn btn-sm btn-warning">Editar</a>
 
                     <form action="material_sacar1.php" method="post" style="display:inline;"
-                        onsubmit="return confirm('¿Sacar 1 unidad de <?= htmlspecialchars($m['descripcion'], ENT_QUOTES) ?>?');">
+                        data-confirm-message="¿Sacar 1 unidad de <?= htmlspecialchars($m['descripcion'], ENT_QUOTES) ?>?">
                         <input type="hidden" name="material_id" value="<?= (int)$m['id'] ?>">
                         <button type="submit" class="btn btn-sm btn-danger">Sacar 1</button>
                     </form>

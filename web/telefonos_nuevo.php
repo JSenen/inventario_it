@@ -23,6 +23,7 @@ $simsDisponibles = $simStmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    $etiqueta   = trim($_POST['etiqueta'] ?? '');
     $marca      = trim($_POST['marca'] ?? '');
     $modelo     = trim($_POST['modelo'] ?? '');
     $imei       = trim($_POST['imei'] ?? '');
@@ -50,14 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Insertar teléfono
             $stmtTel = $pdo->prepare("
                 INSERT INTO telefonos
-                (marca, modelo, imei, numero_serie, usuario_asignado, departamento, ubicacion, seccion,
+                (etiqueta, marca, modelo, imei, numero_serie, usuario_asignado, departamento, ubicacion, seccion,
                  estado, fecha_alta, proveedor, coste, observaciones)
                 VALUES
-                (:marca, :modelo, :imei, :num_serie, :usuario, :depart, :ubicacion, :seccion,
+                (:etiqueta, :marca, :modelo, :imei, :num_serie, :usuario, :depart, :ubicacion, :seccion,
                  :estado, :fecha_alta, :proveedor, :coste, :obs)
             ");
 
             $stmtTel->execute([
+                ':etiqueta'   => $etiqueta ?: null,
                 ':marca'      => $marca,
                 ':modelo'     => $modelo,
                 ':imei'       => $imei,
@@ -99,7 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
 
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             $errores[] = "Error al guardar el teléfono: " . $e->getMessage();
         }
     }
@@ -121,6 +125,10 @@ require_once 'includes/header.php';
 
     <form method="post">
         <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Etiqueta</label>
+                <input type="text" name="etiqueta" class="form-control campo-etiqueta" value="<?= htmlspecialchars($_POST['etiqueta'] ?? '') ?>">
+            </div>
             <div class="col-md-4 mb-3">
                 <label class="form-label">Marca</label>
                 <input type="text" name="marca" class="form-control" required>
@@ -145,6 +153,22 @@ require_once 'includes/header.php';
                 <input type="text" name="usuario_asignado" class="form-control">
             </div>
             <div class="row">
+
+        <div class="col-md-4 mb-3">
+        <label class="form-label">Ubicación</label>
+        <select name="ubicacion" class="form-select">
+            <option value="">-- Seleccione ubicación --</option>
+            <?php foreach ($ubicaciones as $u): 
+                $nombre = $u['nombre'];
+                $selected = (isset($_POST['ubicacion']) && $_POST['ubicacion'] === $nombre) ? 'selected' : '';
+            ?>
+                <option value="<?= htmlspecialchars($nombre) ?>" <?= $selected ?>>
+                    <?= htmlspecialchars($nombre) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    
     <div class="col-md-4 mb-3">
         <label class="form-label">Departamento</label>
         <select name="departamento" class="form-select">
@@ -160,20 +184,7 @@ require_once 'includes/header.php';
         </select>
     </div>
 
-    <div class="col-md-4 mb-3">
-        <label class="form-label">Ubicación</label>
-        <select name="ubicacion" class="form-select">
-            <option value="">-- Seleccione ubicación --</option>
-            <?php foreach ($ubicaciones as $u): 
-                $nombre = $u['nombre'];
-                $selected = (isset($_POST['ubicacion']) && $_POST['ubicacion'] === $nombre) ? 'selected' : '';
-            ?>
-                <option value="<?= htmlspecialchars($nombre) ?>" <?= $selected ?>>
-                    <?= htmlspecialchars($nombre) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+   
 
     <div class="col-md-4 mb-3">
         <label class="form-label">Sección</label>
@@ -195,7 +206,7 @@ require_once 'includes/header.php';
                 <label class="form-label">Estado</label>
                 <select name="estado" class="form-select">
                     <option value="Activo">Activo</option>
-                    <option value="Almacén">Almacén</option>
+                    <option value="Almacén" selected>Almacén</option>
                     <option value="Prestado">Prestado</option>
                     <option value="Averiado">Averiado</option>
                     <option value="Baja">Baja</option>
@@ -208,14 +219,14 @@ require_once 'includes/header.php';
                 <label class="form-label">Fecha alta</label>
                 <input type="date" name="fecha_alta" class="form-control" value="<?= date('Y-m-d') ?>">
             </div>
-            <div class="col-md-4 mb-3">
+            <!-- <div class="col-md-4 mb-3">
                 <label class="form-label">Proveedor</label>
                 <input type="text" name="proveedor" class="form-control">
             </div>
             <div class="col-md-4 mb-3">
                 <label class="form-label">Coste (€)</label>
                 <input type="number" step="0.01" name="coste" class="form-control">
-            </div>
+            </div> -->
         </div>
 
         <!-- Selección de SIM -->

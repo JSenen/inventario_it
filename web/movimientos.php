@@ -14,7 +14,6 @@ $stmt = $pdo->query("
     FROM equipos_movimientos m
     JOIN equipos e ON e.id = m.id_equipo
     ORDER BY m.fecha DESC
-    LIMIT 500
 ");
 $movimientos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -29,7 +28,7 @@ include __DIR__ . '/includes/header.php';
     <div class="card">
         <div class="card-body">
             <p class="mb-2 small text-muted">
-                Últimos 500 movimientos registrados (entregas, recogidas, préstamos y devoluciones).
+                Histórico completo de movimientos registrados (entregas, recogidas, préstamos y devoluciones).
             </p>
 
             <div class="table-responsive">

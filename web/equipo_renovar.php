@@ -21,6 +21,11 @@ $equipo_origen = $stmtOrigen->fetch(PDO::FETCH_ASSOC);
 if (!$equipo_origen) {
     die('Equipo original no encontrado');
 }
+$tipoOrigenUpper = strtoupper($equipo_origen['tipo'] ?? '');
+$equipoOrigenConMonitores = ($tipoOrigenUpper === 'PC')
+    || (strpos($tipoOrigenUpper, 'PORTATIL') !== false)
+    || (strpos($tipoOrigenUpper, 'PORTÁTIL') !== false)
+    || ($tipoOrigenUpper === 'PTI');
 
 // IP principal del equipo origen (si existe)
 $stmtIpOrigen = $pdo->prepare("SELECT * FROM ips_equipos WHERE equipo_id = :id AND es_principal = 1 LIMIT 1");
@@ -29,7 +34,7 @@ $ip_origen = $stmtIpOrigen->fetch(PDO::FETCH_ASSOC);
 
 // Monitores asociados al equipo origen (solo aplica a PC/PORTÁTIL)
 $monitores_origen = [];
-if (in_array($equipo_origen['tipo'], ['PC','PORTÁTIL'])) {
+if ($equipoOrigenConMonitores) {
     $stmtMon = $pdo->prepare("
         SELECT e.*
         FROM pc_monitores pm
@@ -158,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // 2) Gestionar monitores del equipo origen (solo si era PC/PORTÁTIL)
-            if (!empty($monitores_origen) && in_array($equipo_origen['tipo'], ['PC','PORTÁTIL'], true)) {
+            if (!empty($monitores_origen) && $equipoOrigenConMonitores) {
                 $idsMon = array_column($monitores_origen, 'id');
                 $placeholders = implode(',', array_fill(0, count($idsMon), '?'));
 
@@ -168,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } elseif ($monitores_accion === 'baja') {
                     $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :origen");
                     $stmtDel->execute([':origen' => $id_origen]);
-                    $stmtBaja = $pdo->prepare("UPDATE equipos SET estado = 'Baja' WHERE id IN ($placeholders)");
+                    $stmtBaja = $pdo->prepare("UPDATE equipos SET estado = 'Baja', fecha_baja = COALESCE(fecha_baja, NOW()) WHERE id IN ($placeholders)");
                     $stmtBaja->execute($idsMon);
                 } elseif ($monitores_accion === 'almacen') {
                     $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :origen");
@@ -203,11 +208,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
             // 5) Marcar estado final del equipo renovado
-            $stmtEstadoViejo = $pdo->prepare("UPDATE equipos SET estado = :estado WHERE id = :id");
-            $stmtEstadoViejo->execute([
-                ':estado' => $estado_viejo,
-                ':id'     => $id_origen,
-            ]);
+            if (strcasecmp((string)$estado_viejo, 'Baja') === 0) {
+                $stmtEstadoViejo = $pdo->prepare("
+                    UPDATE equipos
+                    SET estado = :estado,
+                        fecha_baja = COALESCE(fecha_baja, NOW())
+                    WHERE id = :id
+                ");
+                $stmtEstadoViejo->execute([
+                    ':estado' => $estado_viejo,
+                    ':id'     => $id_origen,
+                ]);
+            } else {
+                $stmtEstadoViejo = $pdo->prepare("UPDATE equipos SET estado = :estado WHERE id = :id");
+                $stmtEstadoViejo->execute([
+                    ':estado' => $estado_viejo,
+                    ':id'     => $id_origen,
+                ]);
+            }
 
             // 6) Guardar registro de renovación para recibo y firma
             $firmaToken = bin2hex(random_bytes(32));
@@ -234,7 +252,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: recibo_renovacion.php?id=' . $renovacionId);
             exit;
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             $errores[] = "No se pudo completar la renovación: " . $e->getMessage();
         }
     }
@@ -268,11 +288,12 @@ require_once __DIR__ . '/includes/header.php';
                 <?php foreach ($candidatos as $c): ?>
                     <?php
                         $texto = trim(
-                            ($c['etiqueta'] ? '['.$c['etiqueta'].'] ' : '') .
+                            ($c['etiqueta'] ? '['.$c['etiqueta'].'] ' : '[Sin etiqueta] ') .
                             ($c['marca'] ?? '') . ' ' .
                             ($c['modelo'] ?? '') .
                             ($c['numero_serie'] ? ' SN:'.$c['numero_serie'] : '')
                         );
+                        $claseOpt = $c['etiqueta'] ? 'etiqueta-ok' : 'etiqueta-missing';
                         $busqueda = strtolower(
                             ($c['etiqueta'] ?? '') . ' ' .
                             ($c['numero_serie'] ?? '') . ' ' .
@@ -289,6 +310,7 @@ require_once __DIR__ . '/includes/header.php';
                         data-tipo="<?= htmlspecialchars($c['tipo'] ?? '') ?>"
                         data-estado="<?= htmlspecialchars($c['estado'] ?? 'N/A') ?>"
                         data-search="<?= htmlspecialchars($busqueda) ?>"
+                        class="<?= $claseOpt ?>"
                         <?= (isset($nuevo_equipo_id) && $nuevo_equipo_id == $c['id']) ? 'selected' : '' ?>>
                         <?= htmlspecialchars($texto) ?> (<?= htmlspecialchars($c['tipo']) ?> - <?= htmlspecialchars($c['estado'] ?? 'N/A') ?>)
                     </option>
@@ -298,7 +320,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <div class="card mt-2" id="resumen-nuevo" style="display:none;">
                 <div class="card-body p-2">
-                    <div><strong>Etiqueta:</strong> <span id="r-etiqueta">-</span></div>
+                    <div><strong>Etiqueta:</strong> <span id="r-etiqueta" class="etiqueta-missing">(sin etiqueta)</span></div>
                     <div><strong>Tipo / Estado:</strong> <span id="r-tipo">-</span> · <span id="r-estado">-</span></div>
                     <div><strong>Marca / Modelo:</strong> <span id="r-marca">-</span> <span id="r-modelo">-</span></div>
                     <div><strong>Serie:</strong> <span id="r-sn">-</span></div>
@@ -321,7 +343,7 @@ require_once __DIR__ . '/includes/header.php';
             <?php endif; ?>
         </div>
 
-        <?php if (in_array($equipo_origen['tipo'], ['PC','PORTÁTIL'], true)): ?>
+        <?php if ($equipoOrigenConMonitores): ?>
         <div id="bloque-monitores-opciones" style="display:none;">
             <div class="col-md-6">
                 <label class="form-label"><strong>Monitores actuales (<?= count($monitores_origen) ?>)</strong></label>
@@ -401,6 +423,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         campos.etiqueta.textContent = opt.dataset.etiqueta || '(sin etiqueta)';
+        campos.etiqueta.classList.toggle('etiqueta-ok', !!opt.dataset.etiqueta);
+        campos.etiqueta.classList.toggle('etiqueta-missing', !opt.dataset.etiqueta);
         campos.tipo.textContent     = opt.dataset.tipo || '-';
         campos.estado.textContent   = opt.dataset.estado || '-';
         campos.marca.textContent    = opt.dataset.marca || '';

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Recibo de DEVOLUCIÓN</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12pt; color: #111; margin: 24mm 18mm; }
+  h1 { font-size: 22pt; margin: 6mm 0 2mm; }
+  .sub { font-size: 11pt; color:#333; margin-bottom: 6mm; }
+  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8mm; }
+  .logo { height:48px; }
+  .badge { font-size: 10pt; border:1px solid #666; padding:2px 8px; border-radius: 4px; display:inline-block; }
+  .box { border:1px solid #666; border-radius:6px; padding:6mm; margin:5mm 0; }
+  .row { display:flex; gap:8mm; flex-wrap:wrap; }
+  .col { flex: 1 1 60mm; }
+  .label { font-weight:bold; }
+  .mt { margin-top:4mm; }
+  .items ul { margin: 2mm 0 0 6mm; padding:0; }
+  .items li { margin: 1mm 0; }
+  .muted { color:#555; font-size:10pt; }
+  .signs { display:flex; justify-content:space-between; margin-top:10mm; gap:12mm; }
+  .sign { flex:1 1 45%; text-align:center; }
+  .line { border-top:1px solid #000; margin-top:22mm; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <img src="file:///C:/xampp/htdocs/laptop-loans/public/assets/img/logo_left.png" class="logo" />
+    <div class="badge">ENTREGA</div>
+    <img src="file:///C:/xampp/htdocs/laptop-loans/public/assets/img/logo_right.png" class="logo" />
+  </div>
+
+  <h1>Documento de devolución de material</h1>
+  <div class="sub"><strong>CURSO 1</strong></div>
+
+  <div class="box">
+    <div class="label">Datos del adjudicatario</div>
+    <div class="row mt">
+      <div class="col"><span class="label">Nombre y apellidos:</span> aaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaa</div>
+    </div>
+    <div class="row">
+      <div class="col"><span class="label">DNI:</span> 111111111111</div>
+      <div class="col"><span class="label">TIP:</span> 111111111</div>
+    </div>
+    <div class="row">
+      <div class="col"><span class="label">Teléfono:</span> 11111111111</div>
+      <div class="col"><span class="label">Email corporativo:</span> 11111111@wwww.es</div>
+    </div>
+    <div class="row">
+      <div class="col"><span class="label">Empleo:</span> </div>
+      <div class="col"><span class="label">Unidad:</span> </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="label">Equipo devuelto</div>
+    <div class="row mt">
+      <div class="col"><span class="label">Descripción:</span> Portátil</div>
+      <div class="col"><span class="label">Nº de serie:</span> 11111111111111111</div>
+    </div>
+    <div class="row">
+      <div class="col"><span class="label">Curso:</span> CURSO 1</div>
+      <div class="col"><span class="label">Fecha de devolución:</span> 2025-08-19 15:00</div>
+    </div>
+    <div class="mt"><span class="label">Se devuelve con:</span></div>
+    <div class="items">
+      <ul>
+        <li>Cargador</li>
+        <li>Cable alimentación</li>
+        <li>Maletín/Mochila</li>
+        <li>Ratón</li>
+        <li></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="muted">
+      Declaro haber devuelto el material en las mismas condiciones de entrega, sin software instalado por el usuario y con todos sus accesorios.
+    </div>
+  </div>
+
+  <div class="signs">
+    <div class="sign">
+      <div class="line"></div>
+      <div>Firma del receptor</div>
+      <div class="muted">aaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaa</div>
+    </div>
+    <div class="sign">
+      <div class="line"></div>
+      <div>Firma y sello</div>
+    </div>
+  </div>
+</body>
+</html>

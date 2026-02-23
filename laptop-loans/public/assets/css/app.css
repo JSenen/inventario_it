@@ -1,0 +1,54 @@
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  background:#f5f7fb;
+  color:#212529;
+}
+
+.app-logo{
+  height:80px;
+  margin-right:15px;
+}
+
+.card{
+  background:#fff;
+  border:1px solid #e6ebf1;
+  border-radius:.5rem;
+  padding:1rem;
+  margin-bottom:1rem;
+  box-shadow:0 2px 8px rgba(17,24,39,.04);
+}
+
+.nested-card{
+  background:#f8f9fb;
+  border:1px solid #dee2e6;
+}
+
+.table th,.table td{
+  vertical-align:middle;
+}
+
+.table thead th{
+  background:#f8f9fa;
+  border-bottom:2px solid #dee2e6;
+}
+
+.view-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+/* Columna Acciones más ancha y sin saltos */
+.col-actions { width: 260px; }
+.col-actions .actions-wrap{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:nowrap;
+}
+.col-actions .actions-wrap .btn{ white-space:nowrap; }
+.col-actions form{ display:inline; margin:0; }

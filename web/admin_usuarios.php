@@ -39,7 +39,7 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                        class="btn btn-warning btn-sm">Editar</a>
 
                     <a href="usuario_borrar.php?id=<?= $u['id'] ?>"
-                       onclick="return confirm('¿Seguro que quieres borrar este usuario?');"
+                       data-confirm-message="¿Seguro que quieres borrar este usuario?"
                        class="btn btn-danger btn-sm">Borrar</a>
                 </td>
 

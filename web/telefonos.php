@@ -11,12 +11,28 @@ $totalTelefonos = (int)$pdo->query("SELECT COUNT(*) FROM telefonos")->fetchColum
 // Teléfonos activos
 $totalTelefonosActivos = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Activo'")->fetchColumn();
 
+// Teléfonos almacén
+$totalTelefonosAlmacen = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Almacén'")->fetchColumn();
+
 // Telefonos Averiados
 $totalTelefonosAveriados = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Averiado'")->fetchColumn();
 
 // Telefonos en baja
 $totalTelefonosBaja = (int)$pdo->query("SELECT COUNT(*) FROM telefonos WHERE estado = 'Baja'")->fetchColumn();
 
+$departamentosFiltro = $pdo->query("
+    SELECT DISTINCT departamento 
+    FROM telefonos 
+    WHERE departamento IS NOT NULL AND departamento <> ''
+    ORDER BY departamento ASC
+")->fetchAll(PDO::FETCH_COLUMN);
+
+$operadoresFiltro = $pdo->query("
+    SELECT DISTINCT operador
+    FROM sims
+    WHERE operador IS NOT NULL AND operador <> ''
+    ORDER BY operador ASC
+")->fetchAll(PDO::FETCH_COLUMN);
 
 
 // ------ SIMs asignadas por operador ------
@@ -29,9 +45,9 @@ $simPorOperador = $pdo->query($sqlOperador)->fetchAll(PDO::FETCH_ASSOC);
 
 // ------ Teléfonos por departamento ------
 $sqlDept = "
-    SELECT departamento, COUNT(*) AS total
+    SELECT departamento, estado, COUNT(*) AS total
     FROM telefonos
-    WHERE departamento IS NOT NULL AND departamento <> ''
+    WHERE departamento IS NOT NULL AND departamento <> '' AND estado <> 'Baja'
     GROUP BY departamento
     ORDER BY total DESC
     LIMIT 6
@@ -52,6 +68,15 @@ $telPorDept = $pdo->query($sqlDept)->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card-body">
                     <h5 class="card-title">Teléfonos totales</h5>
                     <p class="fs-3"><?= $totalTelefonos ?></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2 col-sm-4 mb-2">
+            <div class="card text-bg-secondary h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Teléfonos almacén</h5>
+                    <p class="fs-3"><?= $totalTelefonosAlmacen ?></p>
                 </div>
             </div>
         </div>
@@ -151,16 +176,67 @@ $telPorDept = $pdo->query($sqlDept)->fetchAll(PDO::FETCH_ASSOC);
         <a href="telefonos_nuevo.php" class="btn btn-primary">Nuevo teléfono</a>
     </div>
 
+    <!-- Filtros -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-sm-3 col-md-2">
+                    <label class="form-label mb-0 small text-muted">Estado</label>
+                    <select id="filtroEstado" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <option value="Activo">Activo</option>
+                        <option value="Averiado">Averiado</option>
+                        <option value="Baja">Baja</option>
+                        <option value="Prestado">Prestado</option>
+                        <option value="Almacén">Almacén</option>
+                    </select>
+                </div>
+                <div class="col-sm-3 col-md-3">
+                    <label class="form-label mb-0 small text-muted">Departamento</label>
+                    <select id="filtroDepartamento" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <?php foreach ($departamentosFiltro as $dep): ?>
+                            <option value="<?= htmlspecialchars($dep) ?>"><?= htmlspecialchars($dep) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-sm-3 col-md-3">
+                    <label class="form-label mb-0 small text-muted">Operador SIM</label>
+                    <select id="filtroOperador" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <?php foreach ($operadoresFiltro as $op): ?>
+                            <option value="<?= htmlspecialchars($op) ?>"><?= htmlspecialchars($op) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-sm-3 col-md-2">
+                    <label class="form-label mb-0 small text-muted">SIM asignada</label>
+                    <select id="filtroSim" class="form-select form-select-sm">
+                        <option value="">Todas</option>
+                        <option value="con">Con SIM</option>
+                        <option value="sin">Sin SIM</option>
+                    </select>
+                </div>
+                <div class="col-sm-12 col-md-2 d-flex">
+                    <button id="limpiarFiltros" class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- LISTADO -->
     <table id="tablaTelefonos" class="table table-striped table-bordered">
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Marca</th>
-                <th>Modelo</th>
+                <th>Etiqueta</th>
+                <th>Marca / Modelo</th>
+                <th>Nº Serie</th>
                 <th>IMEI</th>
                 <th>Usuario</th>
                 <th>Departamento</th>
+                <th>SIM nº</th>
+                <th>Operador</th>
                 <th>Estado</th>
                 <th>Acciones</th>
             </tr>
@@ -192,24 +268,56 @@ $(document).ready(function () {
         serverSide: true,
         ajax: {
             url: 'telefonos_data.php',
-            type: 'GET'
+            type: 'GET',
+            data: function (d) {
+                d.estado       = $('#filtroEstado').val() || '';
+                d.departamento = $('#filtroDepartamento').val() || '';
+                d.operador     = $('#filtroOperador').val() || '';
+                d.sim_asignada = $('#filtroSim').val() || '';
+            }
         },
         pageLength: 25,
+        lengthMenu: [10, 25, 50, 100],
+        stateSave: true,
+        dom: 'Bfrtip',
+        buttons: [
+        'copy',
+        {
+            text: 'Excel',
+            action: function (e, dt) {
+            var params = dt.ajax.params();
+
+            var query = $.param({
+                search: params.search.value,
+                estado: $('#filtroEstado').val() || '',
+                departamento: $('#filtroDepartamento').val() || '',
+                operador: $('#filtroOperador').val() || '',
+                sim_asignada: $('#filtroSim').val() || ''
+            });
+
+            window.location.href = 'telefonos_export.php?' + query;
+            }
+        },
+        'csv',
+        'print'
+        ],
+
         columns: [
             { data: 'id' },
-            { data: 'marca' },
-            { data: 'modelo' },
+            { data: 'etiqueta' },
+            { data: 'marca_modelo' },
+            { data: 'numero_serie' },
             { data: 'imei' },
             { data: 'usuario_asignado' },
             { data: 'departamento' },
+            { data: 'sim_numero' },
+            { data: 'sim_operador' },
             { data: 'estado' },
             { data: 'acciones', orderable: false, searchable: false }
         ],
-           // 👇 AÑADIMOS ESTO
         createdRow: function (row, data, dataIndex) {
             // Índice de la columna "Estado"
-        
-            var indiceEstado = 6;
+            var indiceEstado = 9;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();
@@ -225,7 +333,12 @@ $(document).ready(function () {
             } else if (estado === 'prestado') {
                 $celda.addClass('estado-prestado');
             }   
+
+           
+
+            
         },
+        
 
         // Traducción al castellano
         language: {
@@ -233,6 +346,18 @@ $(document).ready(function () {
             searchPlaceholder: "Buscar en la tabla...",
             url: 'vendor/datatables/i18n/es-ES.json'
         }
+    });
+
+    $('#filtroEstado, #filtroDepartamento, #filtroOperador, #filtroSim').on('change', function () {
+        $('#tablaTelefonos').DataTable().ajax.reload();
+    });
+
+    $('#limpiarFiltros').on('click', function () {
+        $('#filtroEstado').val('');
+        $('#filtroDepartamento').val('');
+        $('#filtroOperador').val('');
+        $('#filtroSim').val('');
+        $('#tablaTelefonos').DataTable().ajax.reload();
     });
 });
 </script>

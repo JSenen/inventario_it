@@ -150,6 +150,16 @@ $statsStmt = $pdo->query("
 ");
 $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 
+// Totales de averías
+$averiasStmt = $pdo->query("
+    SELECT 
+        COUNT(*)                   AS total,
+        SUM(estado = 'ABIERTA')    AS abiertas,
+        SUM(estado = 'CERRADA')    AS cerradas
+    FROM averias
+");
+$averiasStats = $averiasStmt->fetch(PDO::FETCH_ASSOC);
+
 // Stats movimientos de hoy
 $movStmt = $pdo->query("
     SELECT
@@ -219,9 +229,9 @@ require_once __DIR__ . '/includes/header.php';
     <div class="col-md-2 col-sm-4 mb-2">
         <div class="card text-bg-warning h-100">
             <div class="card-body py-2">
-                <div class="small text-uppercase">Averiados</div>
+                <div class="small text-uppercase"><a href="averias_list.php" style="text-decoration: none; color:white;">Averías abiertas</a></div>
                 <div class="fs-4 fw-bold">
-                    <?= (int)($stats['averiados'] ?? 0) ?>
+                    <?= (int)($averiasStats['abiertas'] ?? 0) ?>
                 </div>
             </div>
         </div>
@@ -435,7 +445,7 @@ require_once __DIR__ . '/includes/header.php';
                 </select>
             </div>
             <div class="col-md-1 d-flex justify-content-end">
-                <button type="button" id="limpiarFiltros" class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                <button type="button" id="limpiarFiltros" class="btn btn-outline-info btn-sm w-100">Limpiar</button>
             </div>
         </div>
         <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
@@ -450,16 +460,25 @@ require_once __DIR__ . '/includes/header.php';
                     <a class="nav-link" data-tipo="PORTATIL">Portátiles</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" data-tipo="PTI">PTI</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" data-tipo="MONITOR">Monitores</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-tipo="IMPRESORA">Impresoras</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" data-tipo="IMPRESORA MULTIFUNCION">Multifunción</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" data-tipo="ESCANER">Escáner</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-tipo="DOCK">Dock / Otros</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tipo="ROUTER">Router</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-tipo="AP">AP WiFi</a>
@@ -632,17 +651,7 @@ $(document).ready(function () {
         createdRow: function (row, data, dataIndex) {
 
 
-            //  1. Obtener la celda y el valor real de la etiqueta
-            var indiceEtiqueta = 1; 
-            var $celdaEtiqueta = $('td:eq(' + indiceEtiqueta + ')', row);
-            var etiqueta = $celdaEtiqueta.text().trim();
-
-            //  2. Si tiene etiqueta -> aplicar CSS especial
-            if (etiqueta !== '') {
-                $celdaEtiqueta.addClass('etiqueta-ok'); 
-            }
-
-            // 3. Colorear celda de estado según su valor
+            // 1. Colorear celda de estado según su valor
             var indiceEstado = 13; // índice de la columna "Estado"
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             if ($celda.find('.badge').length === 0) {

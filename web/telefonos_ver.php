@@ -16,6 +16,29 @@ if (!$tel) {
     die("Teléfono no encontrado.");
 }
 
+$estadoTelefono = (string)($tel['estado'] ?? '');
+$estadoKey = strtr(trim($estadoTelefono), [
+    'Á' => 'A',
+    'É' => 'E',
+    'Í' => 'I',
+    'Ó' => 'O',
+    'Ú' => 'U',
+    'á' => 'a',
+    'é' => 'e',
+    'í' => 'i',
+    'ó' => 'o',
+    'ú' => 'u',
+]);
+$estadoKey = strtolower($estadoKey);
+$estadoClase = match ($estadoKey) {
+    'activo'   => 'estado-activo',
+    'averiado' => 'estado-averiado',
+    'baja'     => 'estado-baja',
+    'almacen'  => 'estado-almacen',
+    'prestado' => 'estado-prestado',
+    default    => '',
+};
+
 // SIM actual (si la hay)
 $sqlSimActual = "
     SELECT ts.id AS rel_id, s.*
@@ -35,7 +58,13 @@ require_once 'includes/header.php';
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Teléfono móvil - <?= htmlspecialchars($tel['marca'] . ' ' . $tel['modelo']) ?></h2>
+        <h2>
+            Teléfono móvil -
+            <!-- <?php if (!empty($tel['etiqueta'])): ?>
+                <span class="etiqueta-ok etiqueta-inline">[<?= htmlspecialchars($tel['etiqueta']) ?>]</span>
+            <?php endif; ?> -->
+            <?= htmlspecialchars($tel['marca'] . ' ' . $tel['modelo']) ?>
+        </h2>
         <div>
             <a href="telefonos_editar.php?id=<?= (int)$id ?>" class="btn btn-warning">Editar</a>
             <a href="telefono_historial.php?id=<?= (int)$id ?>" class="btn btn-info">Historial SIM</a>
@@ -44,6 +73,7 @@ require_once 'includes/header.php';
    class="btn btn-secondary" target="_blank">
    Parte de entrega
 </a>
+            <a href="telefono_renovar.php?id=<?= (int)$id ?>" class="btn btn-success">Renovar</a>
             <a href="telefonos.php" class="btn btn-secondary">Volver al listado</a>
         </div>
     </div>
@@ -53,19 +83,33 @@ require_once 'includes/header.php';
         <div class="col-md-8">
             <table class="table table-bordered">
                 <tr><th>ID</th>              <td><?= (int)$tel['id'] ?></td></tr>
-                <tr><th>Marca</th>           <td><?= htmlspecialchars($tel['marca']) ?></td></tr>
-                <tr><th>Modelo</th>          <td><?= htmlspecialchars($tel['modelo']) ?></td></tr>
-                <tr><th>IMEI</th>            <td><?= htmlspecialchars($tel['imei']) ?></td></tr>
-                <tr><th>Número de serie</th> <td><?= htmlspecialchars($tel['numero_serie']) ?></td></tr>
-                <tr><th>Usuario asignado</th><td><?= htmlspecialchars($tel['usuario_asignado']) ?></td></tr>
-                <tr><th>Departamento</th>    <td><?= htmlspecialchars($tel['departamento']) ?></td></tr>
-                <tr><th>Ubicación</th>       <td><?= htmlspecialchars($tel['ubicacion']) ?></td></tr>
-                <tr><th>Sección</th>         <td><?= htmlspecialchars($tel['seccion']) ?></td></tr>
-                <tr><th>Estado</th>          <td><?= htmlspecialchars($tel['estado']) ?></td></tr>
-                <tr><th>Fecha alta</th>      <td><?= htmlspecialchars($tel['fecha_alta']) ?></td></tr>
-                <tr><th>Fecha baja</th>      <td><?= htmlspecialchars($tel['fecha_baja']??'') ?></td></tr>
-                <tr><th>Proveedor</th>       <td><?= htmlspecialchars($tel['proveedor']) ?></td></tr>
-                <tr><th>Coste</th>           <td><?= htmlspecialchars($tel['coste']??'') ?> €</td></tr>
+                <tr><th>Etiqueta</th>        <td><span class="<?= !empty($tel['etiqueta']) ? 'etiqueta-ok' : 'etiqueta-missing' ?>"><?= htmlspecialchars(!empty($tel['etiqueta']) ? $tel['etiqueta'] : '(sin etiqueta)') ?></span></td></tr>
+                <tr><th>Marca</th>           <td><?= htmlspecialchars($tel['marca'] ?? '') ?></td></tr>
+                <tr><th>Modelo</th>          <td><?= htmlspecialchars($tel['modelo'] ?? '') ?></td></tr>
+                <tr><th>IMEI</th>            <td><?= htmlspecialchars($tel['imei'] ?? '') ?></td></tr>
+                <tr><th>Número de serie</th> <td><?= htmlspecialchars($tel['numero_serie'] ?? '') ?></td></tr>
+                <tr>
+                    <th>Usuario asignado</th>
+                    <td>
+                        <?php $usuarioAsignado = trim((string)($tel['usuario_asignado'] ?? '')); ?>
+                        <span class="dato-contacto-destacado<?= $usuarioAsignado === '' ? ' dato-contacto-destacado-vacio' : '' ?>">
+                            <?= htmlspecialchars($usuarioAsignado !== '' ? $usuarioAsignado : '-') ?>
+                        </span>
+                        <?php if ($usuarioAsignado !== ''): ?>
+                            <a class="btn btn-sm btn-outline-primary ms-2" href="usuario_asociado.php?tip=<?= urlencode($usuarioAsignado) ?>">
+                                Ver todo por TIP
+                            </a>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <tr><th>Departamento</th>    <td><?= htmlspecialchars($tel['departamento'] ?? '') ?></td></tr>
+                <tr><th>Ubicación</th>       <td><?= htmlspecialchars($tel['ubicacion'] ?? '') ?></td></tr>
+                <tr><th>Sección</th>         <td><?= htmlspecialchars($tel['seccion'] ?? '') ?></td></tr>
+                <tr><th>Estado</th>          <td class="<?= $estadoClase ?>"><?= htmlspecialchars($estadoTelefono) ?></td></tr>
+                <tr><th>Fecha alta</th>      <td><?= htmlspecialchars($tel['fecha_alta'] ?? '') ?></td></tr>
+                <tr><th>Fecha baja</th>      <td><?= htmlspecialchars($tel['fecha_baja'] ?? '') ?></td></tr>
+                <!-- <tr><th>Proveedor</th>       <td><?= htmlspecialchars($tel['proveedor']) ?></td></tr>
+                <tr><th>Coste</th>           <td><?= htmlspecialchars($tel['coste']??'') ?> €</td></tr> -->
                 <tr>
                     <th>Observaciones</th>
                     <td><?= nl2br(htmlspecialchars($tel['observaciones'])) ?></td>
@@ -76,13 +120,28 @@ require_once 'includes/header.php';
         <!-- Bloque SIM actual + imagen -->
         <div class="col-md-4">
             <div class="card mb-3">
-                <div class="card-header"><b>SIM actual</b></div>
+                <div class="card-header"><b>SIM actual </b>
+                <span class="etiqueta-numero">
+                    <?= htmlspecialchars($simActual['etiqueta'] ?? '') ?>
+                </span>
+            </div>
                 <div class="card-body">
                     <?php if ($simActual): ?>
-                        <p><b>Número:</b> <?= htmlspecialchars($simActual['numero']) ?></p>
+                        <p><b>Número:</b>
+                            <a href="sims_ver.php?id=<?= (int)$simActual['id'] ?>" class="etiqueta-numero text-decoration-none">
+                                <?= htmlspecialchars($simActual['numero']) ?>
+                            </a>
+                        </p>
                         <p><b>Operador:</b> <?= htmlspecialchars($simActual['operador']) ?></p>
                         <p><b>ICCID:</b> <?= htmlspecialchars($simActual['iccid']) ?></p>
                         <p><b>Estado SIM:</b> <?= htmlspecialchars($simActual['estado']) ?></p>
+                        <a
+                            href="sim_liberar.php?telefono_id=<?= (int)$id ?>&return=<?= urlencode('telefonos_ver.php?id=' . (int)$id) ?>"
+                            class="btn btn-sm btn-outline-danger mb-2"
+                            data-confirm-message="Se quitara la SIM actual de este telefono. Continuar?"
+                        >
+                            Quitar SIM de este telefono
+                        </a>
                     <?php else: ?>
                         <p class="text-muted">Este teléfono no tiene SIM asignada actualmente.</p>
                     <?php endif; ?>
@@ -92,7 +151,7 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
-            <?php if (!empty($tel['imagen'])): ?>
+            <?php if (!empty($tel['imagen']) && is_file(__DIR__ . '/' . ltrim((string)$tel['imagen'], '/'))): ?>
                 <div class="card">
                     <div class="card-header"><b>Imagen</b></div>
                     <div class="card-body text-center">
