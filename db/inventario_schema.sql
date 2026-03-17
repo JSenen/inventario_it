@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS equipos (
   marca VARCHAR(100),
   modelo VARCHAR(100),
   numero_serie VARCHAR(100),
+  imei VARCHAR(20),
   hostname VARCHAR(100),
   usuario_asignado VARCHAR(100),
   departamento VARCHAR(100),
@@ -43,6 +44,7 @@ CREATE TABLE IF NOT EXISTS equipos (
 CREATE INDEX IF NOT EXISTS idx_equipos_hostname ON equipos (hostname);
 CREATE INDEX IF NOT EXISTS idx_equipos_usuario ON equipos (usuario_asignado);
 CREATE INDEX IF NOT EXISTS idx_equipos_departamento ON equipos (departamento);
+CREATE INDEX IF NOT EXISTS idx_equipos_imei ON equipos (imei);
 
 -- 3) TABLA IPs ASIGNADAS A EQUIPOS
 CREATE TABLE IF NOT EXISTS ips_equipos (
@@ -387,6 +389,20 @@ CREATE TABLE telefono_sim (
     FOREIGN KEY (sim_id) REFERENCES sims(id)
 );
 
+CREATE TABLE IF NOT EXISTS adjuntos_activos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    entity_type ENUM('equipo','telefono','sim') NOT NULL,
+    entity_id INT NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    stored_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(150) DEFAULT NULL,
+    file_size BIGINT UNSIGNED DEFAULT NULL,
+    uploaded_by VARCHAR(100) DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_adjuntos_entidad (entity_type, entity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 -- 21 Tabla para partes de entrega / recepción de teléfonos
 CREATE TABLE partes_telefono (
@@ -430,6 +446,8 @@ CREATE TABLE equipos_movimientos (
     estado_destino VARCHAR(50),
     observaciones VARCHAR(255) DEFAULT NULL,
     pdf_path VARCHAR(255) DEFAULT NULL,
+    pdf_unsigned_path VARCHAR(255) DEFAULT NULL,
+    pdf_signed_path VARCHAR(255) DEFAULT NULL,
     firma_token VARCHAR(80) DEFAULT NULL,
     firma_path VARCHAR(255) DEFAULT NULL,
     firmado TINYINT(1) DEFAULT 0,
@@ -491,3 +509,83 @@ CREATE TABLE  equipos_verificaciones (
                 FOREIGN KEY (equipo_id) REFERENCES equipos(id)
                 ON DELETE CASCADE
         ) ;
+
+
+-- RECIBOS A PATH PDF EN MOVIMIENTOS DE EQUIPOS
+USE inventario_it;
+
+-- EQUIPOS_MOVIMIENTOS: ya tenía pdf_path, añadimos unsigned/signed si faltan
+ALTER TABLE equipos_movimientos
+  ADD COLUMN IF NOT EXISTS pdf_unsigned_path VARCHAR(255) DEFAULT NULL AFTER pdf_path,
+  ADD COLUMN IF NOT EXISTS pdf_signed_path   VARCHAR(255) DEFAULT NULL AFTER pdf_unsigned_path;
+
+-- RENOVACIONES (equipos): añadimos las 3 columnas
+ALTER TABLE renovaciones
+  ADD COLUMN IF NOT EXISTS pdf_path          VARCHAR(255) DEFAULT NULL AFTER firma_path,
+  ADD COLUMN IF NOT EXISTS pdf_unsigned_path VARCHAR(255) DEFAULT NULL AFTER pdf_path,
+  ADD COLUMN IF NOT EXISTS pdf_signed_path   VARCHAR(255) DEFAULT NULL AFTER pdf_unsigned_path;
+
+-- RENOVACIONES_TELEFONOS: añadimos las 3 columnas
+ALTER TABLE renovaciones_telefonos
+  ADD COLUMN IF NOT EXISTS pdf_path          VARCHAR(255) DEFAULT NULL AFTER firma_path,
+  ADD COLUMN IF NOT EXISTS pdf_unsigned_path VARCHAR(255) DEFAULT NULL AFTER pdf_path,
+  ADD COLUMN IF NOT EXISTS pdf_signed_path   VARCHAR(255) DEFAULT NULL AFTER pdf_unsigned_path;
+
+-- 16-12-2025 Mejoras en Materiales (Imagen y Compatibilidad)
+ALTER TABLE materiales
+ADD COLUMN IF NOT EXISTS imagen VARCHAR(255) DEFAULT NULL AFTER notas;
+-- La columna 'imagen' almacenará la ruta relativa del archivo (ej: uploads/materiales/foto.jpg)
+
+CREATE TABLE IF NOT EXISTS materiales_compatibilidad (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    material_id INT NOT NULL,
+    modelo_impresora VARCHAR(150) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_mat_compat_material
+        FOREIGN KEY (material_id) REFERENCES materiales(id)
+        ON DELETE CASCADE
+);
+
+-- 09-03-2026 Mejoras en Telefonos (Imagen)
+ALTER TABLE telefonos
+ADD COLUMN IF NOT EXISTS imagen VARCHAR(255) DEFAULT NULL AFTER observaciones;
+-- La columna 'imagen' almacenara la ruta relativa del archivo (ej: uploads/telefonos/foto.jpg)
+
+-- 17-03-2026 Mejoras en Equipos (IMEI PTI)
+ALTER TABLE equipos
+ADD COLUMN IF NOT EXISTS imei VARCHAR(20) NULL AFTER numero_serie;
+
+-- 10-03-2026 Flujo de Baja Definitiva (punto limpio)
+CREATE TABLE IF NOT EXISTS bajas_definitivas_lotes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(40) NOT NULL UNIQUE,
+    estado ENUM('PENDIENTE','CONFIRMADO') NOT NULL DEFAULT 'PENDIENTE',
+    creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    creado_por VARCHAR(100) DEFAULT NULL,
+    confirmado_en DATETIME DEFAULT NULL,
+    confirmado_por VARCHAR(100) DEFAULT NULL,
+    punto_limpio VARCHAR(255) DEFAULT NULL,
+    transportado_por VARCHAR(150) DEFAULT NULL,
+    observaciones TEXT,
+    reporte_path VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS bajas_definitivas_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    lote_id INT NOT NULL,
+    activo_tipo ENUM('equipo','telefono') NOT NULL,
+    activo_id INT NOT NULL,
+    activo_etiqueta VARCHAR(120) DEFAULT NULL,
+    activo_descripcion VARCHAR(255) NOT NULL,
+    activo_identificador VARCHAR(150) DEFAULT NULL,
+    estado_previo VARCHAR(50) NOT NULL DEFAULT 'Baja',
+    fecha_baja_original DATETIME DEFAULT NULL,
+    agregado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmado_en DATETIME DEFAULT NULL,
+    CONSTRAINT fk_bajas_def_items_lote
+        FOREIGN KEY (lote_id) REFERENCES bajas_definitivas_lotes(id)
+        ON DELETE CASCADE,
+    UNIQUE KEY uniq_bajas_def_lote_activo (lote_id, activo_tipo, activo_id),
+    KEY idx_bajas_def_activo (activo_tipo, activo_id),
+    KEY idx_bajas_def_lote (lote_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

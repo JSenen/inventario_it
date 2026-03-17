@@ -24,8 +24,14 @@ services:
     restart: always
     depends_on:
       - db
+    environment:
+      MAIL_ENABLED: "0"
+      MAIL_FROM: "no-reply@inventario.local"
+      MAIL_FROM_NAME: "Inventario IT"
     volumes:
       - ./web:/var/www/html
+      - ./laptop-loans:/var/www/html/laptop-loans
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
     ports:
       - "8080:80"
     networks:

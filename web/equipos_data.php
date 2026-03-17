@@ -23,6 +23,7 @@ try {
     $ubicacion  = $req['ubicacion'] ?? '';
     $seccion_id = $req['seccion_id'] ?? '';
     $etiqueta_estado = $req['etiqueta_estado'] ?? '';
+    $historico  = $req['historico'] ?? '0';
 
     // Columnas en el mismo orden de la tabla HTML
     $columns = [
@@ -45,12 +46,22 @@ try {
     ];
 
     // TOTAL SIN FILTROS (solo tabla equipos)
-    $stmtTotal = $pdo->query("SELECT COUNT(*) FROM equipos");
+    if ($historico === '1') {
+        $stmtTotal = $pdo->query("SELECT COUNT(*) FROM equipos WHERE estado = 'Baja definitiva'");
+    } else {
+        $stmtTotal = $pdo->query("SELECT COUNT(*) FROM equipos WHERE estado <> 'Baja definitiva'");
+    }
     $recordsTotal = (int)$stmtTotal->fetchColumn();
 
     // WHERE dinámico
     $where  = [];
     $params = [];
+
+    if ($historico === '1') {
+        $where[] = "e.estado = 'Baja definitiva'";
+    } else {
+        $where[] = "e.estado <> 'Baja definitiva'";
+    }
 
     // Filtros de estado / tipo si existen
     if ($estado !== '') {
@@ -218,8 +229,10 @@ $sqlData = "
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
         $colId       = htmlspecialchars($row['id']);
-        $colImagen   = !empty($row['imagen'])
-            ? '<img src="' . htmlspecialchars($row['imagen']) . '" style="width:50px;height:auto;">'
+        $rutaImagen = (string)($row['imagen'] ?? '');
+        $tieneImagen = ($rutaImagen !== '') && is_file(__DIR__ . '/' . ltrim($rutaImagen, '/'));
+        $colImagen   = $tieneImagen
+            ? '<img src="' . htmlspecialchars($rutaImagen) . '" style="width:50px;height:auto;">'
             : '<span class="text-muted">Sin imagen</span>';
         $colNumSerie = htmlspecialchars($row['numero_serie'] ?? '');
         $colTipo     = htmlspecialchars($row['tipo'] ?? '');
@@ -242,8 +255,10 @@ $sqlData = "
             '<small class="text-muted">' . htmlspecialchars($row['modelo'] ?? '') . '</small>' .
             '</div>';
 
+        $usuarioAsignado = trim((string)($row['usuario_asignado'] ?? ''));
+        $usuarioClass = $usuarioAsignado === '' ? 'dato-contacto-destacado dato-contacto-destacado-vacio' : 'dato-contacto-destacado';
         $colUsuarioDepto =
-            htmlspecialchars($row['usuario_asignado'] ?? '') . '<br>' .
+            '<span class="' . $usuarioClass . '">' . htmlspecialchars($usuarioAsignado !== '' ? $usuarioAsignado : '-') . '</span><br>' .
             '<small class="text-muted">' . htmlspecialchars($row['departamento'] ?? '') . '</small>'. '<br>' .
             '<small class="text-muted">' . htmlspecialchars($row['seccion_nombre'] ?? '') . '</small>';
 
@@ -265,8 +280,15 @@ $sqlData = "
         //$colRed       = htmlspecialchars($row['red_nombre'] ?? '');
         $colMonitores = '';
         $numMon = (int)($row['num_monitores'] ?? 0);
+        $tipoUpper = strtoupper($row['tipo'] ?? '');
+        $esEquipoConMonitores = ($tipoUpper === 'PC')
+            || (strpos($tipoUpper, 'PORTATIL') !== false)
+            || (strpos($tipoUpper, 'PORTÁTIL') !== false)
+            || ($tipoUpper === 'PTI')
+            || ($tipoUpper === 'SITEL');
 
-        if (in_array($row['tipo'], ['PC', 'PORTÁTIL', 'PORTATIL'])) {
+
+        if ($esEquipoConMonitores) {
             if ($numMon === 0) {
                 $colMonitores = '<span class="badge bg-secondary">0</span>';
             } elseif ($numMon === 1) {
@@ -282,10 +304,17 @@ $sqlData = "
         // Estado con badge e icono
         $estadoRaw = trim((string)($row['estado'] ?? ''));
         $estadoLower = strtolower($estadoRaw);
+        $estadoNorm = strtr($estadoLower, [
+            'á' => 'a',
+            'é' => 'e',
+            'í' => 'i',
+            'ó' => 'o',
+            'ú' => 'u',
+        ]);
         $estadoClass = 'bg-secondary';
         $estadoIcon  = 'bi-info-circle-fill';
 
-        switch ($estadoLower) {
+        switch ($estadoNorm) {
             case 'activo':
                 $estadoClass = 'bg-success';
                 $estadoIcon  = 'bi-check-circle-fill';
@@ -297,6 +326,10 @@ $sqlData = "
             case 'baja':
                 $estadoClass = 'bg-danger';
                 $estadoIcon  = 'bi-x-circle-fill';
+                break;
+            case 'baja definitiva':
+                $estadoClass = 'bg-dark';
+                $estadoIcon  = 'bi-x-octagon-fill';
                 break;
             case 'almacen':
                 $estadoClass = 'bg-secondary';
@@ -382,14 +415,16 @@ $sqlData = "
                 <a href="equipo_ver.php?id=' . $row['id'] . '" class="btn btn-outline-primary">Ver</a>
                 <a href="equipo_editar.php?id=' . $row['id'] . '" class="btn btn-outline-secondary">Editar</a>
                 <a href="equipo_borrar.php?id=' . $row['id'] . '" class="btn btn-outline-danger"
-                   onclick="return confirm(\'¿Seguro que quieres eliminar este equipo?\');">
+                   data-confirm-message="¿Seguro que quieres eliminar este equipo?">
                    Borrar
                 </a>
             </div>';
 
         $data[] = [
             $colId,
-            $colEtiqueta = '<span class="etiqueta-ok">' . htmlspecialchars($row['etiqueta'] ?? '') . '</span>',
+            $colEtiqueta = !empty($row['etiqueta'])
+                ? '<span class="etiqueta-ok">' . htmlspecialchars($row['etiqueta']) . '</span>'
+                : '<span class="etiqueta-missing">(sin etiqueta)</span>',
             $colImagen,
             $colNumSerie,
             $colTipo,

@@ -2,10 +2,19 @@
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/logger.php';
+require_once __DIR__ . '/includes/recibos_pdf_helper.php';
+ensureRecibosSchema($pdo);
 
-$stmt = $pdo->query("
-    SELECT
-        r.*,
+$sqlUnion = "
+    (SELECT
+        r.id,
+        r.fecha,
+        r.ip_move,
+        r.mon_accion,
+        r.estado_old,
+        r.firmado,
+        r.firma_token,
+        r.pdf_path,
         eold.etiqueta AS old_etiqueta,
         eold.marca AS old_marca,
         eold.modelo AS old_modelo,
@@ -15,13 +24,84 @@ $stmt = $pdo->query("
         enew.marca AS new_marca,
         enew.modelo AS new_modelo,
         enew.numero_serie AS new_sn,
-        enew.hostname AS new_host
+        enew.hostname AS new_host,
+        'equipo' AS tipo,
+        NULL AS sim_movida,
+        NULL AS sim_id,
+        NULL AS sim_etiqueta,
+        NULL AS sim_numero
     FROM renovaciones r
     JOIN equipos eold ON eold.id = r.equipo_old_id
-    JOIN equipos enew ON enew.id = r.equipo_new_id
-    ORDER BY r.fecha DESC
-    LIMIT 500
-");
+    JOIN equipos enew ON enew.id = r.equipo_new_id)
+    UNION ALL
+    (SELECT
+        rt.id,
+        rt.fecha,
+        rt.sim_movida AS ip_move,
+        NULL AS mon_accion,
+        rt.estado_old,
+        rt.firmado,
+        rt.firma_token,
+        rt.pdf_path,
+        told.etiqueta AS old_etiqueta,
+        told.marca AS old_marca,
+        told.modelo AS old_modelo,
+        told.imei AS old_sn,
+        NULL AS old_host,
+        tnew.etiqueta AS new_etiqueta,
+        tnew.marca AS new_marca,
+        tnew.modelo AS new_modelo,
+        tnew.imei AS new_sn,
+        NULL AS new_host,
+        'telefono' AS tipo,
+        rt.sim_movida,
+        s.id AS sim_id,
+        s.etiqueta AS sim_etiqueta,
+        s.numero AS sim_numero
+    FROM renovaciones_telefonos rt
+    JOIN telefonos told ON told.id = rt.tel_old_id
+    JOIN telefonos tnew ON tnew.id = rt.tel_new_id
+    LEFT JOIN telefono_sim ts ON ts.id = (
+        SELECT ts2.id
+        FROM telefono_sim ts2
+        WHERE ts2.telefono_id = rt.tel_new_id
+          AND ts2.fecha_asignacion <= rt.fecha
+        ORDER BY ts2.fecha_asignacion DESC, ts2.id DESC
+        LIMIT 1
+    )
+    LEFT JOIN sims s ON s.id = ts.sim_id)
+    ORDER BY fecha DESC
+";
+
+// Si la tabla de renovaciones_telefonos aún no existe en la BD antigua, la creamos al vuelo
+try {
+    $stmt = $pdo->query($sqlUnion);
+} catch (PDOException $e) {
+    if (strpos($e->getMessage(), 'renovaciones_telefonos') !== false) {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS renovaciones_telefonos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                tel_old_id INT NOT NULL,
+                tel_new_id INT NOT NULL,
+                sim_movida TINYINT(1) NOT NULL DEFAULT 0,
+                estado_old VARCHAR(20),
+                fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                firma_token VARCHAR(64),
+                firma_path VARCHAR(255),
+                pdf_path VARCHAR(255),
+                pdf_unsigned_path VARCHAR(255),
+                pdf_signed_path VARCHAR(255),
+                firmado TINYINT(1) DEFAULT 0,
+                firmado_fecha DATETIME NULL,
+                KEY idx_token (firma_token)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        $stmt = $pdo->query($sqlUnion);
+    } else {
+        // si es otro error, relanzamos para no ocultarlo
+        throw $e;
+    }
+}
 $renovaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $accionesMon = [
@@ -41,7 +121,7 @@ include __DIR__ . '/includes/header.php';
     <div class="card">
         <div class="card-body">
             <p class="mb-2 small text-muted">
-                Últimas 500 renovaciones registradas. Consulta los recibos sin necesidad de localizar antes el equipo.
+                Histórico completo de renovaciones registradas. Consulta los recibos sin necesidad de localizar antes el equipo.
             </p>
 
             <div class="table-responsive">
@@ -49,11 +129,11 @@ include __DIR__ . '/includes/header.php';
                     <thead class="table-dark">
                         <tr>
                             <th>Fecha</th>
-                            <th>Equipo renovado</th>
-                            <th>Equipo activo</th>
-                            <th>IP principal</th>
+                            <th>Equipo/Telef. renovado</th>
+                            <th>Equipo/Telef. activo</th>
+                            <th>IP/SIM</th>
                             <th>Monitores</th>
-                            <th>Estado equipo renovado</th>
+                            <th>Estado renovado</th>
                             <th>Firma</th>
                             <th>Recibo</th>
                         </tr>
@@ -64,7 +144,7 @@ include __DIR__ . '/includes/header.php';
                                 $firmado = (int)($r['firmado'] ?? 0) === 1;
                                 $firmaBadge = $firmado ? 'success' : 'secondary';
                                 $firmaLabel = $firmado ? 'Firmado' : 'Pendiente';
-                                $monLabel = $accionesMon[$r['mon_accion'] ?? ''] ?? 'Sin cambios';
+                                $monLabel = $accionesMon[$r['mon_accion'] ?? ''] ?? ($r['tipo'] === 'telefono' ? 'N/A' : 'Sin cambios');
 
                                 $oldTitulo = trim(($r['old_marca'] ?? '') . ' ' . ($r['old_modelo'] ?? ''));
                                 if (!empty($r['old_etiqueta'])) {
@@ -77,7 +157,7 @@ include __DIR__ . '/includes/header.php';
                                 }
                             ?>
                             <tr>
-                                <td><?= htmlspecialchars($r['fecha'] ?? '') ?></td>
+                                <td><?= date("d-m-y H:i", strtotime(htmlspecialchars($r['fecha'] ?? '')))  ?></td>
                                 <td>
                                     <div><?= htmlspecialchars($oldTitulo) ?></div>
                                     <div class="text-muted small">
@@ -97,10 +177,25 @@ include __DIR__ . '/includes/header.php';
                                     </div>
                                 </td>
                                 <td>
-                                    <?php if (!empty($r['ip_move'])): ?>
-                                        <span class="badge bg-success">Trasladada</span>
+                                    <?php if ($r['tipo'] === 'telefono'): ?>
+                                        <?php if (!empty($r['sim_movida']) && !empty($r['sim_id'])): ?>
+                                            <?php $simTexto = trim((string)($r['sim_etiqueta'] ?? '')); ?>
+                                            <?php if ($simTexto === '') { $simTexto = trim((string)($r['sim_numero'] ?? '')); } ?>
+                                            <?php if ($simTexto === '') { $simTexto = 'SIM #' . (int)$r['sim_id']; } ?>
+                                            <a href="sims_ver.php?id=<?= (int)$r['sim_id'] ?>" class="sim-numero-destacado text-decoration-none">
+                                                <?= htmlspecialchars($simTexto) ?>
+                                            </a>
+                                        <?php elseif (!empty($r['sim_movida'])): ?>
+                                            <span class="badge bg-success">SIM trasladada</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Sin traslado</span>
+                                        <?php endif; ?>
                                     <?php else: ?>
-                                        <span class="badge bg-secondary">Sin traslado</span>
+                                        <?php if (!empty($r['ip_move'])): ?>
+                                            <span class="badge bg-success">IP trasladada</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Sin traslado</span>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
                                 <td><?= htmlspecialchars($monLabel) ?></td>
@@ -124,11 +219,27 @@ include __DIR__ . '/includes/header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a href="recibo_renovacion.php?id=<?= (int)$r['id'] ?>"
-                                       target="_blank"
-                                       class="btn btn-sm btn-outline-secondary">
-                                        Recibo
-                                    </a>
+                                    <?php if (!empty($r['pdf_path'])): ?>
+                                        <a href="<?= htmlspecialchars($r['pdf_path']) ?>"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-secondary">
+                                            Recibo PDF
+                                        </a>
+                                    <?php else: ?>
+                                        <?php if ($r['tipo'] === 'telefono'): ?>
+                                            <a href="recibo_renovacion_telefono.php?id=<?= (int)$r['id'] ?>"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary">
+                                                Recibo
+                                            </a>
+                                        <?php else: ?>
+                                            <a href="recibo_renovacion.php?id=<?= (int)$r['id'] ?>"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary">
+                                                Recibo
+                                            </a>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

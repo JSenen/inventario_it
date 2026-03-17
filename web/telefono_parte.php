@@ -26,8 +26,34 @@ $stmtSim = $pdo->prepare($sqlSim);
 $stmtSim->execute([':id' => $id]);
 $sim = $stmtSim->fetch(PDO::FETCH_ASSOC);
 
+// Si el teléfono actual proviene de una renovación, recuperar el teléfono retirado
+$stmtRen = $pdo->prepare("
+    SELECT r.id AS renovacion_id,
+           r.fecha AS renovacion_fecha,
+           told.id AS old_id,
+           told.etiqueta AS old_etiqueta,
+           told.marca AS old_marca,
+           told.modelo AS old_modelo,
+           told.imei AS old_imei,
+           told.numero_serie AS old_numero_serie,
+           told.estado AS old_estado,
+           told.fecha_baja AS old_fecha_baja
+    FROM renovaciones_telefonos r
+    JOIN telefonos told ON told.id = r.tel_old_id
+    WHERE r.tel_new_id = :id
+    ORDER BY r.fecha DESC, r.id DESC
+    LIMIT 1
+");
+$stmtRen->execute([':id' => $id]);
+$renovacion = $stmtRen->fetch(PDO::FETCH_ASSOC);
+
 // Guardar log
-logActividad($pdo,"IMPRESION PARTE","Impresion parte telefono ID= ", $id);
+logActividad(
+    $pdo,
+    "IMPRESION_PARTE_TELEFONO",
+    "Impresion parte telefono ID={$id}",
+    ['modulo' => 'TELEFONOS', 'nivel' => 'INFO']
+);
 
 ?>
 <!DOCTYPE html>
@@ -116,7 +142,7 @@ logActividad($pdo,"IMPRESION PARTE","Impresion parte telefono ID= ", $id);
 
     <div class="text-center">
        
-        <img src="assets/logo_departamento.png" class="logo-empresa" alt="Logo">
+        <img src="assets/logo_departamento.png" class="logo-empresa" style="width: 80px !important" alt="Logo">
     </div>
 
     <div class="titulo-parte">PARTE DE ENTREGA DE TELÉFONO MÓVIL</div>
@@ -124,19 +150,35 @@ logActividad($pdo,"IMPRESION PARTE","Impresion parte telefono ID= ", $id);
     <!-- Datos del teléfono -->
     <h4>Datos del teléfono</h4>
     <table class="table table-bordered">
+        <tr><th>Código</th><td><span style="font-weight: 900;"><?= htmlspecialchars($tel['etiqueta']) ?></span></td></tr>
         <tr><th>Marca</th><td><?= htmlspecialchars($tel['marca']) ?></td></tr>
         <tr><th>Modelo</th><td><?= htmlspecialchars($tel['modelo']) ?></td></tr>
         <tr><th>IMEI</th><td><?= htmlspecialchars($tel['imei']) ?></td></tr>
         <tr><th>Número de serie</th><td><?= htmlspecialchars($tel['numero_serie'] ?: '-') ?></td></tr>
         <tr><th>Estado</th><td><?= htmlspecialchars($tel['estado']) ?></td></tr>
         <tr><th>Fecha alta</th><td><?= htmlspecialchars($tel['fecha_alta']) ?></td></tr>
+        <tr><th>SIM heredada</th><td><?= $sim ? 'Sí' : 'No' ?></td></tr>
     </table>
+
+    <?php if ($renovacion): ?>
+        <h4>Teléfono retirado en la renovación</h4>
+        <table class="table table-bordered">
+            <tr><th>Etiqueta</th><td><span style="font-weight: 900;"><?= htmlspecialchars($renovacion['old_etiqueta'] ?: '-') ?></span></td></tr>
+            <tr><th>Marca / Modelo</th><td><?= htmlspecialchars(trim(($renovacion['old_marca'] ?? '') . ' ' . ($renovacion['old_modelo'] ?? ''))) ?></td></tr>
+            <tr><th>IMEI</th><td><?= htmlspecialchars($renovacion['old_imei'] ?: '-') ?></td></tr>
+            <tr><th>Número de serie</th><td><?= htmlspecialchars($renovacion['old_numero_serie'] ?: '-') ?></td></tr>
+            <tr><th>Estado</th><td><?= htmlspecialchars($renovacion['old_estado'] ?: 'Baja') ?></td></tr>
+            <tr><th>Fecha de baja</th><td><?= htmlspecialchars($renovacion['old_fecha_baja'] ?: '-') ?></td></tr>
+            <tr><th>Fecha renovación</th><td><?= htmlspecialchars($renovacion['renovacion_fecha'] ?: '-') ?></td></tr>
+        </table>
+    <?php endif; ?>
 
     <!-- SIM -->
     <h4>Datos de la tarjeta SIM</h4>
     <?php if ($sim): ?>
         <table class="table table-bordered">
-            <tr><th>Número</th><td><?= htmlspecialchars($sim['numero']) ?></td></tr>
+            <tr><th>Número</th><td><span style="font-weight: 900;"><?= htmlspecialchars($sim['numero']) ?></span></td></tr>
+            <tr><th>Número Corto:</th><td><?= htmlspecialchars($sim['numero_corto'] ?? '-') ?></td></tr>
             <tr><th>Operador</th><td><?= htmlspecialchars($sim['operador']) ?></td></tr>
             <tr><th>ICCID</th><td><?= htmlspecialchars($sim['iccid']) ?></td></tr>
             <tr><th>PIN</th><td><?= htmlspecialchars($sim['pin'] ?: '-') ?></td></tr>
@@ -149,10 +191,10 @@ logActividad($pdo,"IMPRESION PARTE","Impresion parte telefono ID= ", $id);
     <!-- Datos del receptor -->
     <h4>Datos del usuario receptor</h4>
     <table class="table table-bordered">
-        <tr><th>Nombre / TIP</th><td><?= htmlspecialchars($tel['usuario_asignado'] ?: '-') ?></td></tr>
-        <tr><th>Departamento</th><td><?= htmlspecialchars($tel['departamento'] ?: '-') ?></td></tr>
-        <tr><th>Ubicación</th><td><?= htmlspecialchars($tel['ubicacion'] ?: '-') ?></td></tr>
-        <tr><th>Sección</th><td><?= htmlspecialchars($tel['seccion'] ?: '-') ?></td></tr>
+        <tr><th>Nombre / TIP</th><td><span style="font-weight: 900;"><?= htmlspecialchars($tel['usuario_asignado'] ?: '-') ?></span></td></tr>
+        <tr><th>Departamento</th><td><span style="font-weight: 900;"><?= htmlspecialchars($tel['departamento'] ?: '-') ?></span></td></tr>
+        <tr><th>Ubicación</th><td><span style="font-weight: 900;"><?= htmlspecialchars($tel['ubicacion'] ?: '-') ?></span> </td></tr>
+        <tr><th>Sección</th><td><span style="font-weight: 900;"><?= htmlspecialchars($tel['seccion'] ?: '-') ?></span></td></tr>
         <tr><th>Fecha entrega</th><td><?= htmlspecialchars($tel['fecha_entrega'] ?: date('Y-m-d')) ?></td></tr>
     </table>
 
@@ -167,11 +209,13 @@ logActividad($pdo,"IMPRESION PARTE","Impresion parte telefono ID= ", $id);
     <div class="row mt-5">
         <div class="col-6 text-center">
             <p><b>Firma Responsable GATI</b></p>
+            <p><?php echo $_SESSION['tip']?></p>
             <div class="firma-box">TIP y firma</div>
         </div>
 
         <div class="col-6 text-center">
             <p><b>Firma Usuario Receptor</b></p>
+            <p></p>
             <div class="firma-box">TIP y firma</div>
         </div>
     </div>

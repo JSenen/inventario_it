@@ -1,0 +1,12 @@
+[2026-03-05 08:51:59] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"dashboard/index","ip":"10.52.2.5"}
+[2026-03-05 12:35:13] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"dashboard/index","ip":"10.52.2.5"}
+[2026-03-05 13:47:25] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"people/index","ip":"10.52.2.5"}
+[2026-03-05 13:47:25] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php:24 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/people/index.php","line":24,"severity":8192}
+[05-Mar-2026 13:47:25 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php on line 24
+[2026-03-05 13:47:25] ERROR   PHP error: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php:25 {"msg":"htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated","file":"/var/www/html/laptop-loans/app/Views/people/index.php","line":25,"severity":8192}
+[05-Mar-2026 13:47:25 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/laptop-loans/app/Views/people/index.php on line 25
+[2026-03-05 13:47:28] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"laptops/index","ip":"10.52.2.5"}
+[2026-03-05 13:47:29] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"courses/index","ip":"10.52.2.5"}
+[2026-03-05 13:47:38] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"courses/index","ip":"10.52.2.5"}
+[2026-03-05 13:47:39] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"courses/index","ip":"10.52.2.5"}
+[2026-03-05 13:53:52] INFO    AUDIT visit {"user_id":"tip:A58656F","username":"A58656F","route":"dashboard/index","ip":"10.52.2.5"}

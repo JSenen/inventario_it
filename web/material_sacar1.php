@@ -55,9 +55,8 @@ try {
     ");
     $stmtUpd->execute([':id' => $materialId]);
 
-    logActividad($pdo, 'SALIDA_MATERIAL', 'Salida rápida de 1 unidad del material ID=' . $materialId);
-
     $pdo->commit();
+    logActividad($pdo, 'SALIDA_MATERIAL', 'Salida rápida de 1 unidad del material ID=' . $materialId);
 } catch (Exception $e) {
     $pdo->rollBack();
 }

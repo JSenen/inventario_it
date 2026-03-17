@@ -4,7 +4,11 @@ require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . "/includes/logger.php";
 require_once __DIR__ . "/includes/movimientos_helper.php";
+require_once __DIR__ . '/includes/equipos_schema.php';
+require_once __DIR__ . '/includes/asset_files.php';
 
+ensureEquiposSchema($pdo);
+ensureAssetFilesSchema($pdo);
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
@@ -16,10 +20,14 @@ $id_equipo = $id;
 $stmtEq = $pdo->prepare("SELECT * FROM equipos WHERE id = :id");
 $stmtEq->execute([':id' => $id]);
 $equipo = $stmtEq->fetch(PDO::FETCH_ASSOC);
+$adjuntosEquipo = listEntityAttachments($pdo, 'equipo', $id);
 
 // Guardamos el estado original para saber si sale / entra de almacén
 $estadoOriginal   = $equipo['estado'] ?? null;
 $usuarioOriginal  = $equipo['usuario_asignado'] ?? null;
+$ubicacionOriginal = strtoupper(trim((string)($equipo['ubicacion'] ?? '')));
+$departamentoOriginal = strtoupper(trim((string)($equipo['departamento'] ?? '')));
+$seccionOriginalId = isset($equipo['seccion_id']) ? (int)$equipo['seccion_id'] : 0;
 
 // Cargar listas tipos equipo para los selects
 $tiposStmt = $pdo->query("SELECT nombre FROM tipos_equipo ORDER BY nombre ASC");
@@ -36,9 +44,94 @@ $ubicaciones = $ubicacionesStmt->fetchAll(PDO::FETCH_ASSOC);
 // Cargar secciones desde la tabla secciones
 $seccionesStmt = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC");
 $secciones = $seccionesStmt->fetchAll(PDO::FETCH_ASSOC);
+$seccionesPorId = [];
+foreach ($secciones as $sec) {
+    $seccionesPorId[(int)$sec['id']] = (string)$sec['nombre'];
+}
+$seccionOriginalNombre = strtoupper(trim((string)($seccionesPorId[$seccionOriginalId] ?? '')));
 // Cargar departamentos desde la tabla departamentos
 $departamentosStmt = $pdo->query("SELECT nombre FROM departamentos ORDER BY nombre ASC");       
 $departamentos = $departamentosStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Tabla de relación SIM↔equipo (PTI) por si aún no existe
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_sim (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        sim_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_sim (sim_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (sim_id) REFERENCES sims(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
+// Tabla de relación DOCK↔equipo PTI por si aún no existe
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_dock (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        dock_equipo_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_dock (dock_equipo_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (dock_equipo_id) REFERENCES equipos(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
+// SIM actual (si es PTI) y SIMs disponibles
+$stmtSimActual = $pdo->prepare("
+    SELECT es.id AS rel_id, s.*
+    FROM equipo_sim es
+    JOIN sims s ON s.id = es.sim_id
+    WHERE es.equipo_id = :id
+      AND es.fecha_liberacion IS NULL
+    ORDER BY es.fecha_asignacion DESC
+    LIMIT 1
+");
+$stmtSimActual->execute([':id' => $id_equipo]);
+$simActual = $stmtSimActual->fetch(PDO::FETCH_ASSOC);
+
+$simsDisponiblesStmt = $pdo->prepare("
+    SELECT id, numero, operador, iccid, etiqueta
+    FROM sims
+    WHERE estado = 'Disponible' OR id = :simActual
+    ORDER BY numero ASC
+");
+$simsDisponiblesStmt->execute([':simActual' => $simActual['id'] ?? 0]);
+$simsDisponibles = $simsDisponiblesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// DOCK actual (si es PTI) y DOCKs disponibles
+$stmtDockActual = $pdo->prepare("
+    SELECT ed.id AS rel_id, d.id, d.etiqueta, d.marca, d.modelo, d.numero_serie
+    FROM equipo_dock ed
+    JOIN equipos d ON d.id = ed.dock_equipo_id
+    WHERE ed.equipo_id = :id
+      AND ed.fecha_liberacion IS NULL
+    ORDER BY ed.fecha_asignacion DESC
+    LIMIT 1
+");
+$stmtDockActual->execute([':id' => $id_equipo]);
+$dockActual = $stmtDockActual->fetch(PDO::FETCH_ASSOC);
+
+$docksDisponiblesStmt = $pdo->prepare("
+    SELECT d.id, d.etiqueta, d.marca, d.modelo, d.numero_serie
+    FROM equipos d
+    LEFT JOIN equipo_dock ed
+      ON ed.dock_equipo_id = d.id
+     AND ed.fecha_liberacion IS NULL
+    WHERE UPPER(d.tipo) = 'DOCK'
+      AND (ed.id IS NULL OR d.id = :dockActual)
+    ORDER BY d.etiqueta ASC, d.numero_serie ASC, d.id ASC
+");
+$docksDisponiblesStmt->execute([':dockActual' => $dockActual['id'] ?? 0]);
+$docksDisponibles = $docksDisponiblesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Imagen actual del equipo
 $imagenActual = isset($equipo['imagen']) ? $equipo['imagen'] : '';
@@ -116,6 +209,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $monitoresSeleccionadosPost = isset($_POST['monitores']) && is_array($_POST['monitores'])
     ? array_map('intval', $_POST['monitores'])
     : [];
+    // SIM seleccionada para PTI (opcional)
+    $sim_id_pti_nueva = isset($_POST['sim_id_pti']) && $_POST['sim_id_pti'] !== '' ? (int)$_POST['sim_id_pti'] : null;
+    // DOCK seleccionado para PTI (opcional)
+    $dock_id_pti_nuevo = isset($_POST['dock_id_pti']) && $_POST['dock_id_pti'] !== '' ? (int)$_POST['dock_id_pti'] : null;
 
     // 1) Si ha elegido una imagen existente en el desplegable
     if (!empty($_POST['imagen_existente'])) {
@@ -177,6 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $marca            = strtoupper(trim($_POST['marca'] ?? ''));
             $modelo           = strtoupper(trim($_POST['modelo'] ?? ''));
             $numero_serie     = strtoupper(trim($_POST['numero_serie'] ?? ''));
+            $imei             = strtoupper(trim($_POST['imei'] ?? ''));
             $hostname         = strtoupper(trim($_POST['hostname'] ?? ''));
             $usuario_asignado = strtoupper(trim($_POST['usuario_asignado'] ?? ''));
             $departamento     = strtoupper(trim($_POST['departamento'] ?? ''));
@@ -187,6 +285,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $estado           = trim($_POST['estado'] ?? 'En uso');
             $notas            = strtoupper(trim($_POST['notas'] ?? ''));
             $etiqueta        = strtoupper(trim($_POST['etiqueta'] ?? ''));
+
+            $tipoUpper        = strtoupper($tipo);
+            $esPTI            = (strpos($tipoUpper, 'PTI') !== false);
+
+            // Validación SIM para PTI
+            if ($esPTI && $sim_id_pti_nueva !== null && (!$simActual || $sim_id_pti_nueva !== (int)$simActual['id'])) {
+                $stmtCheckSim = $pdo->prepare("
+                    SELECT COUNT(*) 
+                    FROM equipo_sim 
+                    WHERE sim_id = :sim AND fecha_liberacion IS NULL
+                ");
+                $stmtCheckSim->execute([':sim' => $sim_id_pti_nueva]);
+                $yaAsignada = (int)$stmtCheckSim->fetchColumn() > 0;
+                if ($yaAsignada) {
+                    $errores[] = "La SIM seleccionada ya está asignada a otro equipo.";
+                }
+
+                $stmtEstadoSim = $pdo->prepare("SELECT estado FROM sims WHERE id = :id");
+                $stmtEstadoSim->execute([':id' => $sim_id_pti_nueva]);
+                $estadoSim = $stmtEstadoSim->fetchColumn();
+                if (!$estadoSim) {
+                    $errores[] = "La SIM seleccionada no existe.";
+                } elseif ($estadoSim !== 'Disponible') {
+                    $errores[] = "La SIM seleccionada no está disponible.";
+                }
+            }
+
+            // Validación DOCK para PTI
+            if ($esPTI && $dock_id_pti_nuevo !== null && (!$dockActual || $dock_id_pti_nuevo !== (int)$dockActual['id'])) {
+                $stmtCheckDock = $pdo->prepare("
+                    SELECT COUNT(*)
+                    FROM equipo_dock
+                    WHERE dock_equipo_id = :dock AND fecha_liberacion IS NULL
+                ");
+                $stmtCheckDock->execute([':dock' => $dock_id_pti_nuevo]);
+                if ((int)$stmtCheckDock->fetchColumn() > 0) {
+                    $errores[] = "El DOCK seleccionado ya está asignado a otro equipo.";
+                }
+
+                $stmtDockExiste = $pdo->prepare("
+                    SELECT COUNT(*)
+                    FROM equipos
+                    WHERE id = :id AND UPPER(tipo) = 'DOCK'
+                ");
+                $stmtDockExiste->execute([':id' => $dock_id_pti_nuevo]);
+                if ((int)$stmtDockExiste->fetchColumn() === 0) {
+                    $errores[] = "El DOCK seleccionado no existe o no es válido.";
+                }
+            }
     
 
             // Red / IP
@@ -195,10 +342,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $red_id = $_POST['red_id'] ?? '';
 
             // Avería
-            $tipo_averia  = strtoupper(trim($_POST['tipo_averia'] ?? ''));
-            $num_asunto   = strtoupper(trim($_POST['num_asunto'] ?? ''));
-            $desc_averia  = trim($_POST['desc_averia'] ?? '');
-            $empresa_ext  = strtoupper(trim($_POST['empresa_ext'] ?? ''));
+            $gestion_averia = strtoupper(trim($_POST['gestion_averia'] ?? 'EXTERNA')); // EXTERNA | INTERNA (GATI)
+            $tipo_averia    = strtoupper(trim($_POST['tipo_averia'] ?? ''));
+            $num_asunto     = strtoupper(trim($_POST['num_asunto'] ?? ''));
+            $desc_averia    = trim($_POST['desc_averia'] ?? '');
+            $empresa_ext    = strtoupper(trim($_POST['empresa_ext'] ?? ''));
 
             $estadoEsAveriado = (strcasecmp($estado, 'Averiado') === 0);
 
@@ -210,24 +358,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($tipo_averia === '') {
                     $errores[] = "El tipo de avería es obligatorio cuando el equipo está en estado AVERIADO.";
                 }
-                if ($num_asunto === '') {
-                    $errores[] = "El número de asunto es obligatorio cuando el equipo está en estado AVERIADO.";
-                }
-            }
-
-            // Si el estado pasa a BAJA por primera vez → guardar fecha_baja
-            if ($estado === 'Baja') {
-
-                $sql_check = "SELECT fecha_baja FROM equipos WHERE id = :id";
-                $stmt_check = $pdo->prepare($sql_check);
-                $stmt_check->execute([':id' => $id_equipo]);
-                $check = $stmt_check->fetch(PDO::FETCH_ASSOC);
-
-                // Solo insertar fecha_baja si está vacía (evita sobrescritura)
-                if (empty($check['fecha_baja'])) {
-                    $sql_baja = "UPDATE equipos SET fecha_baja = NOW() WHERE id = :id";
-                    $stmt_baja = $pdo->prepare($sql_baja);
-                    $stmt_baja->execute([':id' => $id_equipo]);
+                if ($gestion_averia === 'INTERNA') {
+                    // Reparación interna: limpiar campos externos para evitar datos residuales
+                    $num_asunto  = null;
+                    $empresa_ext = $empresa_ext !== '' ? $empresa_ext : 'GATI (INTERNA)';
                 }
             }
 
@@ -255,8 +389,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ? (int) $_POST['seccion_id']
             : null;
 
+            // Normalizamos campos de avería según quién gestiona
+            $esGestionInterna = ($gestion_averia === 'INTERNA');
+            $numAsuntoDb      = $esGestionInterna ? null : ($num_asunto !== '' ? $num_asunto : null);
+            $empresaExtDb     = $esGestionInterna
+                ? ($empresa_ext !== '' ? $empresa_ext : 'GATI (INTERNA)')
+                : ($empresa_ext !== '' ? $empresa_ext : 'PENDIENTE RAU');
+
             // Si no hay errores, proceder a actualizar
             if (empty($errores)) {
+                $adjuntosSubidos = [];
                 try {
                     $pdo->beginTransaction();
 
@@ -266,6 +408,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         marca = :marca,
                         modelo = :modelo,
                         numero_serie = :numero_serie,
+                        imei = :imei,
                         hostname = :hostname,
                         usuario_asignado = :usuario_asignado,
                         departamento = :departamento,
@@ -274,6 +417,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         proveedor = :proveedor,
                         coste = :coste,
                         estado = :estado,
+                        fecha_baja = CASE
+                            WHEN :estado_baja = 1 AND fecha_baja IS NULL THEN NOW()
+                            ELSE fecha_baja
+                        END,
                         notas = :notas,
                         imagen = :imagen,
                         seccion_id = :seccion_id,
@@ -286,6 +433,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':marca'            => $marca,
                         ':modelo'           => $modelo,
                         ':numero_serie'     => $numero_serie,
+                        ':imei'             => $imei !== '' ? $imei : null,
                         ':hostname'         => $hostname,
                         ':usuario_asignado' => $usuario_asignado,
                         ':departamento'     => $departamento,
@@ -294,12 +442,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':proveedor'        => $proveedor,
                         ':coste'            => $coste !== '' ? $coste : null,
                         ':estado'           => $estado,
+                        ':estado_baja'      => (strcasecmp($estado, 'Baja') === 0 || strcasecmp($estado, 'Baja definitiva') === 0) ? 1 : 0,
                         ':notas'            => $notas,
                         ':imagen'           => $imagenRuta,   
                         ':id'               => $id,
                         ':seccion_id'       => $seccion_id,
                         ':etiqueta'         => $etiqueta,
                     ]);
+
+                    $adjuntosSubidos = uploadEntityAttachments(
+                        $pdo,
+                        'equipo',
+                        $id_equipo,
+                        $_FILES['adjuntos'] ?? [],
+                        $_SESSION['tip'] ?? null
+                    );
 
                     // Gestionar IP principal
                     if ($ip === '' || $red_id === '') {
@@ -331,8 +488,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
             
+            $tipoConMonitores = strtoupper($tipo);
+            $tiposMonitores = ['PC','PORTATIL','PORTÁTIL','PTI','PORTATIL (PTI)','PORTÁTIL (PTI)','SITEL'];
+            $esEquipoConMonitor = in_array($tipoConMonitores, $tiposMonitores, true);
+
             // Gestionar monitores asociados
-            if (in_array($tipo, ['PC','PORTATIL'])) {
+            if ($esEquipoConMonitor) {
                 // Borrar relaciones actuales y crear nuevas
                 $stmtDel = $pdo->prepare("DELETE FROM pc_monitores WHERE id_pc = :id_pc");
                 $stmtDel->execute([':id_pc' => $id_equipo]);
@@ -355,6 +516,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtDel->execute([':id_pc' => $id_equipo]);
             }
 
+            // Gestionar SIM para PTI
+            if (!$esPTI && $simActual) {
+                // Ya no es PTI: liberar SIM actual
+                $stmtClose = $pdo->prepare("
+                    UPDATE equipo_sim
+                    SET fecha_liberacion = NOW()
+                    WHERE equipo_id = :eq AND fecha_liberacion IS NULL
+                ");
+                $stmtClose->execute([':eq' => $id_equipo]);
+
+                $stmtUpdSim = $pdo->prepare("UPDATE sims SET estado = 'Disponible' WHERE id = :sim");
+                $stmtUpdSim->execute([':sim' => $simActual['id']]);
+            } elseif ($esPTI) {
+                // A) tenía SIM y se quita
+                if ($simActual && $sim_id_pti_nueva === null) {
+                    $stmtClose = $pdo->prepare("
+                        UPDATE equipo_sim
+                        SET fecha_liberacion = NOW()
+                        WHERE equipo_id = :eq AND sim_id = :sim AND fecha_liberacion IS NULL
+                    ");
+                    $stmtClose->execute([':eq' => $id_equipo, ':sim' => $simActual['id']]);
+
+                    $stmtUpdSim = $pdo->prepare("UPDATE sims SET estado = 'Disponible' WHERE id = :sim");
+                    $stmtUpdSim->execute([':sim' => $simActual['id']]);
+                }
+
+                // B) no tenía SIM y ahora sí
+                if (!$simActual && $sim_id_pti_nueva !== null) {
+                    $stmtRel = $pdo->prepare("
+                        INSERT INTO equipo_sim (equipo_id, sim_id)
+                        VALUES (:eq, :sim)
+                    ");
+                    $stmtRel->execute([':eq' => $id_equipo, ':sim' => $sim_id_pti_nueva]);
+
+                    $stmtUpdSim = $pdo->prepare("UPDATE sims SET estado = 'Asignada' WHERE id = :sim");
+                    $stmtUpdSim->execute([':sim' => $sim_id_pti_nueva]);
+                }
+
+                // C) tenía SIM y se cambia por otra
+                if ($simActual && $sim_id_pti_nueva !== null && $sim_id_pti_nueva !== (int)$simActual['id']) {
+                    // cerrar relación actual
+                    $stmtClose = $pdo->prepare("
+                        UPDATE equipo_sim
+                        SET fecha_liberacion = NOW()
+                        WHERE equipo_id = :eq AND sim_id = :sim AND fecha_liberacion IS NULL
+                    ");
+                    $stmtClose->execute([':eq' => $id_equipo, ':sim' => $simActual['id']]);
+
+                    $stmtUpdSimOld = $pdo->prepare("UPDATE sims SET estado = 'Disponible' WHERE id = :sim");
+                    $stmtUpdSimOld->execute([':sim' => $simActual['id']]);
+
+                    // nueva relación
+                    $stmtRelNew = $pdo->prepare("
+                        INSERT INTO equipo_sim (equipo_id, sim_id)
+                        VALUES (:eq, :sim)
+                    ");
+                    $stmtRelNew->execute([':eq' => $id_equipo, ':sim' => $sim_id_pti_nueva]);
+
+                    $stmtUpdSimNew = $pdo->prepare("UPDATE sims SET estado = 'Asignada' WHERE id = :sim");
+                    $stmtUpdSimNew->execute([':sim' => $sim_id_pti_nueva]);
+                }
+            }
+
+            // Gestionar DOCK para PTI
+            if (!$esPTI && $dockActual) {
+                $stmtCloseDock = $pdo->prepare("
+                    UPDATE equipo_dock
+                    SET fecha_liberacion = NOW()
+                    WHERE equipo_id = :eq AND fecha_liberacion IS NULL
+                ");
+                $stmtCloseDock->execute([':eq' => $id_equipo]);
+            } elseif ($esPTI) {
+                // A) tenía DOCK y se quita
+                if ($dockActual && $dock_id_pti_nuevo === null) {
+                    $stmtCloseDock = $pdo->prepare("
+                        UPDATE equipo_dock
+                        SET fecha_liberacion = NOW()
+                        WHERE equipo_id = :eq AND dock_equipo_id = :dock AND fecha_liberacion IS NULL
+                    ");
+                    $stmtCloseDock->execute([':eq' => $id_equipo, ':dock' => $dockActual['id']]);
+                }
+
+                // B) no tenía DOCK y ahora sí
+                if (!$dockActual && $dock_id_pti_nuevo !== null) {
+                    $stmtDockRel = $pdo->prepare("
+                        INSERT INTO equipo_dock (equipo_id, dock_equipo_id)
+                        VALUES (:eq, :dock)
+                    ");
+                    $stmtDockRel->execute([':eq' => $id_equipo, ':dock' => $dock_id_pti_nuevo]);
+                }
+
+                // C) tenía DOCK y se cambia por otro
+                if ($dockActual && $dock_id_pti_nuevo !== null && $dock_id_pti_nuevo !== (int)$dockActual['id']) {
+                    $stmtCloseDock = $pdo->prepare("
+                        UPDATE equipo_dock
+                        SET fecha_liberacion = NOW()
+                        WHERE equipo_id = :eq AND dock_equipo_id = :dock AND fecha_liberacion IS NULL
+                    ");
+                    $stmtCloseDock->execute([':eq' => $id_equipo, ':dock' => $dockActual['id']]);
+
+                    $stmtDockRel = $pdo->prepare("
+                        INSERT INTO equipo_dock (equipo_id, dock_equipo_id)
+                        VALUES (:eq, :dock)
+                    ");
+                    $stmtDockRel->execute([':eq' => $id_equipo, ':dock' => $dock_id_pti_nuevo]);
+                }
+            }
+
             // Gestionar AVERÍA
             $averiaId = null;
 
@@ -371,9 +640,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ");
                     $stmtAvUp->execute([
                         ':tipo_averia' => $tipo_averia,
-                        ':num_asunto'  => $num_asunto,
+                        ':num_asunto'  => $numAsuntoDb,
                         ':descripcion' => $desc_averia,
-                        ':empresa_ext' => $empresa_ext,
+                        ':empresa_ext' => $empresaExtDb,
                         ':id'          => $averia['id'],
                     ]);
                     $averiaId = (int)$averia['id'];
@@ -386,9 +655,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtAvIns->execute([
                         ':equipo_id'   => $id,
                         ':tipo_averia' => $tipo_averia,
-                        ':num_asunto'  => $num_asunto,
+                        ':num_asunto'  => $numAsuntoDb,
                         ':descripcion' => $desc_averia,
-                        ':empresa_ext' => $empresa_ext,
+                        ':empresa_ext' => $empresaExtDb,
                     ]);
                     $averiaId = (int)$pdo->lastInsertId();
                 }
@@ -401,9 +670,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 */
             }
-                        logActividad($pdo, 'EDITAR_EQUIPO', 'Equipo editado: ID=' . $id);
-
             $pdo->commit();
+            logActividad($pdo, 'EDITAR_EQUIPO', 'Equipo editado: ID=' . $id);
+
+            $adjuntosABorrar = isset($_POST['borrar_adjuntos']) && is_array($_POST['borrar_adjuntos'])
+                ? array_map('intval', $_POST['borrar_adjuntos'])
+                : [];
+            foreach ($adjuntosABorrar as $adjuntoId) {
+                if ($adjuntoId > 0) {
+                    deleteEntityAttachment($pdo, 'equipo', $id_equipo, $adjuntoId);
+                }
+            }
 
             // 👇 Registrar movimiento (si procede: Almacén <-> Activo/Prestado)
             try {
@@ -420,9 +697,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // logActividad($pdo, 'ERROR_MOVIMIENTO', $eMov->getMessage());
             }
 
+            $idsTraslado = [];
+            if (empty($idMov)) {
+                $seccionNuevaNombre = strtoupper(trim((string)($seccionesPorId[(int)($seccion_id ?? 0)] ?? '')));
+                try {
+                    $idsTraslado = registrarMovimientosTrasladoEquipo(
+                        $pdo,
+                        $id_equipo,
+                        $usuario_asignado,
+                        [
+                            'ubicacion'    => $ubicacionOriginal,
+                            'departamento' => $departamentoOriginal,
+                            'seccion'      => $seccionOriginalNombre,
+                        ],
+                        [
+                            'ubicacion'    => $ubicacion,
+                            'departamento' => $departamento,
+                            'seccion'      => $seccionNuevaNombre,
+                        ],
+                        $estado
+                    );
+                } catch (Exception $eTraslado) {
+                    $idsTraslado = [];
+                    // logActividad($pdo, 'ERROR_MOV_TRASLADO', $eTraslado->getMessage());
+                }
+            }
+
             // 🔁 Si se ha generado un movimiento, vamos a la ficha del equipo con aviso
             if (!empty($idMov)) {
                 header('Location: equipo_ver.php?id=' . $id_equipo . '&mov=last');
+                exit;
+            }
+            if (!empty($idsTraslado) && count($idsTraslado) === 2) {
+                header(
+                    'Location: equipo_ver.php?id=' . $id_equipo .
+                    '&mov_baja=' . (int)$idsTraslado[0] .
+                    '&mov_alta=' . (int)$idsTraslado[1]
+                );
                 exit;
             }
 
@@ -437,7 +748,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
         } catch (Exception $e) {
-            $pdo->rollBack();
+             if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            cleanupUploadedAttachments($adjuntosSubidos ?? []);
             $errores[] = "Error al actualizar el equipo: " . $e->getMessage();
         }
     }
@@ -449,6 +763,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'marca'            => $marca,
                 'modelo'           => $modelo,
                 'numero_serie'     => $numero_serie,
+                'imei'             => $imei,
                 'hostname'         => $hostname,
                 'usuario_asignado' => $usuario_asignado,
                 'departamento'     => $departamento,
@@ -469,10 +784,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
 
             $averia = [
-                'tipo_averia' => $tipo_averia,
-                'num_asunto'  => $num_asunto,
-                'descripcion' => $desc_averia,
-                'empresa_ext' => $empresa_ext,
+                'tipo_averia'    => $tipo_averia,
+                'num_asunto'     => $numAsuntoDb ?? $num_asunto,
+                'descripcion'    => $desc_averia,
+                'empresa_ext'    => $empresaExtDb,
+                'gestion_averia' => $gestion_averia,
             ];
         }
 
@@ -483,6 +799,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $ip_val  = $ipRow['ip']  ?? '';
 $mac_val = $ipRow['mac'] ?? '';
 $red_sel = $ipRow['red_id'] ?? '';
+$adjuntosEquipo = listEntityAttachments($pdo, 'equipo', $id_equipo);
 
 require_once __DIR__ . '/includes/header.php'; 
 ?>
@@ -501,7 +818,7 @@ require_once __DIR__ . '/includes/header.php';
 <?php endif; ?>
  
 
-<form method="post" class="row g-3" enctype="multipart/form-data">
+<form id="formEditarEquipo" method="post" class="row g-3" enctype="multipart/form-data">
 
   <div class="col-md-3">
         <label class="form-label">Etiqueta</label>
@@ -546,11 +863,20 @@ require_once __DIR__ . '/includes/header.php';
             <option value="<?= $idMon ?>" <?= $selected ?>>
                 <?= htmlspecialchars(trim(
                     ($m['marca'] ?? '') . ' ' .
-                    ($m['modelo'] ?? '') .
-                    ( $m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '' )
+                    ($m['modelo'] ?? '')
                 )) ?>
+
+                <?php if (!empty($m['etiqueta'])): ?>
+                    <span class="etiqueta-ok">
+                        <?= htmlspecialchars($m['etiqueta']) ?>
+                    </span>
+                <?php endif; ?>
+
+                <?= !empty($m['numero_serie']) ? ' [SN: '.$m['numero_serie'].']' : '' ?>
                 <?= $m['asignado_a_este'] ? ' (actual)' : '' ?>
             </option>
+
+
         <?php endforeach; ?>
     </select>
 </div> -->
@@ -573,8 +899,9 @@ require_once __DIR__ . '/includes/header.php';
             <option value="<?= $idMon ?>" <?= $selected ?>
                     <?= $m['asignado_a_este'] ? ' data-actual="1"' : '' ?>>
                 <?= htmlspecialchars(trim(
-                    ($m['marca'] ?? '') . ' ' .
-                    ($m['modelo'] ?? '') .
+                    ($m['marca'] ?? '') . ' modelo: ' .
+                    ($m['modelo'] ?? '') . ' etiqueta: ' . 
+                    ($m['etiqueta'] ?? '')  . ' ' .
                     ( $m['numero_serie'] ? ' [SN: '.$m['numero_serie'].']' : '' )
                 )) ?>
                 <?= $m['asignado_a_este'] ? ' (actual)' : '' ?>
@@ -600,7 +927,7 @@ require_once __DIR__ . '/includes/header.php';
 
                         <a href="monitor_desvincular.php?id=<?= $m['id'] ?>&pc=<?= $equipo['id'] ?>"
                            class="btn btn-warning btn-sm ms-3"
-                           onclick="return confirm('¿Desvincular este monitor y enviarlo a Almacén?');">
+                           data-confirm-message="¿Desvincular este monitor y enviarlo a Almacén?">
                             Desvincular y pasar a Almacén
                         </a>
                     </div>
@@ -620,6 +947,11 @@ require_once __DIR__ . '/includes/header.php';
     <div class="col-md-3">
         <label class="form-label">Modelo</label>
         <input type="text" name="modelo" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['modelo'] ?? '') ?>">
+    </div>
+    <div class="col-md-3" id="bloque-imei-pti" style="display:none;">
+        <label class="form-label">IMEI</label>
+        <input type="text" name="imei" class="form-control campo-destacado" value="<?= htmlspecialchars($equipo['imei'] ?? '') ?>">
+        <small class="text-muted">Visible para equipos PTI. No es obligatorio.</small>
     </div>
 
     <div class="col-md-3">
@@ -702,6 +1034,57 @@ require_once __DIR__ . '/includes/header.php';
     </select>
 </div>
 
+<div class="col-md-6" id="bloque-sim-pti" style="display:none;">
+    <label class="form-label"><b>SIM (solo PTI, opcional)</b></label>
+    <select name="sim_id_pti" class="form-select">
+        <option value="">-- Sin SIM --</option>
+        <?php
+        $simPost = $_POST['sim_id_pti'] ?? null;
+        foreach ($simsDisponibles as $sim):
+            $selected =
+                ($simPost !== null && $simPost !== '') ? ((int)$simPost === (int)$sim['id'] ? 'selected' : '') :
+                ($simActual && (int)$simActual['id'] === (int)$sim['id'] ? 'selected' : '');
+        ?>
+            <?php
+                $styleEtiqueta = $sim['etiqueta'] ? 'style="color:#175fce;font-weight:700;"' : '';
+            ?>
+            <option value="<?= (int)$sim['id'] ?>" <?= $selected ?> class="<?= $sim['etiqueta'] ? 'etiqueta-ok' : '' ?>" <?= $styleEtiqueta ?>>
+                <?= $sim['etiqueta'] ? '[' . htmlspecialchars($sim['etiqueta']) . '] ' : '' ?><?= htmlspecialchars($sim['numero']) ?> · <?= htmlspecialchars($sim['operador']) ?> (ICCID: <?= htmlspecialchars($sim['iccid']) ?>)
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <?php if ($simActual): ?>
+        <small class="text-muted">SIM actual: <?= htmlspecialchars($simActual['numero']) ?> (<?= htmlspecialchars($simActual['operador']) ?>)</small>
+    <?php else: ?>
+        <small class="text-muted">Visible solo si el tipo es PTI. No es obligatoria.</small>
+    <?php endif; ?>
+</div>
+
+<div class="col-md-6" id="bloque-dock-pti" style="display:none;">
+    <label class="form-label"><b>DOCK (solo PTI, opcional)</b></label>
+    <select name="dock_id_pti" class="form-select">
+        <option value="">-- Sin DOCK --</option>
+        <?php
+        $dockPost = $_POST['dock_id_pti'] ?? null;
+        foreach ($docksDisponibles as $dock):
+            $selected =
+                ($dockPost !== null && $dockPost !== '') ? ((int)$dockPost === (int)$dock['id'] ? 'selected' : '') :
+                ($dockActual && (int)$dockActual['id'] === (int)$dock['id'] ? 'selected' : '');
+        ?>
+            <option value="<?= (int)$dock['id'] ?>" <?= $selected ?>>
+                <?= !empty($dock['etiqueta']) ? '[' . htmlspecialchars($dock['etiqueta']) . '] ' : '' ?>
+                <?= htmlspecialchars(trim(($dock['marca'] ?? '') . ' ' . ($dock['modelo'] ?? ''))) ?>
+                <?= !empty($dock['numero_serie']) ? ' (SN: ' . htmlspecialchars($dock['numero_serie']) . ')' : '' ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <?php if ($dockActual): ?>
+        <small class="text-muted">DOCK actual: <?= htmlspecialchars($dockActual['etiqueta'] ?: ('EQ-' . $dockActual['id'])) ?></small>
+    <?php else: ?>
+        <small class="text-muted">Visible solo si el tipo es PTI. No es obligatorio.</small>
+    <?php endif; ?>
+</div>
+
 
 
     <div class="col-md-2">
@@ -727,7 +1110,7 @@ require_once __DIR__ . '/includes/header.php';
 
     <?php
     // Lista de estados
-    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado', 'Privado'];
+    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Baja definitiva', 'Prestado', 'Privado'];
 
     // Estado actual del equipo
     $estadoSel = $equipo['estado'] ?? 'Activo';
@@ -738,6 +1121,7 @@ require_once __DIR__ . '/includes/header.php';
         'Almacén'  => '#0d6efd', 
         'Averiado' => '#ffc107', 
         'Baja'     => '#dc3545', 
+        'Baja definitiva' => '#111111',
         'Prestado' => '#6c757d', 
         'Privado'  => '#f90dfdff',
     ];
@@ -827,7 +1211,8 @@ $imagenSeleccionada = $_POST['imagen_existente']
         </div>
 
         <div id="galeriaImagenes" class="collapse">
-            <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3 mt-2">
+            <div class="thumb-grid-wrapper">
+                <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3 mt-2">
                 <?php
                 $imagenPost = $imagenSeleccionada;
                 if (!empty($imagenes_existentes)):
@@ -853,6 +1238,7 @@ $imagenSeleccionada = $_POST['imagen_existente']
                         <span class="text-muted small">No hay imágenes guardadas.</span>
                     </div>
                 <?php endif; ?>
+                </div>
             </div>
         </div>
 
@@ -871,6 +1257,45 @@ $imagenSeleccionada = $_POST['imagen_existente']
         <textarea name="notas" class="form-control campo-destacado" rows="3"><?= htmlspecialchars($equipo['notas'] ?? '') ?></textarea>
     </div>
 
+    <div class="col-12">
+        <label class="form-label">Adjuntos</label>
+        <input type="file" name="adjuntos[]" class="form-control" multiple>
+        <small class="text-muted">Puedes subir uno o varios archivos asociados a este equipo.</small>
+        <?php if (!empty($adjuntosEquipo)): ?>
+            <div class="table-responsive mt-3">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Archivo</th>
+                            <th>Tamaño</th>
+                            <th>Subido</th>
+                            <th class="text-end">Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($adjuntosEquipo as $adjunto): ?>
+                            <tr>
+                                <td>
+                                    <a href="<?= htmlspecialchars($adjunto['file_path']) ?>" target="_blank" rel="noopener">
+                                        <?= htmlspecialchars($adjunto['original_name']) ?>
+                                    </a>
+                                </td>
+                                <td><?= htmlspecialchars(formatAttachmentSize((int)($adjunto['file_size'] ?? 0))) ?></td>
+                                <td><?= htmlspecialchars($adjunto['created_at'] ?? '') ?></td>
+                                <td class="text-end">
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" name="borrar_adjuntos[]" value="<?= (int)$adjunto['id'] ?>">
+                                        Borrar
+                                    </label>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+
 
 
     
@@ -882,6 +1307,11 @@ $tipo_averia_val = $_POST['tipo_averia'] ?? ($averia['tipo_averia'] ?? '');
 $num_asunto_val  = $_POST['num_asunto']  ?? ($averia['num_asunto']  ?? '');
 $desc_averia_val = $_POST['desc_averia'] ?? ($averia['descripcion'] ?? '');
 $empresa_ext_val = $_POST['empresa_ext'] ?? ($averia['empresa_ext'] ?? '');
+$inferGestion    = ($averia && ($averia['num_asunto'] ?? '') === '') ? 'INTERNA' : 'EXTERNA';
+$gestion_averia_val = strtoupper($_POST['gestion_averia'] ?? ($averia['gestion_averia'] ?? $inferGestion));
+if (!in_array($gestion_averia_val, ['EXTERNA', 'INTERNA'], true)) {
+    $gestion_averia_val = 'EXTERNA';
+}
 $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 ?>
 
@@ -894,12 +1324,26 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 <div id="bloqueAveria" style="<?= $mostrarAveria ? '' : 'display:none;' ?>">
     <div class="row g-3">
         <div class="col-md-4">
+            <label class="form-label">Quién gestiona la avería *</label>
+            <select name="gestion_averia" id="gestionAveria" class="form-select campo-averia">
+                <option value="EXTERNA" <?= $gestion_averia_val === 'EXTERNA' ? 'selected' : '' ?>>
+                    RAU / Empresa externa (requiere nº de asunto)
+                </option>
+                <option value="INTERNA" <?= $gestion_averia_val === 'INTERNA' ? 'selected' : '' ?>>
+                    GATI (reparación interna, sin nº de asunto)
+                </option>
+            </select>
+            <p class="form-text mb-0">
+                Si interviene una empresa, se solicitará el nº de asunto a RAU. Para reparaciones internas, no se generará número.
+            </p>
+        </div>
+        <div class="col-md-4">
             <label class="form-label">Tipo de avería *</label>
             <input type="text" name="tipo_averia" class="form-control campo-averia"
                    value="<?= htmlspecialchars($tipo_averia_val) ?>"
                    placeholder="Ej: No enciende, Pantalla rota, Disco defectuoso...">
         </div>
-        <div class="col-md-4">
+        <div class="col-md-4" id="grupoNumAsunto">
             <label class="form-label">Nº de asunto (empresa externa) *</label>
             <input type="text" name="num_asunto" class="form-control campo-averia"
                    value="<?= htmlspecialchars($num_asunto_val) ?>"
@@ -909,19 +1353,30 @@ $mostrarAveria   = (strcasecmp($equipo['estado'] ?? '', 'Averiado') === 0);
 </p>
         </div>
 
-        <div class="col-md-4">
-            <label class="form-label">Reparación realizada por: </label>
+        <div class="col-md-4" id="grupoEmpresaExt">
+            <label class="form-label">Reparación realizada por</label>
             <input type="text" name="empresa_ext" class="form-control campo-averia"
                    value="<?= htmlspecialchars($empresa_ext_val) ?>"
-                   placeholder="Nombre de la empresa de soporte o 'Interna'">
-                               <p class="form-text mb-3">
-    La empresa externa notifcada por RAU con el número de asunto o indicar 'Interna'.
-</p>
+                   placeholder="Nombre de la empresa asignada por RAU">
+            <p class="form-text mb-3">
+                Completar cuando lo gestiona una empresa externa; para GATI puede dejarlo en blanco.
+            </p>
         </div>
         <div class="col-12">
             <label class="form-label">Descripción de la avería</label>
             <textarea name="desc_averia" class="form-control campo-averia" rows="3"
                       placeholder="Describe brevemente el problema, pruebas realizadas, etc."><?= htmlspecialchars($desc_averia_val) ?></textarea>
+        </div>
+    </div>
+
+    <div id="rauEmailBox" class="alert alert-info mt-3" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="mb-0">Texto para correo a RAU</strong>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="copyRauEmail">Copiar</button>
+        </div>
+        <textarea class="form-control" id="rauEmailBody" rows="7" readonly></textarea>
+        <div class="form-text">
+            Copia y pega este texto en GroupWise para solicitar nº de asunto y empresa.
         </div>
     </div>
 </div>
@@ -1109,32 +1564,151 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', function () {
     const radiosEstado  = document.querySelectorAll('input[name="estado"]');
     const bloqueAveria  = document.getElementById('bloqueAveria');
+    const selectGestion = document.getElementById('gestionAveria');
+    const grupoNumAsunto = document.getElementById('grupoNumAsunto');
+    const grupoEmpresaExt = document.getElementById('grupoEmpresaExt');
+    const inputNumAsunto = document.querySelector('input[name="num_asunto"]');
+    const inputEmpresaExt = document.querySelector('input[name="empresa_ext"]');
+    const rauEmailBox   = document.getElementById('rauEmailBox');
+    const rauEmailBody  = document.getElementById('rauEmailBody');
+    const copyRauEmail  = document.getElementById('copyRauEmail');
 
-    if (radiosEstado.length > 0 && bloqueAveria) {
+    const inputsRau = [
+        'input[name="etiqueta"]',
+        'select[name="tipo"]',
+        'input[name="marca"]',
+        'input[name="modelo"]',
+        'input[name="numero_serie"]',
+        'select[name="hostname"]',
+        'input[name="usuario_asignado"]',
+        'select[name="departamento"]',
+        'select[name="seccion_id"]',
+        'select[name="ubicacion"]',
+        'select[name="ip"]',
+        'input[name="tipo_averia"]',
+        'textarea[name="desc_averia"]'
+    ].map(sel => document.querySelector(sel)).filter(Boolean);
 
-        function toggleAveria() {
-            const seleccionado = document.querySelector('input[name="estado"]:checked');
-            if (!seleccionado) {
-                bloqueAveria.style.display = 'none';
-                return;
-            }
+    function toggleCamposGestion() {
+        const esInterna = (selectGestion?.value || '').toUpperCase() === 'INTERNA';
 
-            const val = seleccionado.value.toLowerCase(); // 'Activo', 'Averiado', etc.
-            if (val === 'averiado') {
-                bloqueAveria.style.display = '';   // se muestra
-            } else {
-                bloqueAveria.style.display = 'none'; // se oculta
-            }
+        if (grupoNumAsunto) {
+            grupoNumAsunto.style.display = esInterna ? 'none' : '';
+        }
+        if (grupoEmpresaExt) {
+            grupoEmpresaExt.style.display = esInterna ? 'none' : '';
+        }
+        if (inputNumAsunto) {
+            inputNumAsunto.required = false;
+        }
+        if (inputEmpresaExt) {
+            inputEmpresaExt.required = false;
+        }
+        buildRauEmail();
+    }
+
+    function toggleAveria() {
+        if (!bloqueAveria) return;
+        const seleccionado = document.querySelector('input[name="estado"]:checked');
+        if (!seleccionado) {
+            bloqueAveria.style.display = 'none';
+            toggleCamposGestion();
+            buildRauEmail();
+            return;
         }
 
-        // Escuchar cambios en todos los radios
-        radiosEstado.forEach(radio => {
-            radio.addEventListener('change', toggleAveria);
-        });
-
-        // Estado inicial al cargar la página
-        toggleAveria();
+        const val = seleccionado.value.toLowerCase(); // 'Activo', 'Averiado', etc.
+        if (val === 'averiado') {
+            bloqueAveria.style.display = '';   // se muestra
+        } else {
+            bloqueAveria.style.display = 'none'; // se oculta
+        }
+        toggleCamposGestion();
     }
+
+    function buildRauEmail() {
+        const esInterna = (selectGestion?.value || '').toUpperCase() === 'INTERNA';
+        const bloqueVisible = bloqueAveria && bloqueAveria.style.display !== 'none';
+        if (!rauEmailBox || !rauEmailBody) return;
+
+        if (!bloqueVisible || esInterna) {
+            rauEmailBox.style.display = 'none';
+            rauEmailBody.value = '';
+            return;
+        }
+
+        const getVal = (el) => (el?.value || '').trim();
+        const getText = (el) => {
+            if (!el) return '';
+            if (el.tagName === 'SELECT') {
+                const opt = el.selectedOptions && el.selectedOptions[0];
+                return (opt?.textContent || '').trim();
+            }
+            return getVal(el);
+        };
+
+        const etiqueta    = getVal(inputsRau[0]) || ('EQ-' + <?= (int)$equipo['id'] ?>);
+        const tipo        = getText(inputsRau[1]);
+        const marca       = getVal(inputsRau[2]);
+        const modelo      = getVal(inputsRau[3]);
+        const serie       = getVal(inputsRau[4]);
+        const servicio    = getText(inputsRau[5]);
+        const usuario     = getVal(inputsRau[6]);
+        const depto       = getText(inputsRau[7]);
+        const seccion     = getText(inputsRau[8]);
+        const ubicacion   = getText(inputsRau[9]);
+        const ip          = getText(inputsRau[10]);
+        const tipoAv      = getVal(inputsRau[11]);
+        const descAv      = getVal(inputsRau[12]);
+
+        const asunto = `Solicitud RAU - Avería equipo ${etiqueta}`;
+        const cuerpo = [
+            asunto,
+            '',
+            `Equipo: ${etiqueta} (ID ${<?= (int)$equipo['id'] ?>})`,
+            `Tipo/Marca/Modelo: ${[tipo, marca, modelo].filter(Boolean).join(' ')}`,
+            `Nº serie: ${serie || 'N/D'}`,
+            `Servicio: ${servicio || 'N/D'}`,
+            `Usuario asignado: ${usuario || 'N/D'}`,
+            `Departamento: ${depto || 'N/D'}`,
+            `Sección: ${seccion || 'N/D'}`,
+            `Ubicación: ${ubicacion || 'N/D'}`,
+            `IP principal: ${ip || 'N/D'}`,
+            '',
+            `Tipo de avería: ${tipoAv || 'N/D'}`,
+            `Descripción: ${descAv || 'N/D'}`,
+            '',
+            'Solicito nº de asunto y empresa que atenderá la incidencia.'
+        ].join('\\n');
+
+        rauEmailBody.value = cuerpo;
+        rauEmailBox.style.display = '';
+    }
+
+    // Escuchar cambios en todos los radios
+    radiosEstado.forEach(radio => {
+        radio.addEventListener('change', toggleAveria);
+    });
+    if (selectGestion) {
+        selectGestion.addEventListener('change', toggleCamposGestion);
+    }
+    inputsRau.forEach(el => {
+        el.addEventListener('input', buildRauEmail);
+        el.addEventListener('change', buildRauEmail);
+    });
+    if (selectGestion) {
+        selectGestion.addEventListener('change', buildRauEmail);
+    }
+    if (copyRauEmail && rauEmailBody) {
+        copyRauEmail.addEventListener('click', () => {
+            rauEmailBody.select();
+            document.execCommand('copy');
+        });
+    }
+
+    // Estado inicial al cargar la página
+    toggleAveria();
+    buildRauEmail();
 });
 </script>
 
@@ -1144,18 +1718,44 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', function () {
     const tipoSelect       = document.querySelector('select[name="tipo"]');
     const bloqueMonitores  = document.getElementById('bloque-monitores');
+    const bloqueImei       = document.getElementById('bloque-imei-pti');
+    const bloqueSim        = document.getElementById('bloque-sim-pti');
+    const bloqueDock       = document.getElementById('bloque-dock-pti');
 
     function actualizarBloqueMonitores() {
         if (!tipoSelect) return;
         const valor = (tipoSelect.value || '').toUpperCase();
-        if (valor === 'PC' || valor === 'PORTATIL' || valor === 'PORTÁTIL') {
+        const esPortatil = valor.includes('PORTATIL') || valor.includes('PORTÁTIL') || valor === 'PTI' || valor === 'SITEL';
+        const esPTI = valor.includes('PTI');
+        if (valor === 'PC' || esPortatil) {
             bloqueMonitores.style.display = 'block';
         } else {
             bloqueMonitores.style.display = 'none';
         }
+        if (bloqueImei) {
+            bloqueImei.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const inputImei = bloqueImei.querySelector('input[name="imei"]');
+                if (inputImei) inputImei.value = '';
+            }
+        }
+        if (bloqueSim) {
+            bloqueSim.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const selectSim = bloqueSim.querySelector('select[name="sim_id_pti"]');
+                if (selectSim) selectSim.value = '';
+            }
+        }
+        if (bloqueDock) {
+            bloqueDock.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const selectDock = bloqueDock.querySelector('select[name="dock_id_pti"]');
+                if (selectDock) selectDock.value = '';
+            }
+        }
     }
 
-    if (tipoSelect && bloqueMonitores) {
+    if (tipoSelect) {
         tipoSelect.addEventListener('change', actualizarBloqueMonitores);
         actualizarBloqueMonitores();
     }
@@ -1210,6 +1810,129 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('formEditarEquipo');
+    if (!form) return;
+    let confirmacionAceptada = false;
+
+    const selectUbicacion = form.querySelector('select[name="ubicacion"]');
+    const selectDepartamento = form.querySelector('select[name="departamento"]');
+    const selectSeccion = form.querySelector('select[name="seccion_id"]');
+    const selectIp = form.querySelector('select[name="ip"]');
+    const resumenCambios = document.getElementById('resumenCambioCampos');
+    const resumenDestino = document.getElementById('resumenDestinoMovimiento');
+    const avisoIp = document.getElementById('avisoIpMovimiento');
+    const textoIp = document.getElementById('textoIpMovimiento');
+    const btnConfirmar = document.getElementById('btnConfirmarMovimiento');
+
+    if (!selectUbicacion || !selectDepartamento || !selectSeccion) return;
+
+    const original = {
+        ubicacion: (<?= json_encode((string)($equipo['ubicacion'] ?? '')) ?> || '').toUpperCase().trim(),
+        departamento: (<?= json_encode((string)($equipo['departamento'] ?? '')) ?> || '').toUpperCase().trim(),
+        seccionId: String(<?= json_encode((string)((int)($equipo['seccion_id'] ?? 0))) ?> || '')
+    };
+
+    form.addEventListener('submit', function (e) {
+        const actual = {
+            ubicacion: (selectUbicacion.value || '').toUpperCase().trim(),
+            departamento: (selectDepartamento.value || '').toUpperCase().trim(),
+            seccionId: String(selectSeccion.value || '')
+        };
+
+        const cambios = [];
+        if (actual.ubicacion !== original.ubicacion) {
+            cambios.push('Ubicación');
+        }
+        if (actual.departamento !== original.departamento) {
+            cambios.push('Departamento');
+        }
+        if (actual.seccionId !== original.seccionId) {
+            cambios.push('Sección');
+        }
+
+        if (cambios.length === 0 || confirmacionAceptada) return;
+
+        const txtUbicacion = selectUbicacion.selectedOptions[0]?.textContent?.trim() || '-';
+        const txtDepartamento = selectDepartamento.selectedOptions[0]?.textContent?.trim() || '-';
+        const txtSeccion = selectSeccion.selectedOptions[0]?.textContent?.trim() || '-';
+
+        e.preventDefault();
+
+        if (!window.bootstrap || !btnConfirmar || !resumenCambios || !resumenDestino) {
+            const mensaje =
+                'Has cambiado: ' + cambios.join(', ') + '.\n\n' +
+                'Nuevo destino del equipo:\n' +
+                '- Ubicación: ' + txtUbicacion + '\n' +
+                '- Departamento: ' + txtDepartamento + '\n' +
+                '- Sección: ' + txtSeccion + '\n\n' +
+                '¿Confirmas el movimiento?';
+            window.appDialogs.confirm(mensaje, {
+                title: 'Confirmar movimiento interno',
+                okText: 'Confirmar y guardar'
+            }).then(function (ok) {
+                if (!ok) return;
+                confirmacionAceptada = true;
+                form.submit();
+            });
+            return;
+        }
+
+        resumenCambios.innerHTML = cambios.map(c => '<span class="badge bg-warning text-dark me-1">' + c + '</span>').join('');
+        resumenDestino.innerHTML =
+            '<li><strong>Ubicación:</strong> ' + txtUbicacion + '</li>' +
+            '<li><strong>Departamento:</strong> ' + txtDepartamento + '</li>' +
+            '<li><strong>Sección:</strong> ' + txtSeccion + '</li>';
+
+        const ipActual = (selectIp?.value || '').trim();
+        if (ipActual !== '' && avisoIp && textoIp) {
+            textoIp.textContent = ipActual;
+            avisoIp.classList.remove('d-none');
+        } else if (avisoIp && textoIp) {
+            textoIp.textContent = '';
+            avisoIp.classList.add('d-none');
+        }
+
+        const modalEl = document.getElementById('confirmarMovimientoModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+
+        btnConfirmar.onclick = function () {
+            confirmacionAceptada = true;
+            modal.hide();
+            form.submit();
+        };
+    });
+});
+</script>
+
+<div class="modal fade" id="confirmarMovimientoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Confirmar movimiento interno</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Se detectaron cambios en:</p>
+                <div id="resumenCambioCampos" class="mb-3"></div>
+                <p class="mb-2">Nuevo destino del equipo:</p>
+                <ul id="resumenDestinoMovimiento" class="mb-0"></ul>
+                <div id="avisoIpMovimiento" class="alert alert-warning mt-3 mb-0 d-none">
+                    IP principal detectada: <strong id="textoIpMovimiento"></strong>.<br>
+                    Esta IP se mantendrá con el equipo tras el movimiento.<br>
+                    Si no quieres mantenerla, pulsa <strong>Cancelar</strong>, cambia la IP y vuelve a guardar.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnConfirmarMovimiento">Confirmar y guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <?php

@@ -2,6 +2,8 @@
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/logger.php';
+require_once __DIR__ . '/includes/recibos_pdf_helper.php';
+ensureRecibosSchema($pdo);
 
 // Listado de movimientos de equipos
 $stmt = $pdo->query("
@@ -14,7 +16,6 @@ $stmt = $pdo->query("
     FROM equipos_movimientos m
     JOIN equipos e ON e.id = m.id_equipo
     ORDER BY m.fecha DESC
-    LIMIT 500
 ");
 $movimientos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -29,7 +30,7 @@ include __DIR__ . '/includes/header.php';
     <div class="card">
         <div class="card-body">
             <p class="mb-2 small text-muted">
-                Últimos 500 movimientos registrados (entregas, recogidas, préstamos y devoluciones).
+                Histórico completo de movimientos registrados (entregas, recogidas, préstamos y devoluciones).
             </p>
 
             <div class="table-responsive">
@@ -77,7 +78,7 @@ include __DIR__ . '/includes/header.php';
                                 $firmaTok  = $m['firma_token'] ?? '';
                             ?>
                             <tr>
-                                <td><?= htmlspecialchars($m['fecha'] ?? '') ?></td>
+                                <td><?= date("d-m-y H:i", strtotime(htmlspecialchars($m['fecha'] ?? '')))  ?></td>
                                 <td>
                                     <span class="badge bg-<?= $badgeTipo ?>">
                                         <?= htmlspecialchars(ucfirst($tipo)) ?>
@@ -109,11 +110,19 @@ include __DIR__ . '/includes/header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a href="recibo_movimiento.php?id=<?= (int)$m['id'] ?>"
-                                    target="_blank"
-                                    class="btn btn-sm btn-outline-secondary">
-                                        Recibo
-                                    </a>
+                                    <?php if (!empty($pdfPath)): ?>
+                                        <a href="<?= htmlspecialchars($pdfPath) ?>"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-secondary">
+                                            Recibo PDF
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="recibo_movimiento.php?id=<?= (int)$m['id'] ?>"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-secondary">
+                                            Recibo
+                                        </a>
+                                    <?php endif; ?>
                                 </td>
 
                             </tr>

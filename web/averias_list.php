@@ -145,10 +145,22 @@ $averias = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?= htmlspecialchars($av['tipo_averia']) ?>
                 </td>
 
-                <td><?= htmlspecialchars($av['num_asunto']) ?></td>
-                <td><?= htmlspecialchars($av['empresa_ext']) ?></td>
-                <td><?= htmlspecialchars($av['fecha_creacion']) ?></td>
-                <td><?= htmlspecialchars($av['fecha_cierre'] ?? '-') ?></td>
+                <td>
+                    <?php if (!empty($av['num_asunto'])): ?>
+                        <?= htmlspecialchars($av['num_asunto']) ?>
+                    <?php else: ?>
+                        <span class="text-muted">Sin nº (GATI)</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if (!empty($av['empresa_ext'])): ?>
+                        <?= htmlspecialchars($av['empresa_ext']) ?>
+                    <?php else: ?>
+                        <span class="text-muted">GATI (interna) / Pendiente</span>
+                    <?php endif; ?>
+                </td>
+                <td><?= date("d-m-y H:i", strtotime(htmlspecialchars($av['fecha_creacion'])))  ?></td>
+                <td><?= date("d-m-y H:i", strtotime( htmlspecialchars($av['fecha_cierre'] ?? '-'))) ?></td>
                 <td>
                     <?php if ($av['estado'] === 'ABIERTA'): ?>
                         <span class="badge bg-danger">ABIERTA</span>
@@ -173,7 +185,7 @@ $averias = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <!-- Cerrar avería (solo si está abierta) -->
                     <?php if ($av['estado'] === 'ABIERTA'): ?>
                         <a class="btn btn-sm btn-success"
-                        href="averia_cerrar.php?id=<?= $av['id'] ?>">
+                        href="averia_cerrar.php?id=<?= $av['id'] ?>&equipo_id=<?= $av['equipo_id'] ?>">
                             Cerrar
                         </a>
                     <?php endif; ?>

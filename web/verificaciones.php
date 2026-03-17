@@ -1,7 +1,6 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/verificaciones.php';
 
 ensureTablaVerificaciones($pdo);
@@ -49,6 +48,7 @@ $f_departamento= strtoupper(trim($_GET['departamento'] ?? ''));
 $f_seccion     = $_GET['seccion'] ?? '';
 $f_estado      = trim($_GET['estado'] ?? '');
 $f_dias        = isset($_GET['dias']) ? max(0, (int)$_GET['dias']) : 0;
+$f_buscar      = trim($_GET['buscar'] ?? '');
 
 $where = [];
 $params = [];
@@ -72,6 +72,19 @@ if ($f_estado !== '') {
 if ($f_dias > 0) {
     $where[] = 'ev.fecha >= DATE_SUB(NOW(), INTERVAL :dias DAY)';
     $params[':dias'] = $f_dias;
+}
+if ($f_buscar !== '') {
+    $where[] = "(
+        CAST(ev.equipo_id AS CHAR) LIKE :buscar
+        OR COALESCE(ev.ip, '') LIKE :buscar
+        OR COALESCE(ev.notas, '') LIKE :buscar
+        OR COALESCE(e.etiqueta, '') LIKE :buscar
+        OR COALESCE(e.numero_serie, '') LIKE :buscar
+        OR COALESCE(e.marca, '') LIKE :buscar
+        OR COALESCE(e.modelo, '') LIKE :buscar
+        OR COALESCE(e.usuario_asignado, '') LIKE :buscar
+    )";
+    $params[':buscar'] = '%' . $f_buscar . '%';
 }
 
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -121,12 +134,29 @@ if ($f_estado !== '') {
     $whereEquipos[] = 'e.estado = :estado_eq';
     $paramsEquipos[':estado_eq'] = $f_estado;
 }
+if ($f_buscar !== '') {
+    $whereEquipos[] = "(
+        CAST(e.id AS CHAR) LIKE :buscar_eq
+        OR COALESCE(e.etiqueta, '') LIKE :buscar_eq
+        OR COALESCE(e.numero_serie, '') LIKE :buscar_eq
+        OR COALESCE(e.marca, '') LIKE :buscar_eq
+        OR COALESCE(e.modelo, '') LIKE :buscar_eq
+        OR COALESCE(e.usuario_asignado, '') LIKE :buscar_eq
+        OR COALESCE(e.hostname, '') LIKE :buscar_eq
+        OR COALESCE(e.departamento, '') LIKE :buscar_eq
+        OR COALESCE(e.ubicacion, '') LIKE :buscar_eq
+        OR COALESCE(s.nombre, '') LIKE :buscar_eq
+        OR COALESCE(ip.ip, '') LIKE :buscar_eq
+    )";
+    $paramsEquipos[':buscar_eq'] = '%' . $f_buscar . '%';
+}
 $whereEquiposSql = $whereEquipos ? 'WHERE ' . implode(' AND ', $whereEquipos) : '';
 
 $sqlEquipos = "
     SELECT
         e.id,
         e.etiqueta,
+        e.numero_serie,
         e.tipo,
         e.marca,
         e.modelo,
@@ -162,6 +192,7 @@ $ubicaciones = $pdo->query("SELECT nombre FROM ubicaciones ORDER BY nombre ASC")
 $departamentos = $pdo->query("SELECT nombre FROM departamentos ORDER BY nombre ASC")->fetchAll(PDO::FETCH_COLUMN);
 $secciones = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC")->fetchAll(PDO::FETCH_ASSOC);
 
+require_once __DIR__ . '/includes/header.php';
 ?>
 <div class="container mb-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -187,6 +218,16 @@ $secciones = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC")
     <div class="card mb-3 shadow-sm">
         <div class="card-body">
             <form class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small mb-1">Buscador general</label>
+                    <input
+                        type="text"
+                        name="buscar"
+                        class="form-control form-control-sm"
+                        value="<?= htmlspecialchars($f_buscar) ?>"
+                        placeholder="Etiqueta, Nº serie, IP, usuario, modelo..."
+                    >
+                </div>
                 <div class="col-md-3">
                     <label class="form-label small mb-1">Ubicación verificada</label>
                     <select name="ubicacion" class="form-select form-select-sm">
@@ -250,7 +291,7 @@ $secciones = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC")
                 <table class="table table-sm table-striped align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>ID / Etiqueta</th>
+                            <th>Etiqueta / Nº serie</th>
                             <th>Tipo / Modelo</th>
                             <th>Usuario</th>
                             <th>Depto</th>
@@ -270,7 +311,9 @@ $secciones = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC")
                                         <a href="equipo_ver.php?id=<?= (int)$eq['id'] ?>">
                                             <?= htmlspecialchars($eq['etiqueta'] ?: ('EQ-' . $eq['id'])) ?>
                                         </a>
-                                        <div class="text-muted small">ID: <?= (int)$eq['id'] ?></div>
+                                        <div class="text-muted small">
+                                            SN: <?= htmlspecialchars($eq['numero_serie'] ?: '-') ?>
+                                        </div>
                                     </td>
                                     <td><?= htmlspecialchars(trim(($eq['tipo'] ?? '') . ' ' . ($eq['marca'] ?? '') . ' ' . ($eq['modelo'] ?? ''))) ?></td>
                                     <td><?= htmlspecialchars($eq['usuario_asignado'] ?? '') ?></td>
@@ -343,7 +386,11 @@ $secciones = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC")
                                     <td><?= htmlspecialchars($v['estado_equipo'] ?? '') ?></td>
                                     <td><?= htmlspecialchars($v['ip'] ?? '') ?></td>
                                     <td><?= htmlspecialchars($v['usuario_verificador'] ?? '') ?></td>
-                                    <td class="text-muted"><?= nl2br(htmlspecialchars($v['notas'] ?? '')) ?></td>
+                                    <td class="text-muted">
+                                        <div class="small text-break" style="max-width: 260px; white-space: pre-line;">
+                                            <?= htmlspecialchars($v['notas'] ?? '') ?>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>

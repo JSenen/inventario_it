@@ -6,6 +6,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Inventario Informático</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="shortcut icon" href="assets/favicon.ico">
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Bootstrap local -->
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css"> 
@@ -106,6 +109,12 @@
     font-weight: bold;
     text-align: center;
 }
+.estado-baja-definitiva {
+    background-color: #111 !important;
+    color: #fff !important;
+    font-weight: bold;
+    text-align: center;
+}
 .estado-almacen {
     background-color: #939595ff !important;  /* azul */
     color: white !important;
@@ -119,6 +128,36 @@
     font-weight: bold;
     text-align: center;
 }
+
+/* Resalta etiquetas visibles en selects/listados */
+.etiqueta-ok {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.2rem 0.45rem;
+    background: linear-gradient(180deg, #2f85ff 0%, #175fce 100%) !important;
+    color: #fff !important;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.15), 0 1px 2px rgba(0, 0, 0, 0.18);
+    border-radius: 0.35rem;
+}
+.etiqueta-missing {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.2rem 0.45rem;
+    background: #f1f3f5;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    border-radius: 0.35rem;
+}
+.etiqueta-inline {
+    display: inline-block;
+    width: auto;
+}
 .estado-provado {
     background-color: #d876cfff !important;  /* cyan */
     color: white !important;
@@ -126,11 +165,15 @@
     text-align: center;
 }
 
-.etiqueta-ok {
-    background-color: #2c7ee2ff !important;  /* azul */
+.etiqueta-numero {
+    display: block;
+    background-color: #d65252ff !important;  /* rojo */
     color: white !important;
     font-weight: bold;
     text-align: center;
+    font-size: 18px;
+    padding: 0.2rem 0.45rem;
+    border-radius: 0.35rem;
 }
 
 .custom-dropdown-menu {
@@ -183,6 +226,45 @@
 .campo-etiqueta {
     background-color: #2c7ee2ff !important;
     color: white !important;
+}
+
+/* Resalte de datos sensibles de usuario/telefono */
+.dato-contacto-destacado {
+    display: inline-block;
+    padding: 0.2rem 0.45rem;
+    border-radius: 0.35rem;
+    background: #050505;
+    color: #9cff8a;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+}
+.dato-contacto-destacado-vacio {
+    background: #1f1f1f;
+    color: #bfc6c9;
+}
+
+.sim-numero-destacado {
+    display: inline-block;
+    padding: 0.16rem 0.45rem;
+    border-radius: 0.35rem;
+    background: #c81e1e;
+    color: #fff;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.sim-numero-corto {
+    display: inline-block;
+    padding: 0.16rem 0.45rem;
+    border-radius: 0.35rem;
+    background: #e69b54ff;
+    color: #fff;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.sim-numero-destacado-vacio {
+    background: #5e5e5e;
+    color: #f0f0f0;
 }
 #tablaEquipos
 #tablaTelefonos
@@ -255,6 +337,12 @@
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
 }
 
+.thumb-grid-wrapper {
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
 .seleccionar-imagen.active-selection {
     border: 1px solid #0d6efd !important;
     box-shadow: 0 0 0 2px rgba(13,110,253,0.2);
@@ -288,6 +376,117 @@
     background-color: #f1f1f1;
 }
 
+:root {
+    --sidebar-width: 280px;
+}
+
+.sidebar-toggle {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 1100;
+}
+
+.app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: #212529;
+    color: #fff;
+    z-index: 1090;
+    overflow-y: auto;
+    padding: 50px 12px;
+    transition: transform 0.2s ease;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.25);
+}
+
+.app-sidebar .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.app-sidebar .sidebar-brand img {
+    height: 56px;
+}
+
+.app-sidebar .sidebar-brand a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.app-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.app-sidebar .nav-link:hover,
+.app-sidebar .nav-link:focus,
+.app-sidebar .nav-link.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 0.35rem;
+}
+
+.app-sidebar .dropdown-menu {
+    position: static !important;
+    float: none;
+    transform: none !important;
+    margin: 4px 0 8px 10px;
+    min-width: unset;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.app-sidebar .dropdown-item {
+    white-space: normal;
+}
+
+.app-sidebar .sidebar-footer {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.app-main {
+    margin-left: calc(var(--sidebar-width) + 12px);
+    transition: margin-left 0.2s ease;
+}
+
+body > footer {
+    margin-left: var(--sidebar-width);
+    transition: margin-left 0.2s ease;
+}
+
+body.sidebar-collapsed .app-sidebar {
+    transform: translateX(-100%);
+}
+
+body.sidebar-collapsed .app-main,
+body.sidebar-collapsed > footer {
+    margin-left: 0;
+}
+
+body.sidebar-collapsed .app-main {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 991.98px) {
+    .app-main,
+    body > footer {
+        margin-left: 0 !important;
+    }
+    .app-sidebar {
+        transform: translateX(-100%);
+    }
+    body.sidebar-open .app-sidebar {
+        transform: translateX(0);
+    }
+}
+
 </style>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </head>
@@ -296,6 +495,23 @@
 <?php
 // En qué página estoy (index.php, dashboard.php, etc.)
 $currentPage = basename($_SERVER['PHP_SELF']);
+$adminTab = strtolower((string)($_GET['tab'] ?? ''));
+
+$isDashboard = ($currentPage === 'dashboard.php');
+$isEquipos = ($currentPage === 'index.php') || str_starts_with($currentPage, 'equipo_');
+$isRedes = in_array($currentPage, ['redes.php', 'redes_gestion.php', 'buscar_ip.php', 'plano_red.php'], true);
+$isMoviles = in_array($currentPage, ['telefonos.php', 'sims.php'], true)
+    || str_starts_with($currentPage, 'telefono_')
+    || str_starts_with($currentPage, 'ficheros_')
+    || str_starts_with($currentPage, 'sim_');
+$isMateriales = ($currentPage === 'materiales.php');
+$isAverias = ($currentPage === 'averias_list.php') || str_starts_with($currentPage, 'averia_');
+$isRevistas = ($currentPage === 'verificaciones.php');
+$isManual = ($currentPage === 'manual_usuario.php');
+$isUsuarioAsociado = ($currentPage === 'usuario_asociado.php');
+$isAdmin = ($currentPage === 'admin_catalogos.php') || ($currentPage === 'verificaciones_reportes.php');
+$isRecibos = in_array($currentPage, ['renovaciones.php', 'movimientos.php', 'recibo_movimiento.php', 'recibo_renovacion.php', 'recibo_renovacion_telefono.php', 'bajas_definitivas.php', 'bajas_definitivas_reporte.php'], true);
+$isLogs = ($currentPage === 'actividad_logs.php');
 ?>
 
     <!--
@@ -304,150 +520,147 @@ $currentPage = basename($_SERVER['PHP_SELF']);
          alt="Logo del departamento" 
          style="height:60px;">
     </div> -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid d-flex align-items-center">
-        <img src="assets/logo_departamento.png" 
-             alt="Logo" 
-             style="height:80px; margin-right:15px;">
-        
-        <a class="navbar-brand" href="index.php">Inventario IT</a>
+<button id="sidebarToggle" class="btn btn-dark btn-sm sidebar-toggle" type="button" aria-label="Mostrar u ocultar menú">
+    ☰ Menú
+</button>
 
-        <li class="nav-item">
-    <a class="btn btn-sm btn-outline-light <?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"
-       href="dashboard.php">
+<aside id="appSidebar" class="app-sidebar">
+    <div class="sidebar-brand">
+        <img src="assets/logo_departamento.png" alt="Logo">
+        <a href="index.php">Inventario IT</a>
+    </div>
+
+    <a class="btn btn-sm btn-outline-light w-100 mb-3 <?= $isDashboard ? 'active' : '' ?>" href="dashboard.php">
         Dashboard
     </a>
-</li>
 
+    <ul class="navbar-nav flex-column">
 
-        <!-- Bootstrap 5: data-bs-toggle / data-bs-target -->
-        <button class="navbar-toggler" type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarNav"
-                aria-controls="navbarNav"
-                aria-expanded="false"
-                aria-label="Alternar navegación">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <li class="nav-item">
+            <a class="nav-link <?= $isEquipos ? 'active' : '' ?>" href="index.php">👨🏽‍💻 Equipos</a>
+        </li>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <!-- Menú principal -->
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <!-- Equipos -->
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">👨🏽‍💻 Equipos</a>
-                </li>
-
-                <!-- Redes (submenu) -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                        🛜 Redes
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                        <li><a class="dropdown-item" href="redes.php">Control IPs</a></li>
-                        <li><a class="dropdown-item" href="redes_gestion.php">Gestion Redes</a></li>
-                        <li><a class="dropdown-item" href="buscar_ip.php">Buscar IP</a></li> 
-                        <li><a class="dropdown-item" href="plano_red.php"></i> Plano red</a></li>
-
-
-                    </ul>
-                </li>
-
-                 <!-- Moviles / SIMS -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                     📱 Móviles / SIMS
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                        <li><a class="dropdown-item" href="telefonos.php">Teléfonos</a></li>
-                        <li><a class="dropdown-item" href="sims.php">Tarjetas SIM</a></li>
-                       
-                    </ul>
-                </li>
-
-                <!-- Material / Fungibles -->
-                <li class="nav-item">
-                    <a class="nav-link" href="materiales.php">
-                        📦 Material / Fungibles
-                    </a>
-                </li>
-
-                <!-- Averías -->
-                <li class="nav-item">
-                    <a class="nav-link" href="averias_list.php">⚠️ Gestión de averías</a>
-                </li>
-                <!-- Controles -->
-                <li class="nav-item">
-                    <a class="nav-link" href="verificaciones.php">✅ Controles</a>
-                </li>
-                <!-- Administración (submenu) -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                        Administración
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=usuarios">Usuarios</a></li>
-                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=Puestos">Puestos</a></li>
-                         <li><a class="dropdown-item" href="admin_catalogos.php?tab=ubicaciones">Ubicaciones</a></li>
-                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=departamentos">Departamentos</a></li>
-                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=tipos">Tipos de equipo</a></li>
-                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=servicio">Servicio</a></li>
-                        <li><a class="dropdown-item" href="admin_catalogos.php?tab=secciones">Secciones</a></li>
-                    </ul>
-                </li>
-                <!-- Recibos -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="recibosMenu" role="button"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                        📄 Recibos
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="recibosMenu">
-                        <li><a class="dropdown-item" href="renovaciones.php">Recibos Renovación</a></li>
-                        <li><a class="dropdown-item" href="movimientos.php">Recibos Movimiento</a></li>
-                    </ul>
-                </li>
-                <!-- Portátiles Formación -->
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                         Portátiles Formación
-                    </a>
-                </li>
-                <!-- Logs solo para admin -->   
-                <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="actividad_logs.php">📝 Logs</a>
-                    </li>
-                <?php endif; ?>
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle <?= $isMoviles ? 'active' : '' ?>" href="#" id="movilesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?= $isMoviles ? 'true' : 'false' ?>">
+                📱 Móviles / SIMS
+            </a>
+            <ul class="dropdown-menu <?= $isMoviles ? 'show' : '' ?>" aria-labelledby="movilesDropdown">
+                <li><a class="dropdown-item <?= str_starts_with($currentPage, 'telefono') ? 'active' : '' ?>" href="telefonos.php">Teléfonos</a></li>
+                <li><a class="dropdown-item <?= str_starts_with($currentPage, 'sim') || $currentPage === 'sims.php' ? 'active' : '' ?>" href="sims.php">Tarjetas SIM</a></li>
             </ul>
-<!-- <form class="d-flex ms-auto" action="busqueda.php" method="get" role="search">
-    <input
-        class="form-control form-control-sm me-2"
-        type="search"
-        name="q"
-        placeholder="Buscar equipo o IP..."
-        aria-label="Buscar"
-    >
-    <button class="btn btn-sm btn-outline-light" type="submit">
-        Buscar
-    </button>
-</form> -->
+        </li>
 
-            <!-- Info de usuario + botón Salir -->
-            <?php if (!empty($_SESSION['tip'])): ?>
-                <span class="navbar-text me-3">
-                    <?= htmlspecialchars($_SESSION['tip']) ?> (<?= htmlspecialchars($_SESSION['rol']) ?>)
-                </span>
-                <a href="logout.php" class="btn btn-outline-light btn-sm">
-                    Salir
-                </a>
-            <?php endif; ?>
+        <li class="nav-item">
+            <a class="nav-link" href="/laptop-loans/public/?r=dashboard/index">💻 Portátiles Formación</a>
+        </li>
+
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle <?= $isRedes ? 'active' : '' ?>" href="#" id="redesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?= $isRedes ? 'true' : 'false' ?>">
+                🛜 Redes
+            </a>
+            <ul class="dropdown-menu <?= $isRedes ? 'show' : '' ?>" aria-labelledby="redesDropdown">
+                <li><a class="dropdown-item <?= $currentPage === 'redes.php' ? 'active' : '' ?>" href="redes.php">Control IPs</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'redes_gestion.php' ? 'active' : '' ?>" href="redes_gestion.php">Gestion Redes</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'buscar_ip.php' ? 'active' : '' ?>" href="buscar_ip.php">Buscar IP</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'plano_red.php' ? 'active' : '' ?>" href="plano_red.php">Plano red</a></li>
+            </ul>
+        </li>
+
+        
+
+        <li class="nav-item">
+            <a class="nav-link <?= $isMateriales ? 'active' : '' ?>" href="materiales.php">📦 Material / Fungibles</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $currentPage === 'ficheros.php' ? 'active' : '' ?>" href="ficheros.php">🗂️ Ficheros</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $isAverias ? 'active' : '' ?>" href="averias_list.php">⚠️ Gestión de averías</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $isRevistas ? 'active' : '' ?>" href="verificaciones.php">✅ Revistas</a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link <?= $isUsuarioAsociado ? 'active' : '' ?>" href="usuario_asociado.php">👤 Activos por TIP</a>
+        </li>
+
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle <?= $isAdmin ? 'active' : '' ?>" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?= $isAdmin ? 'true' : 'false' ?>">
+                &#9881; Administración
+            </a>
+            <ul class="dropdown-menu <?= $isAdmin ? 'show' : '' ?>" aria-labelledby="adminDropdown">
+                <li><a class="dropdown-item <?= $currentPage === 'admin_catalogos.php' && $adminTab === 'usuarios' ? 'active' : '' ?>" href="admin_catalogos.php?tab=usuarios">Usuarios</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'admin_catalogos.php' && $adminTab === 'puestos' ? 'active' : '' ?>" href="admin_catalogos.php?tab=Puestos">Puestos</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'admin_catalogos.php' && $adminTab === 'ubicaciones' ? 'active' : '' ?>" href="admin_catalogos.php?tab=ubicaciones">Ubicaciones</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'admin_catalogos.php' && $adminTab === 'departamentos' ? 'active' : '' ?>" href="admin_catalogos.php?tab=departamentos">Departamentos</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'admin_catalogos.php' && $adminTab === 'tipos' ? 'active' : '' ?>" href="admin_catalogos.php?tab=tipos">Tipos de equipo</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'admin_catalogos.php' && $adminTab === 'servicio' ? 'active' : '' ?>" href="admin_catalogos.php?tab=servicio">Servicio</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'admin_catalogos.php' && $adminTab === 'secciones' ? 'active' : '' ?>" href="admin_catalogos.php?tab=secciones">Secciones</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item <?= $currentPage === 'verificaciones_reportes.php' ? 'active' : '' ?>" href="verificaciones_reportes.php">Reportes verificaciones</a></li>
+            </ul>
+        </li>
+
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle <?= $isRecibos ? 'active' : '' ?>" href="#" id="recibosMenu" role="button" data-bs-toggle="dropdown" aria-expanded="<?= $isRecibos ? 'true' : 'false' ?>">
+                📄 Recibos
+            </a>
+            <ul class="dropdown-menu <?= $isRecibos ? 'show' : '' ?>" aria-labelledby="recibosMenu">
+                <li><a class="dropdown-item <?= $currentPage === 'renovaciones.php' || $currentPage === 'recibo_renovacion.php' || $currentPage === 'recibo_renovacion_telefono.php' ? 'active' : '' ?>" href="renovaciones.php">Recibos Renovación</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'movimientos.php' || $currentPage === 'recibo_movimiento.php' ? 'active' : '' ?>" href="movimientos.php">Recibos Movimiento</a></li>
+                <li><a class="dropdown-item <?= $currentPage === 'bajas_definitivas.php' || $currentPage === 'bajas_definitivas_reporte.php' ? 'active' : '' ?>" href="bajas_definitivas.php">Bajas definitivas</a></li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link <?= $currentPage === 'ficheros.php' ? 'active' : '' ?>" href="equipos_historico.php">💾 Histórico</a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link <?= $isManual ? 'active' : '' ?>" href="manual_usuario.php">📘 Manual</a>
+        </li>
+        <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
+            <li class="nav-item">
+                <a class="nav-link <?= $isLogs ? 'active' : '' ?>" href="actividad_logs.php">📝 Logs</a>
+            </li>
+        <?php endif; ?>
+    </ul>
+
+    <?php if (!empty($_SESSION['tip'])): ?>
+        <div class="sidebar-footer">
+            <div class="small mb-2"><?= htmlspecialchars($_SESSION['tip']) ?> (<?= htmlspecialchars($_SESSION['rol']) ?>)</div>
+            <a href="logout.php" class="btn btn-outline-light btn-sm w-100">Salir</a>
         </div>
-    </div>
-</nav>
+    <?php endif; ?>
+</aside>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var toggle = document.getElementById('sidebarToggle');
+    var storageKey = 'inventario_sidebar_collapsed';
+    var isMobile = window.matchMedia('(max-width: 991.98px)').matches;
+
+    if (isMobile) {
+        document.body.classList.add('sidebar-collapsed');
+    } else if (localStorage.getItem(storageKey) === '1') {
+        document.body.classList.add('sidebar-collapsed');
+    }
+
+    if (!toggle) return;
+
+    toggle.addEventListener('click', function () {
+        if (window.matchMedia('(max-width: 991.98px)').matches) {
+            document.body.classList.toggle('sidebar-open');
+            document.body.classList.toggle('sidebar-collapsed');
+            return;
+        }
+        document.body.classList.toggle('sidebar-collapsed');
+        localStorage.setItem(storageKey, document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
+    });
+});
+</script>
 
 
 
-<div class="container mb-5">
+<div class="container mb-5 app-main">

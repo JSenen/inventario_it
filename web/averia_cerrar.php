@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/logger.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- Procesar cierre con solución ---
     $id_averia = isset($_POST['id_averia']) ? (int)$_POST['id_averia'] : 0;
+    $id_equipo = isset($_POST['equipo_id']) ? (int)$_POST['equipo_id'] : 0;
     $solucion  = trim($_POST['solucion_aplicada'] ?? '');
 
     if ($id_averia <= 0) {
@@ -15,6 +16,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Puedes forzar que haya texto:
     if ($solucion === '') {
         die('Debes indicar la solución aplicada antes de cerrar la avería.');
+    }
+
+    // Intentar recuperar el equipo asociado si no llega por POST
+    if ($id_equipo <= 0) {
+        $stmtEquipo = $pdo->prepare("SELECT equipo_id FROM averias WHERE id = :id");
+        $stmtEquipo->execute([':id' => $id_averia]);
+        $id_equipo = (int)($stmtEquipo->fetchColumn() ?? 0);
     }
 
     $sql = "UPDATE averias
@@ -28,6 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ':solucion' => $solucion,
         ':id'       => $id_averia
     ]);
+
+    if ($id_equipo > 0) {
+        $sql = "UPDATE equipos
+                SET estado = 'Activo'
+                WHERE id = :equipo_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':equipo_id' => $id_equipo]);
+    }
 
     logActividad($pdo, 'CERRAR_AVERIA', 'Avería cerrada: ID=' . $id_averia);
 
@@ -81,6 +97,7 @@ if ($averia['estado'] !== 'ABIERTA') {
 
     <form method="post">
         <input type="hidden" name="id_averia" value="<?= (int)$averia['id'] ?>">
+        <input type="hidden" name="equipo_id" value="<?= (int)$averia['equipo_id'] ?>">
 
         <div class="mb-3">
             <label for="solucion_aplicada" class="form-label">

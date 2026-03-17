@@ -2,6 +2,12 @@
 require_once 'auth.php';
 require_once 'config.php';
 
+function jsonError(string $msg): void {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => $msg]);
+    exit;
+}
+
 // Opcional: para ver errores si algo falla
 // error_reporting(E_ALL);
 // ini_set('display_errors', 1);
@@ -15,7 +21,19 @@ $length = isset($_GET['length']) ? (int)$_GET['length'] : 25;
 $search = $_GET['search']['value'] ?? '';
 
 // Columnas válidas para ordenar
-$columns = ['id', 'marca', 'modelo', 'imei', 'usuario_asignado', 'departamento', 'estado'];
+$columns = [
+    't.id',
+    't.etiqueta',
+    't.id',
+    't.marca',
+    't.numero_serie',
+    't.imei',
+    't.usuario_asignado',
+    't.departamento',
+    's.numero',
+    's.operador',
+    't.estado'
+];
 
 $orderColIndex = isset($_GET['order'][0]['column']) ? (int)$_GET['order'][0]['column'] : 0;
 $orderDir      = $_GET['order'][0]['dir'] ?? 'asc';
@@ -23,50 +41,108 @@ $orderDir      = $orderDir === 'desc' ? 'DESC' : 'ASC';
 $orderColumn   = $columns[$orderColIndex] ?? 'id';
 
 // Filtro
-$where = '';
-$params = [];
+$whereParts = [];
+$params     = [];
 
 if (!empty($search)) {
-    $where = "WHERE marca LIKE :search
-           OR modelo LIKE :search
-           OR imei   LIKE :search
-           OR usuario_asignado LIKE :search
-           OR departamento LIKE :search";
+    $whereParts[] = "(t.etiqueta LIKE :search
+        OR t.marca LIKE :search
+        OR t.modelo LIKE :search
+        OR t.numero_serie LIKE :search
+        OR t.imei LIKE :search
+        OR t.usuario_asignado LIKE :search
+        OR t.departamento LIKE :search
+        OR s.numero LIKE :search
+        OR s.operador LIKE :search
+        OR s.iccid LIKE :search)";
     $params[':search'] = "%$search%";
 }
 
-// Total registros (sin filtro)
-$totalStmt = $pdo->query("SELECT COUNT(*) FROM telefonos");
-$recordsTotal = (int)$totalStmt->fetchColumn();
-
-// Total filtrados
-if ($where) {
-    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM telefonos $where");
-    $countStmt->execute($params);
-    $recordsFiltered = (int)$countStmt->fetchColumn();
-} else {
-    $recordsFiltered = $recordsTotal;
+$estado = $_GET['estado'] ?? '';
+if ($estado !== '') {
+    $whereParts[] = "t.estado = :estado";
+    $params[':estado'] = $estado;
 }
 
+$departamento = $_GET['departamento'] ?? '';
+if ($departamento !== '') {
+    $whereParts[] = "t.departamento = :departamento";
+    $params[':departamento'] = $departamento;
+}
+
+$operador = $_GET['operador'] ?? '';
+if ($operador !== '') {
+    $whereParts[] = "s.operador = :operador";
+    $params[':operador'] = $operador;
+}
+
+$simAsignada = $_GET['sim_asignada'] ?? '';
+if ($simAsignada === 'con') {
+    $whereParts[] = "ts.sim_id IS NOT NULL";
+} elseif ($simAsignada === 'sin') {
+    $whereParts[] = "ts.sim_id IS NULL";
+}
+
+$where = $whereParts ? ('WHERE ' . implode(' AND ', $whereParts)) : '';
+
+$fromClause = "
+    FROM telefonos t
+    LEFT JOIN telefono_sim ts
+        ON ts.telefono_id = t.id
+       AND ts.fecha_liberacion IS NULL
+    LEFT JOIN sims s
+        ON s.id = ts.sim_id
+";
+
+try {
+    // Total registros (sin filtro)
+    $totalStmt = $pdo->query("SELECT COUNT(*) FROM telefonos");
+    $recordsTotal = (int)$totalStmt->fetchColumn();
+
+    // Total filtrados
+    if ($where) {
+        $countStmt = $pdo->prepare("SELECT COUNT(DISTINCT t.id) $fromClause $where");
+        $countStmt->execute($params);
+        $recordsFiltered = (int)$countStmt->fetchColumn();
+    } else {
+        $recordsFiltered = $recordsTotal;
+    }
+
 // Datos
-$sql = "SELECT id, marca, modelo, imei, usuario_asignado, departamento, estado
-        FROM telefonos
+$sql = "SELECT
+            t.id,
+            t.etiqueta,
+            t.imagen,
+            t.marca,
+            t.modelo,
+            t.numero_serie,
+            t.imei,
+            t.usuario_asignado,
+            t.departamento,
+            t.estado,
+            s.id       AS sim_id,
+            s.numero   AS sim_numero,
+            s.operador AS sim_operador
+        $fromClause
         $where
         ORDER BY $orderColumn $orderDir
         LIMIT :start, :length";
 
-$stmt = $pdo->prepare($sql);
+    $stmt = $pdo->prepare($sql);
 
-// Bind de filtro si hay
-foreach ($params as $k => $v) {
-    $stmt->bindValue($k, $v, PDO::PARAM_STR);
+    // Bind de filtro si hay
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, PDO::PARAM_STR);
+    }
+
+    $stmt->bindValue(':start', $start, PDO::PARAM_INT);
+    $stmt->bindValue(':length', $length, PDO::PARAM_INT);
+
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    jsonError('Error en consulta: ' . $e->getMessage());
 }
-
-$stmt->bindValue(':start', $start, PDO::PARAM_INT);
-$stmt->bindValue(':length', $length, PDO::PARAM_INT);
-
-$stmt->execute();
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Construir array de salida
 $data = [];
@@ -77,13 +153,48 @@ foreach ($rows as $r) {
         <a href="telefono_parte.php?id=' . (int)$r['id'] . '" class="btn btn-sm btn-secondary" target="_blank">Parte</a>
     ';
 
+    $simNumero   = trim((string)($r['sim_numero'] ?? ''));
+    $simId       = isset($r['sim_id']) ? (int)$r['sim_id'] : 0;
+    $simOperador = $r['sim_operador'] ?? '';
+    $numeroSerie = $r['numero_serie'] ?? '';
+    $usuarioAsignado = trim((string)($r['usuario_asignado'] ?? ''));
+    $etiquetaTel = trim((string)($r['etiqueta'] ?? ''));
+    $marca = trim((string)($r['marca'] ?? ''));
+    $modelo = trim((string)($r['modelo'] ?? ''));
+    $marcaModelo = trim($marca . ' ' . $modelo);
+    $rutaImagen = trim((string)($r['imagen'] ?? ''));
+
+    $imagenHtml = '<span class="text-muted">Sin imagen</span>';
+    if ($rutaImagen !== '') {
+        $rutaFs = __DIR__ . '/' . ltrim($rutaImagen, '/');
+        if (is_file($rutaFs)) {
+            $imagenHtml = '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Img" style="height:40px; width:auto; object-fit:contain;">';
+        }
+    }
+
+    if ($simId > 0) {
+        $acciones .= '
+            <a
+                href="sim_liberar.php?telefono_id=' . (int)$r['id'] . '&return=' . rawurlencode('telefonos.php') . '"
+                class="btn btn-sm btn-outline-danger"
+                data-confirm-message="Se quitara la SIM de este telefono. Continuar?"
+            >Quitar SIM</a>
+        ';
+    }
+
     $data[] = [
         'id'               => (int)$r['id'],
-        'marca'            => htmlspecialchars($r['marca']),
-        'modelo'           => htmlspecialchars($r['modelo']),
+        'etiqueta'         => $etiquetaTel !== '' ? '<span class="etiqueta-ok">' . htmlspecialchars($etiquetaTel) . '</span>' : '<span class="etiqueta-missing">(sin etiqueta)</span>',
+        'imagen'           => $imagenHtml,
+        'marca_modelo'     => htmlspecialchars($marcaModelo !== '' ? $marcaModelo : '-'),
+        'numero_serie'     => $numeroSerie !== '' ? htmlspecialchars($numeroSerie) : '-',
         'imei'             => htmlspecialchars($r['imei']),
-        'usuario_asignado' => htmlspecialchars($r['usuario_asignado']),
+        'usuario_asignado' => '<span class="dato-contacto-destacado' . ($usuarioAsignado === '' ? ' dato-contacto-destacado-vacio' : '') . '">' . htmlspecialchars($usuarioAsignado !== '' ? $usuarioAsignado : '-') . '</span>',
         'departamento'     => htmlspecialchars($r['departamento']),
+        'sim_numero'       => ($simNumero !== '' && $simId > 0)
+            ? '<a href="sims_ver.php?id=' . $simId . '" class="sim-numero-destacado text-decoration-none">' . htmlspecialchars($simNumero) . '</a>'
+            : '<span class="sim-numero-destacado sim-numero-destacado-vacio">-</span>',
+        'sim_operador'     => $simOperador !== '' ? htmlspecialchars($simOperador) : '-',
         'estado'           => htmlspecialchars($r['estado']),
         'acciones'         => $acciones
     ];

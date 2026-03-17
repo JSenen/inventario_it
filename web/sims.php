@@ -1,7 +1,10 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once __DIR__ . '/includes/sims_schema.php';
 require_once 'includes/header.php';
+
+ensureSimsSchema($pdo);
 
 
 // Total SIMs
@@ -13,6 +16,12 @@ $totalSimsDisponibles = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado
 // SIMs en baja
 $totalSimsBaja = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado = 'Baja'")->fetchColumn();
 
+$operadores = $pdo->query("
+    SELECT DISTINCT operador
+    FROM sims
+    WHERE operador IS NOT NULL AND operador <> ''
+    ORDER BY operador ASC
+")->fetchAll(PDO::FETCH_COLUMN);
 
 
 ?>
@@ -51,14 +60,46 @@ $totalSimsBaja = (int)$pdo->query("SELECT COUNT(*) FROM sims WHERE estado = 'Baj
         <a href="sims_nuevo.php" class="btn btn-primary">Nueva SIM</a>
     </div>
 
+    <!-- Filtros -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label mb-0 small text-muted">Estado</label>
+                    <select id="filtroEstado" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <option value="Disponible">Disponible</option>
+                        <option value="Asignada">Asignada</option>
+                        <option value="Averiada">Averiada</option>
+                        <option value="Baja">Baja</option>
+                    </select>
+                </div>
+                <div class="col-sm-4 col-md-3 col-lg-2">
+                    <label class="form-label mb-0 small text-muted">Operador</label>
+                    <select id="filtroOperador" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <?php foreach ($operadores as $op): ?>
+                            <option value="<?= htmlspecialchars($op) ?>"><?= htmlspecialchars($op) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-sm-4 col-md-3 col-lg-2 d-flex">
+                    <button id="limpiarFiltros" class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <table id="tablaSims" class="table table-striped table-bordered">
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Etiqueta</th>
                 <th>Número</th>
+                <th>Número corto</th>
                 <th>ICCID</th>
                 <th>Operador</th>
-                <th>Tarifa</th>
+                <th>PUK</th>
                 <th>Estado</th>
                 <th>Acciones</th>
             </tr>
@@ -94,24 +135,56 @@ $(document).ready(function () {
         },
         pageLength: 25,
         lengthMenu: [10, 25, 50, 100],
+        stateSave: true,
         dom: 'Bfrtip',
-        buttons: ['copy', 'excel', 'csv', 'print'],
+        buttons: [
+            'copy',
+            {
+                text: 'Excel',
+                action: function (e, dt, node, config) {
+
+                    var params = dt.ajax.params();
+
+                    var query = $.param({
+                        search: params.search.value,
+                        estado: $('#filtroEstado').val(),
+                        operador: $('#filtroOperador').val()
+                    });
+
+                    window.location.href = 'sims_export.php?' + query;
+                }
+            },
+            'csv',
+            'print'
+        ],
+
         columns: [
             { data: 'id' },
+            { data: 'etiqueta' },
             { data: 'numero' },
+            { data: 'numero_corto' },
             { data: 'iccid' },
             { data: 'operador' },
-            { data: 'tarifa' },
+            { data: 'puk' },
             { data: 'estado' },
             { data: 'acciones', orderable: false, searchable: false }
         ],
+        ajax: {
+            url: 'sims_data.php',
+            type: 'GET',
+            data: function (d) {
+                d.estado   = $('#filtroEstado').val() || '';
+                d.operador = $('#filtroOperador').val() || '';
+            }
+        },
            // 👇 AÑADIMOS ESTO
         createdRow: function (row, data, dataIndex) {
             // Índice de la columna "Estado"
             // ID(0), Imagen(1), Nº serie(2), Tipo(3), Marca(4),
             // Usuario(5), Servicio(6), Ubicación(7),
             // IP principal(8), Red(9), Estado(10), Acciones(11)
-            var indiceEstado = 5;
+
+            var indiceEstado = 7;
 
             var $celda = $('td:eq(' + indiceEstado + ')', row);
             var estado = $celda.text().toLowerCase().trim();
@@ -134,6 +207,16 @@ $(document).ready(function () {
             searchPlaceholder: "Buscar en la tabla...",
             url: 'vendor/datatables/i18n/es-ES.json'
         }
+    });
+
+    $('#filtroEstado, #filtroOperador').on('change', function () {
+        $('#tablaSims').DataTable().ajax.reload();
+    });
+
+    $('#limpiarFiltros').on('click', function () {
+        $('#filtroEstado').val('');
+        $('#filtroOperador').val('');
+        $('#tablaSims').DataTable().ajax.reload();
     });
 
 });

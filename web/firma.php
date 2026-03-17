@@ -18,6 +18,7 @@ $stmt->execute([':t' => $token]);
 $mov = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $ren = null;
+$renTel = null;
 if (!$mov) {
     // Intentar con renovación
     $stmtRen = $pdo->prepare("
@@ -32,7 +33,21 @@ if (!$mov) {
     $stmtRen->execute([':t' => $token]);
     $ren = $stmtRen->fetch(PDO::FETCH_ASSOC);
     if (!$ren) {
-        die('Movimiento o renovación no encontrado');
+        // Intentar con renovaciones de teléfonos
+        $stmtRenTel = $pdo->prepare("
+            SELECT r.*, 
+                   told.etiqueta AS old_etiqueta, told.marca AS old_marca, told.modelo AS old_modelo, told.imei AS old_imei, told.numero_serie AS old_sn,
+                   tnew.etiqueta AS new_etiqueta, tnew.marca AS new_marca, tnew.modelo AS new_modelo, tnew.imei AS new_imei, tnew.numero_serie AS new_sn
+            FROM renovaciones_telefonos r
+            JOIN telefonos told ON told.id = r.tel_old_id
+            JOIN telefonos tnew ON tnew.id = r.tel_new_id
+            WHERE r.firma_token = :t
+        ");
+        $stmtRenTel->execute([':t' => $token]);
+        $renTel = $stmtRenTel->fetch(PDO::FETCH_ASSOC);
+        if (!$renTel) {
+            die('Movimiento o renovación no encontrado');
+        }
     }
 }
 ?>
@@ -53,7 +68,7 @@ if (!$mov) {
         </p>
         <p><strong>Usuario:</strong> <?= htmlspecialchars($mov['usuario_destino']) ?></p>
         <p><strong>Fecha:</strong> <?= htmlspecialchars($mov['fecha']) ?></p>
-    <?php else: ?>
+    <?php elseif ($ren): ?>
         <h1 class="h4 mb-3">Firma del recibo de renovación</h1>
         <p><strong>Equipo renovado:</strong>
             <?= htmlspecialchars($ren['old_marca'].' '.$ren['old_modelo']) ?> (S/N: <?= htmlspecialchars($ren['old_sn']) ?>)
@@ -62,6 +77,15 @@ if (!$mov) {
             <?= htmlspecialchars($ren['new_marca'].' '.$ren['new_modelo']) ?> (S/N: <?= htmlspecialchars($ren['new_sn']) ?>, HOST: <?= htmlspecialchars($ren['new_host']) ?>)
         </p>
         <p><strong>Fecha:</strong> <?= htmlspecialchars($ren['fecha']) ?></p>
+    <?php else: ?>
+        <h1 class="h4 mb-3">Firma del recibo de renovación</h1>
+        <p><strong>Teléfono renovado:</strong>
+            <?= htmlspecialchars(($renTel['old_etiqueta'] ? '['.$renTel['old_etiqueta'].'] ' : '').$renTel['old_marca'].' '.$renTel['old_modelo']) ?> (IMEI: <?= htmlspecialchars($renTel['old_imei']) ?>)
+        </p>
+        <p><strong>Teléfono nuevo:</strong>
+            <?= htmlspecialchars(($renTel['new_etiqueta'] ? '['.$renTel['new_etiqueta'].'] ' : '').$renTel['new_marca'].' '.$renTel['new_modelo']) ?> (IMEI: <?= htmlspecialchars($renTel['new_imei']) ?>)
+        </p>
+        <p><strong>Fecha:</strong> <?= htmlspecialchars($renTel['fecha']) ?></p>
     <?php endif; ?>
 
     <p>Por favor, firme en el recuadro:</p>

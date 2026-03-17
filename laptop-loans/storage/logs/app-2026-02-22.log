@@ -1,0 +1,8 @@
+[2026-02-22 11:44:56] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"172.18.0.1"}
+[2026-02-22 11:44:56] ERROR   Uncaught exception: SQLSTATE[HY000] [1044] Access denied for user 'inventario_user'@'%' to database 'laptop_loans' {"msg":"SQLSTATE[HY000] [1044] Access denied for user 'inventario_user'@'%' to database 'laptop_loans'","file":"/var/www/html/laptop-loans/app/Models/DB.php","line":13,"trace":"#0 /var/www/html/laptop-loans/app/Models/DB.php(13): PDO->__construct('mysql:host=db;p...', 'inventario_user', Object(SensitiveParameterValue), Array)\n#1 /var/www/html/laptop-loans/app/Controllers/HandoversController.php(65): App\\Models\\DB::pdo()\n#2 /var/www/html/laptop-loans/public/index.php(50): App\\Controllers\\HandoversController->index()\n#3 {main}"}
+[2026-02-22 11:53:42] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"172.18.0.1"}
+[2026-02-22 11:53:44] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"people/index","ip":"172.18.0.1"}
+[2026-02-22 19:41:53] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"172.18.0.1"}
+[2026-02-22 19:44:55] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"172.18.0.1"}
+[2026-02-22 19:45:57] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"dashboard/index","ip":"172.18.0.1"}
+[2026-02-22 19:45:59] INFO    AUDIT visit {"user_id":null,"username":"anon","route":"laptops/index","ip":"172.18.0.1"}

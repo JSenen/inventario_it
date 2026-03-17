@@ -3,6 +3,9 @@
 require_once 'config.php';              // Conexión a BD ($pdo)
 require_once 'auth.php';                // Autenticación / sesión
 require_once 'includes/header.php';     // Cabecera HTML + menú
+require_once __DIR__ . '/includes/secciones_helper.php';
+
+ensureSeccionesCorreo($pdo);
 
 // Pestaña activa
 $tab = $_GET['tab'] ?? 'usuarios';
@@ -96,7 +99,7 @@ if (!in_array($tab, $validTabs)) {
                             </a>
                             <a href="usuario_borrar.php?id=<?= $u['id'] ?>"
                                class="btn btn-sm btn-danger"
-                               onclick="return confirm('¿Seguro que quieres borrar este usuario?');">
+                               data-confirm-message="¿Seguro que quieres borrar este usuario?">
                                 Borrar
                             </a>
                         </td>
@@ -148,7 +151,7 @@ if (!in_array($tab, $validTabs)) {
                                    class="btn btn-sm btn-warning">Editar</a>
                                 <a href="departamento_borrar.php?id=<?= $d['id'] ?>"
                                    class="btn btn-sm btn-danger"
-                                   onclick="return confirm('¿Borrar este departamento?');">
+                                   data-confirm-message="¿Borrar este departamento?">
                                     Borrar
                                 </a>
                             </td>
@@ -196,7 +199,7 @@ if (!in_array($tab, $validTabs)) {
                                    class="btn btn-sm btn-warning">Editar</a>
                                 <a href="ubicacion_borrar.php?id=<?= $u['id'] ?>"
                                    class="btn btn-sm btn-danger"
-                                   onclick="return confirm('¿Borrar esta ubicación?');">
+                                   data-confirm-message="¿Borrar esta ubicación?">
                                     Borrar
                                 </a>
                             </td>
@@ -244,7 +247,7 @@ if (!in_array($tab, $validTabs)) {
                                    class="btn btn-sm btn-warning">Editar</a>
                                 <a href="tipo_borrar.php?id=<?= $t['id'] ?>"
                                    class="btn btn-sm btn-danger"
-                                   onclick="return confirm('¿Borrar este tipo?');">
+                                   data-confirm-message="¿Borrar este tipo?">
                                     Borrar
                                 </a>
                             </td>
@@ -291,7 +294,7 @@ if (!in_array($tab, $validTabs)) {
                                    class="btn btn-sm btn-warning">Editar</a>
                                 <a href="servicio_borrar.php?id=<?= $s['id'] ?>"
                                    class="btn btn-sm btn-danger"
-                                   onclick="return confirm('¿Borrar este tipo?');">
+                                   data-confirm-message="¿Borrar este tipo?">
                                     Borrar
                                 </a>
                             </td>
@@ -327,6 +330,7 @@ if (!in_array($tab, $validTabs)) {
                         <th>ID</th>
                         <th>Sección</th>
                         <th>Descripción</th>
+                        <th>Correo</th>
                         <th>Acciones</th>
                     </tr>
                     </thead>
@@ -337,11 +341,18 @@ if (!in_array($tab, $validTabs)) {
                             <td><?= htmlspecialchars($s['nombre']) ?></td>
                             <td><?= htmlspecialchars($s['descripcion'] ?? '') ?></td>
                             <td>
+                                <?php if (!empty($s['correo'])): ?>
+                                    <a href="mailto:<?= htmlspecialchars($s['correo']) ?>"><?= htmlspecialchars($s['correo']) ?></a>
+                                <?php else: ?>
+                                    <span class="text-muted">-</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
                                 <a href="secciones_editar.php?id=<?= $s['id'] ?>"
                                    class="btn btn-sm btn-warning">Editar</a>
                                 <a href="secciones_borrar.php?id=<?= $s['id'] ?>"
                                    class="btn btn-sm btn-danger"
-                                   onclick="return confirm('¿Borrar esta sección?');">
+                                   data-confirm-message="¿Borrar esta sección?">
                                     Borrar
                                 </a>
                             </td>
@@ -400,5 +411,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 <?php require_once 'includes/footer.php'; ?>
-
-

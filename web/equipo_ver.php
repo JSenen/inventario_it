@@ -1,9 +1,13 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . "/includes/logger.php";
 require_once __DIR__ . '/includes/verificaciones.php';
+require_once __DIR__ . '/includes/equipos_schema.php';
+require_once __DIR__ . '/includes/asset_files.php';
+
+ensureEquiposSchema($pdo);
+ensureAssetFilesSchema($pdo);
 
 // 👇 AÑADE ESTO
 $id_equipo = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -23,10 +27,87 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([':id' => $id_equipo]);
 $equipo = $stmt->fetch(PDO::FETCH_ASSOC);
+$adjuntosEquipo = listEntityAttachments($pdo, 'equipo', $id_equipo);
 
 if (!$equipo) {
     die('Equipo no encontrado');
 }
+
+$estadoRaw = trim((string)($equipo['estado'] ?? ''));
+$estadoLower = strtolower($estadoRaw);
+$estadoNorm = strtr($estadoLower, [
+    'á' => 'a',
+    'é' => 'e',
+    'í' => 'i',
+    'ó' => 'o',
+    'ú' => 'u',
+]);
+$estadoClass = 'bg-secondary';
+$estadoIcon  = 'bi-info-circle-fill';
+
+switch ($estadoNorm) {
+    case 'activo':
+        $estadoClass = 'bg-success';
+        $estadoIcon  = 'bi-check-circle-fill';
+        break;
+    case 'averiado':
+        $estadoClass = 'bg-warning text-dark';
+        $estadoIcon  = 'bi-exclamation-triangle-fill';
+        break;
+    case 'baja':
+        $estadoClass = 'bg-danger';
+        $estadoIcon  = 'bi-x-circle-fill';
+        break;
+    case 'baja definitiva':
+        $estadoClass = 'bg-dark';
+        $estadoIcon  = 'bi-x-octagon-fill';
+        break;
+    case 'almacen':
+    case 'almacén':
+        $estadoClass = 'bg-secondary';
+        $estadoIcon  = 'bi-archive-fill';
+        break;
+    case 'prestado':
+        $estadoClass = 'bg-info text-dark';
+        $estadoIcon  = 'bi-clock-history';
+        break;
+    case 'privado':
+        $estadoClass = 'bg-dark';
+        $estadoIcon  = 'bi-shield-lock-fill';
+        break;
+}
+
+// Asegurar tabla de relación SIM↔equipo para PTI
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_sim (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        sim_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_sim (sim_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (sim_id) REFERENCES sims(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
+// Asegurar tabla de relación DOCK↔equipo PTI
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_dock (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        dock_equipo_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_dock (dock_equipo_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (dock_equipo_id) REFERENCES equipos(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
 
 $mensajeVerifError = null;
 
@@ -57,12 +138,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar_verificacio
         if (!empty($_POST['actualizar_equipo'])) {
             $stmtUpdateEq = $pdo->prepare("
                 UPDATE equipos
-                SET ubicacion = :ubicacion, estado = :estado
+                SET ubicacion = :ubicacion,
+                    estado = :estado,
+                    fecha_baja = CASE
+                        WHEN :estado_baja = 1 AND fecha_baja IS NULL THEN NOW()
+                        ELSE fecha_baja
+                    END
                 WHERE id = :id
             ");
             $stmtUpdateEq->execute([
                 ':ubicacion' => $ubicacionVerificada,
                 ':estado'    => $estadoVerificado,
+                ':estado_baja' => (strcasecmp((string)$estadoVerificado, 'Baja') === 0 || strcasecmp((string)$estadoVerificado, 'Baja definitiva') === 0) ? 1 : 0,
                 ':id'        => $id_equipo,
             ]);
         }
@@ -84,9 +171,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar_verificacio
 // Inicializar variables para monitores o PC asociado
 $monitores_pc = [];
 $pc_asociado  = null;
+$tipoEquipoUpper = strtoupper($equipo['tipo'] ?? '');
+$esEquipoConMonitores = ($tipoEquipoUpper === 'PC')
+    || (strpos($tipoEquipoUpper, 'PORTATIL') !== false)
+    || (strpos($tipoEquipoUpper, 'PORTÁTIL') !== false)
+    || ($tipoEquipoUpper === 'PTI')
+    || ($tipoEquipoUpper === 'SITEL');
 
-// Si es PC o PORTÁTIL → listar monitores
-if (in_array($equipo['tipo'], ['PC','PORTÁTIL'])) {
+$simActual = null;
+$dockActual = null;
+
+// SIM actual si es PTI
+if (strpos($tipoEquipoUpper, 'PTI') !== false) {
+    $stmtSim = $pdo->prepare("
+        SELECT s.*
+        FROM equipo_sim es
+        JOIN sims s ON s.id = es.sim_id
+        WHERE es.equipo_id = :id
+          AND es.fecha_liberacion IS NULL
+        ORDER BY es.fecha_asignacion DESC
+        LIMIT 1
+    ");
+    $stmtSim->execute([':id' => $id_equipo]);
+    $simActual = $stmtSim->fetch(PDO::FETCH_ASSOC);
+
+    $stmtDock = $pdo->prepare("
+        SELECT d.id, d.etiqueta, d.marca, d.modelo, d.numero_serie
+        FROM equipo_dock ed
+        JOIN equipos d ON d.id = ed.dock_equipo_id
+        WHERE ed.equipo_id = :id
+          AND ed.fecha_liberacion IS NULL
+        ORDER BY ed.fecha_asignacion DESC
+        LIMIT 1
+    ");
+    $stmtDock->execute([':id' => $id_equipo]);
+    $dockActual = $stmtDock->fetch(PDO::FETCH_ASSOC);
+}
+
+// Si es PC - SITEL o PORTÁTIL → listar monitores
+if ($esEquipoConMonitores) {
     $sqlMon = "SELECT e.*
                FROM pc_monitores pm
                JOIN equipos e ON e.id = pm.id_monitor
@@ -153,6 +276,23 @@ if (isset($_GET['mov']) && $_GET['mov'] === 'last') {
     $stmtMov->execute([':id' => $id_equipo]);
     $ultimoMov = $stmtMov->fetch(PDO::FETCH_ASSOC);
 }
+$movBajaId = isset($_GET['mov_baja']) ? (int)$_GET['mov_baja'] : 0;
+$movAltaId = isset($_GET['mov_alta']) ? (int)$_GET['mov_alta'] : 0;
+$movimientosTraslado = [];
+if ($movBajaId > 0 && $movAltaId > 0) {
+    $stmtMovTraslado = $pdo->prepare("
+        SELECT id, tipo, fecha, firma_token
+        FROM equipos_movimientos
+        WHERE id_equipo = :id_equipo
+          AND id IN (:id_baja, :id_alta)
+        ORDER BY fecha DESC, id DESC
+    ");
+    $stmtMovTraslado->bindValue(':id_equipo', $id_equipo, PDO::PARAM_INT);
+    $stmtMovTraslado->bindValue(':id_baja', $movBajaId, PDO::PARAM_INT);
+    $stmtMovTraslado->bindValue(':id_alta', $movAltaId, PDO::PARAM_INT);
+    $stmtMovTraslado->execute();
+    $movimientosTraslado = $stmtMovTraslado->fetchAll(PDO::FETCH_ASSOC);
+}
 
 $ultimaVerificacion = obtenerUltimaVerificacionEquipo($pdo, $id_equipo);
 
@@ -170,20 +310,28 @@ $stmtRenLast = $pdo->prepare("
 ");
 $stmtRenLast->execute([':id' => $id_equipo]);
 $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
+require_once __DIR__ . '/includes/header.php';
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Detalle del Equipo</title>
-    <link rel="stylesheet" href="css/bootstrap.min.css">
-</head>
-<body>
-
-<div class="container mt-4">
+<div class="mt-4">
     <h2>Detalle del Equipo</h2>
     <hr>
+<?php if (!empty($movimientosTraslado)): ?>
+    <div class="alert alert-info d-flex justify-content-between align-items-center">
+        <div>
+            Se han generado recibos de <strong>baja</strong> y <strong>alta</strong> por traslado de ubicación/departamento/sección.
+        </div>
+        <div class="btn-group btn-group-sm">
+            <?php foreach ($movimientosTraslado as $movTras): ?>
+                <a href="recibo_movimiento.php?id=<?= (int)$movTras['id'] ?>"
+                   target="_blank"
+                   class="btn btn-outline-secondary">
+                    <?= htmlspecialchars(ucfirst($movTras['tipo'])) ?> #<?= (int)$movTras['id'] ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>
 <?php if ($ultimoMov): ?>
     <div class="alert alert-info d-flex justify-content-between align-items-center">
         <div>
@@ -288,7 +436,7 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
                 <div class="col-md-3">
                     <label class="form-label small mb-1">Estado verificado</label>
                     <select name="estado_verificado" class="form-select">
-                        <?php foreach (['Activo','Almacén','Averiado','Baja','Prestado','Privado'] as $estadoOpt): ?>
+                        <?php foreach (['Activo','Almacén','Averiado','Baja','Baja definitiva','Prestado','Privado'] as $estadoOpt): ?>
                             <option value="<?= $estadoOpt ?>" <?= $equipo['estado'] === $estadoOpt ? 'selected' : '' ?>>
                                 <?= $estadoOpt ?>
                             </option>
@@ -316,8 +464,10 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
 
     <h4>Información del equipo</h4>
     <table class="table table-bordered">
-        <tr><th>ID</th> <td> (id) <?= htmlspecialchars($equipo['id']) ?> (etiqueta) <?= htmlspecialchars($equipo['etiqueta'] ?? '') ?></td></tr>
-        <?php if (!empty($equipo['imagen'])): ?>
+        <tr>
+            <th>ID</th>
+             <td> <span class="<?= !empty($equipo['etiqueta']) ? 'etiqueta-ok' : 'etiqueta-missing' ?>"><?= htmlspecialchars(!empty($equipo['etiqueta']) ? $equipo['etiqueta'] : '(sin etiqueta)') ?></span></td></tr>
+        <?php if (!empty($equipo['imagen']) && is_file(__DIR__ . '/' . ltrim((string)$equipo['imagen'], '/'))): ?>
         <tr>
             <th>Imagen</th>
             <td>
@@ -331,11 +481,65 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
         <tr><th>Marca</th> <td><?= htmlspecialchars($equipo['marca']) ?></td></tr>
         <tr><th>Modelo</th> <td><?= htmlspecialchars($equipo['modelo']) ?></td></tr>
         <tr><th>Número de serie</th> <td><?= htmlspecialchars($equipo['numero_serie']) ?></td></tr>
+        <?php if (strpos($tipoEquipoUpper, 'PTI') !== false || !empty($equipo['imei'])): ?>
+            <tr><th>IMEI</th> <td><?= htmlspecialchars($equipo['imei'] ?: '-') ?></td></tr>
+        <?php endif; ?>
         <tr><th>Servicio</th> <td><?= htmlspecialchars($equipo['hostname']) ?></td></tr>
-        <tr><th>Usuario asignado</th> <td><?= htmlspecialchars($equipo['usuario_asignado']) ?></td></tr>
+        <tr>
+            <th>Usuario asignado</th>
+            <td>
+                <?php $usuarioAsignado = trim((string)($equipo['usuario_asignado'] ?? '')); ?>
+                <span class="dato-contacto-destacado<?= $usuarioAsignado === '' ? ' dato-contacto-destacado-vacio' : '' ?>">
+                    <?= htmlspecialchars($usuarioAsignado !== '' ? $usuarioAsignado : '-') ?>
+                </span>
+                <?php if ($usuarioAsignado !== ''): ?>
+                    <a class="btn btn-sm btn-outline-primary ms-2" href="usuario_asociado.php?tip=<?= urlencode($usuarioAsignado) ?>">
+                        Ver todo por TIP
+                    </a>
+                <?php endif; ?>
+            </td>
+        </tr>
         <tr><th>Departamento</th> <td><?= htmlspecialchars($equipo['departamento']) ?></td></tr>
         <tr><th>Ubicación</th> <td><?= htmlspecialchars($equipo['ubicacion']) ?></td></tr>
-        <?php if (in_array($equipo['tipo'], ['PC','PORTÁTIL'])): ?>
+        <?php if ($simActual): ?>
+            <tr>
+                <th>SIM (PTI)</th>
+                <td>
+                    <?php if (!empty($simActual['etiqueta'])): ?>
+                        <a href="sims_ver.php?id=<?= (int)$simActual['id'] ?>">
+                            <span class="etiqueta-numero"><?= htmlspecialchars($simActual['etiqueta']) ?></span>
+                        </a>
+                    <?php endif; ?>
+                    Nº <?= htmlspecialchars($simActual['numero']) ?> · <br>
+                    ICCID: <?= htmlspecialchars($simActual['iccid']) ?>
+                </td>
+            </tr>
+        <?php elseif (strpos($tipoEquipoUpper, 'PTI') !== false): ?>
+            <tr>
+                <th>SIM (PTI)</th>
+                <td><span class="text-muted">Sin SIM asignada</span></td>
+            </tr>
+        <?php endif; ?>
+        <?php if ($dockActual): ?>
+            <tr>
+                <th>DOCK (PTI)</th>
+                <td>
+                    <a href="equipo_ver.php?id=<?= (int)$dockActual['id'] ?>">
+                        <?= htmlspecialchars($dockActual['etiqueta'] ?: ('EQ-' . $dockActual['id'])) ?>
+                    </a><br>
+                    <?= htmlspecialchars(trim(($dockActual['marca'] ?? '') . ' ' . ($dockActual['modelo'] ?? ''))) ?>
+                    <?php if (!empty($dockActual['numero_serie'])): ?>
+                        <br>SN: <?= htmlspecialchars($dockActual['numero_serie']) ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        <?php elseif (strpos($tipoEquipoUpper, 'PTI') !== false): ?>
+            <tr>
+                <th>DOCK (PTI)</th>
+                <td><span class="text-muted">Sin DOCK asignado</span></td>
+            </tr>
+        <?php endif; ?>
+        <?php if ($esEquipoConMonitores): ?>
 <tr>
     <th>Monitores asociados</th>
     <td>
@@ -386,7 +590,7 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
         <?= $equipo['fecha_baja'] ? htmlspecialchars($equipo['fecha_baja']) : '<span class="text-muted">-</span>' ?>
     </td>
 </tr>
-<tr>
+<!-- <tr>
     <th>Proveedor</th>
     <td><?= htmlspecialchars($equipo['proveedor'] ?? '') ?></td>
 </tr>
@@ -399,10 +603,49 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
             -
         <?php endif; ?>
     </td>
-</tr>
-        <tr><th>Estado</th> <td><?= htmlspecialchars($equipo['estado']) ?></td></tr>
+</tr> -->
+        <tr>
+            <th>Estado</th>
+            <td>
+                <span class="badge rounded-pill <?= $estadoClass ?> d-inline-flex align-items-center gap-1">
+                    <i class="bi <?= $estadoIcon ?>"></i>
+                    <?= htmlspecialchars($estadoRaw !== '' ? $estadoRaw : '-') ?>
+                </span>
+            </td>
+        </tr>
         <tr><th>Creado en</th> <td><?= htmlspecialchars($equipo['creado_en']) ?></td></tr>
     </table>
+    <?php if (!empty($adjuntosEquipo)): ?>
+        <div class="card mb-4">
+            <div class="card-header"><strong>Adjuntos</strong></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Archivo</th>
+                                <th>Tamaño</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($adjuntosEquipo as $adjunto): ?>
+                                <tr>
+                                    <td>
+                                        <a href="<?= htmlspecialchars($adjunto['file_path']) ?>" target="_blank" rel="noopener">
+                                            <?= htmlspecialchars($adjunto['original_name']) ?>
+                                        </a>
+                                    </td>
+                                    <td><?= htmlspecialchars(formatAttachmentSize((int)($adjunto['file_size'] ?? 0))) ?></td>
+                                    <td><?= htmlspecialchars($adjunto['created_at'] ?? '') ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 <h4 class="mt-4">Material instalado / consumido</h4>
 
 <?php if (!empty($materiales_instalados)): ?>
@@ -478,5 +721,4 @@ $ultimaRenov = $stmtRenLast->fetch(PDO::FETCH_ASSOC);
     <?php endif; ?>
 
 </div>
-</body>
-</html>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

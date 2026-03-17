@@ -3,7 +3,11 @@ require_once 'auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . "/includes/logger.php";
 require_once __DIR__ . "/includes/movimientos_helper.php";
+require_once __DIR__ . '/includes/equipos_schema.php';
+require_once __DIR__ . '/includes/asset_files.php';
 
+ensureEquiposSchema($pdo);
+ensureAssetFilesSchema($pdo);
 
 // Cargar tipos de equipos para los select
 $tiposStmt = $pdo->query("SELECT nombre FROM tipos_equipo ORDER BY nombre ASC");
@@ -29,6 +33,54 @@ $redes = $redesStmt->fetchAll(PDO::FETCH_ASSOC);
 // Cargar secciones para el select
 $seccionesStmt = $pdo->query("SELECT id, nombre FROM secciones ORDER BY nombre ASC");   
 $secciones = $seccionesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Tabla de relación SIM↔equipo (para PTI) por si aún no existe
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_sim (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        sim_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_sim (sim_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (sim_id) REFERENCES sims(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
+// Tabla de relación DOCK↔equipo PTI por si aún no existe
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo_dock (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        equipo_id INT NOT NULL,
+        dock_equipo_id INT NOT NULL,
+        fecha_asignacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_liberacion DATETIME DEFAULT NULL,
+        observaciones TEXT,
+        INDEX idx_equipo (equipo_id),
+        INDEX idx_dock (dock_equipo_id),
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+        FOREIGN KEY (dock_equipo_id) REFERENCES equipos(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
+// SIMs disponibles para asignar (solo se muestran si el tipo es PTI)
+$simsDisponibles = $pdo->query("SELECT id, numero, operador, iccid, etiqueta FROM sims WHERE estado = 'Disponible' ORDER BY numero ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+// DOCKs disponibles para asignar (solo PTI)
+$docksDisponiblesStmt = $pdo->query("
+    SELECT d.id, d.etiqueta, d.marca, d.modelo, d.numero_serie
+    FROM equipos d
+    LEFT JOIN equipo_dock ed
+      ON ed.dock_equipo_id = d.id
+     AND ed.fecha_liberacion IS NULL
+    WHERE UPPER(d.tipo) = 'DOCK'
+      AND ed.id IS NULL
+    ORDER BY d.etiqueta ASC, d.numero_serie ASC, d.id ASC
+");
+$docksDisponibles = $docksDisponiblesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Monitores libres (no asignados todavía)
 $monitoresStmt = $pdo->query("
@@ -61,6 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $marca           = strtoupper(trim($_POST['marca'] ?? ''));
     $modelo          = strtoupper(trim($_POST['modelo'] ?? ''));
     $numero_serie    = strtoupper(trim($_POST['numero_serie'] ?? ''));
+    $imei            = strtoupper(trim($_POST['imei'] ?? ''));
     $hostname        = strtoupper(trim($_POST['hostname'] ?? ''));
     $usuario_asignado= strtoupper(trim($_POST['usuario_asignado'] ?? ''));
     $departamento    = strtoupper(trim($_POST['departamento'] ?? ''));
@@ -78,6 +131,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $monitoresSeleccionados = isset($_POST['monitores']) && is_array($_POST['monitores'])
     ? array_map('intval', $_POST['monitores'])
     : [];
+    $sim_id_pti      = isset($_POST['sim_id_pti']) && $_POST['sim_id_pti'] !== '' ? (int)$_POST['sim_id_pti'] : null;
+    $dock_id_pti     = isset($_POST['dock_id_pti']) && $_POST['dock_id_pti'] !== '' ? (int)$_POST['dock_id_pti'] : null;
+
+    $tipoUpper       = strtoupper($tipo);
+    $esPTI           = (strpos($tipoUpper, 'PTI') !== false);
+
+    // Validar SIM solo si es PTI y se seleccionó una
+    if ($esPTI && $sim_id_pti !== null) {
+        $stmtCheckSim = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM equipo_sim 
+            WHERE sim_id = :sim AND fecha_liberacion IS NULL
+        ");
+        $stmtCheckSim->execute([':sim' => $sim_id_pti]);
+        $yaAsignada = (int)$stmtCheckSim->fetchColumn() > 0;
+        if ($yaAsignada) {
+            $errores[] = "La SIM seleccionada ya está asignada a otro equipo.";
+        }
+
+        $stmtEstadoSim = $pdo->prepare("SELECT estado FROM sims WHERE id = :id");
+        $stmtEstadoSim->execute([':id' => $sim_id_pti]);
+        $estadoSim = $stmtEstadoSim->fetchColumn();
+        if (!$estadoSim) {
+            $errores[] = "La SIM seleccionada no existe.";
+        } elseif ($estadoSim !== 'Disponible') {
+            $errores[] = "La SIM seleccionada no está disponible.";
+        }
+    }
+
+    // Validar DOCK solo si es PTI y se seleccionó uno
+    if ($esPTI && $dock_id_pti !== null) {
+        $stmtCheckDock = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM equipo_dock
+            WHERE dock_equipo_id = :dock AND fecha_liberacion IS NULL
+        ");
+        $stmtCheckDock->execute([':dock' => $dock_id_pti]);
+        $dockYaAsignado = (int)$stmtCheckDock->fetchColumn() > 0;
+        if ($dockYaAsignado) {
+            $errores[] = "El DOCK seleccionado ya está asignado a otro equipo.";
+        }
+
+        $stmtDockExiste = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM equipos
+            WHERE id = :id AND UPPER(tipo) = 'DOCK'
+        ");
+        $stmtDockExiste->execute([':id' => $dock_id_pti]);
+        if ((int)$stmtDockExiste->fetchColumn() === 0) {
+            $errores[] = "El DOCK seleccionado no existe o no es válido.";
+        }
+    }
 
 
     if ($tipo === '') {
@@ -136,19 +241,21 @@ if ($numero_serie !== '') {
     : null;
 
     if (empty($errores)) {
+        $adjuntosSubidos = [];
         try {
             $pdo->beginTransaction();
 
             $sqlEquipo = "INSERT INTO equipos 
-                (tipo, marca, modelo, numero_serie, hostname, usuario_asignado, departamento, ubicacion, fecha_compra, proveedor, coste, estado, notas, etiqueta, imagen, seccion_id)
+                (tipo, marca, modelo, numero_serie, imei, hostname, usuario_asignado, departamento, ubicacion, fecha_compra, proveedor, coste, estado, notas, etiqueta, imagen, seccion_id)
                 VALUES 
-                (:tipo, :marca, :modelo, :numero_serie, :hostname, :usuario_asignado, :departamento, :ubicacion, :fecha_compra, :proveedor, :coste, :estado, :notas, :etiqueta, :imagen, :seccion_id)";
+                (:tipo, :marca, :modelo, :numero_serie, :imei, :hostname, :usuario_asignado, :departamento, :ubicacion, :fecha_compra, :proveedor, :coste, :estado, :notas, :etiqueta, :imagen, :seccion_id)";
             $stmtEq = $pdo->prepare($sqlEquipo);
             $stmtEq->execute([
                 ':tipo'            => $tipo,
                 ':marca'           => $marca,
                 ':modelo'          => $modelo,
                 ':numero_serie'    => $numero_serie,
+                ':imei'            => $imei !== '' ? $imei : null,
                 ':hostname'        => $hostname,
                 ':usuario_asignado'=> $usuario_asignado,
                 ':departamento'    => $departamento,
@@ -164,9 +271,19 @@ if ($numero_serie !== '') {
             ]);
 
             $equipoId = (int)$pdo->lastInsertId();
+            $adjuntosSubidos = uploadEntityAttachments(
+                $pdo,
+                'equipo',
+                $equipoId,
+                $_FILES['adjuntos'] ?? [],
+                $_SESSION['tip'] ?? null
+            );
 
-            // Si es PC o PORTÁTIL, guardar monitores asociados
-        if (in_array($tipo, ['PC','PORTATIL'.'PORTÁTIL']) && !empty($monitoresSeleccionados)) {
+            // Si es un equipo con monitores (PC, portátil o variante PTI), guardar asociaciones
+        $tipoConMonitores = strtoupper($tipo);
+        $tiposMonitores = ['PC','PORTATIL','PORTÁTIL','PTI','PORTATIL (PTI)','PORTÁTIL (PTI)','SITEL'];
+
+        if (in_array($tipoConMonitores, $tiposMonitores, true) && !empty($monitoresSeleccionados)) {
             $sqlRel = "INSERT INTO pc_monitores (id_pc, id_monitor)
                     VALUES (:id_pc, :id_monitor)";
             $stmtRel = $pdo->prepare($sqlRel);
@@ -181,6 +298,33 @@ if ($numero_serie !== '') {
             }
         }
 
+            // Si es PTI y se seleccionó SIM, crear relación
+            if ($esPTI && $sim_id_pti !== null) {
+                $stmtRelSim = $pdo->prepare("
+                    INSERT INTO equipo_sim (equipo_id, sim_id)
+                    VALUES (:equipo, :sim)
+                ");
+                $stmtRelSim->execute([
+                    ':equipo' => $equipoId,
+                    ':sim'    => $sim_id_pti,
+                ]);
+
+                $stmtUpdSim = $pdo->prepare("UPDATE sims SET estado = 'Asignada' WHERE id = :sim");
+                $stmtUpdSim->execute([':sim' => $sim_id_pti]);
+            }
+
+            // Si es PTI y se seleccionó DOCK, crear relación
+            if ($esPTI && $dock_id_pti !== null) {
+                $stmtRelDock = $pdo->prepare("
+                    INSERT INTO equipo_dock (equipo_id, dock_equipo_id)
+                    VALUES (:equipo, :dock)
+                ");
+                $stmtRelDock->execute([
+                    ':equipo' => $equipoId,
+                    ':dock'   => $dock_id_pti,
+                ]);
+            }
+
             // Si se proporcionó IP y red, guardarla
             if ($ip !== '' && $red_id !== '') {
                 $sqlIp = "INSERT INTO ips_equipos (equipo_id, red_id, ip, mac, es_principal, notas)
@@ -194,9 +338,8 @@ if ($numero_serie !== '') {
                 ]);
             }
 
-                        logActividad($pdo, 'CREAR_EQUIPO', 'Nuevo equipo creado: ID=' . $equipoId);
-
             $pdo->commit();
+            logActividad($pdo, 'CREAR_EQUIPO', 'Nuevo equipo creado: ID=' . $equipoId);
 
             // 👇 Si se crea ya como Activo/Prestado con usuario, consideramos salida desde almacén
             try {
@@ -223,7 +366,10 @@ if ($numero_serie !== '') {
             exit;
 
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            cleanupUploadedAttachments($adjuntosSubidos ?? []);
             $errores[] = "Error al guardar el equipo: " . $e->getMessage();
         }
 
@@ -315,6 +461,11 @@ usort($imagenes_existentes, function ($a, $b) {
                         <div class="col-md-4">
                             <label class="form-label">Modelo</label>
                             <input type="text" name="modelo" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['modelo'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-4" id="bloque-imei-pti" style="display:none;">
+                            <label class="form-label">IMEI</label>
+                            <input type="text" name="imei" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['imei'] ?? '') ?>">
+                            <small class="text-muted">Visible para equipos PTI. No es obligatorio.</small>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Servicio</label>
@@ -421,6 +572,40 @@ usort($imagenes_existentes, function ($a, $b) {
                             <label class="form-label">Fecha Alta</label>
                             <input type="date" name="fecha_compra" class="form-control campo-destacado" value="<?= htmlspecialchars($_POST['fecha_compra'] ?? '') ?>">
                         </div>
+                        <div class="col-md-6" id="bloque-sim-pti" style="display:none;">
+                            <label class="form-label"><b>Asignar SIM (solo PTI, opcional)</b></label>
+                            <select name="sim_id_pti" class="form-select">
+                                <option value="">-- Sin SIM --</option>
+                                <?php foreach ($simsDisponibles as $sim): ?>
+                                    <?php
+                                        $selected = (isset($_POST['sim_id_pti']) && (int)$_POST['sim_id_pti'] === (int)$sim['id']) ? 'selected' : '';
+                                    ?>
+                                    <?php
+                                        // La clase en <option> no siempre aplica en todos los navegadores; añadimos color inline si tiene etiqueta
+                                        $styleEtiqueta = $sim['etiqueta'] ? 'style="color:#175fce;font-weight:700;"' : '';
+                                    ?>
+                                    <option value="<?= (int)$sim['id'] ?>" <?= $selected ?> class="<?= $sim['etiqueta'] ? 'etiqueta-ok' : '' ?>" <?= $styleEtiqueta ?>>
+                                        <?= $sim['etiqueta'] ? '[' . htmlspecialchars($sim['etiqueta']) . '] ' : '' ?><?= htmlspecialchars($sim['numero']) ?> · <?= htmlspecialchars($sim['operador']) ?> (ICCID: <?= htmlspecialchars($sim['iccid']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="text-muted">Visible solo para equipos de tipo PTI. No es obligatorio.</small>
+                        </div>
+                        <div class="col-md-6" id="bloque-dock-pti" style="display:none;">
+                            <label class="form-label"><b>Asignar DOCK (solo PTI, opcional)</b></label>
+                            <select name="dock_id_pti" class="form-select">
+                                <option value="">-- Sin DOCK --</option>
+                                <?php foreach ($docksDisponibles as $dock): ?>
+                                    <?php $selected = (isset($_POST['dock_id_pti']) && (int)$_POST['dock_id_pti'] === (int)$dock['id']) ? 'selected' : ''; ?>
+                                    <option value="<?= (int)$dock['id'] ?>" <?= $selected ?>>
+                                        <?= !empty($dock['etiqueta']) ? '[' . htmlspecialchars($dock['etiqueta']) . '] ' : '' ?>
+                                        <?= htmlspecialchars(trim(($dock['marca'] ?? '') . ' ' . ($dock['modelo'] ?? ''))) ?>
+                                        <?= !empty($dock['numero_serie']) ? ' (SN: ' . htmlspecialchars($dock['numero_serie']) . ')' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="text-muted">Visible solo para equipos de tipo PTI. No es obligatorio.</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -432,7 +617,8 @@ usort($imagenes_existentes, function ($a, $b) {
                 </div>
                 <div class="card-body">
                     <input type="hidden" name="imagen_existente" id="imagen_existente" value="<?= htmlspecialchars($_POST['imagen_existente'] ?? '') ?>">
-                    <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3">
+                    <div class="thumb-grid-wrapper">
+                        <div class="row row-cols-2 row-cols-md-3 g-2 thumb-grid mb-3">
                         <?php
                         $imagenPost = $_POST['imagen_existente'] ?? '';
                         if (!empty($imagenes_existentes)):
@@ -458,6 +644,7 @@ usort($imagenes_existentes, function ($a, $b) {
                                 <span class="text-muted small">No hay imágenes guardadas.</span>
                             </div>
                         <?php endif; ?>
+                        </div>
                     </div>
                     <label for="imagen" class="form-label mb-1"><strong>Subir imagen nueva</strong> (si no hay ninguna disponible)</label>
                     <input type="file" class="form-control campo-destacado" id="imagen_nueva_input" name="imagen" accept="image/*">
@@ -470,6 +657,17 @@ usort($imagenes_existentes, function ($a, $b) {
                 </div>
                 <div class="card-body">
                     <textarea name="notas" class="form-control campo-destacado" rows="3"><?= htmlspecialchars($_POST['notas'] ?? '') ?></textarea>
+                </div>
+            </div>
+
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header py-2">
+                    <strong>Adjuntos</strong>
+                </div>
+                <div class="card-body">
+                    <label for="adjuntos" class="form-label">Subir uno o varios archivos</label>
+                    <input type="file" class="form-control" id="adjuntos" name="adjuntos[]" multiple>
+                    <small class="text-muted">Puedes adjuntar PDFs, imágenes u otros documentos relacionados con el equipo.</small>
                 </div>
             </div>
 
@@ -519,13 +717,14 @@ usort($imagenes_existentes, function ($a, $b) {
                 </div>
                 <div class="card-body">
                     <?php
-                    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Prestado','Privado'];
+                    $estados = ['Activo', 'Almacén', 'Averiado', 'Baja', 'Baja definitiva', 'Prestado','Privado'];
                     $estadoSel = $_POST['estado'] ?? 'Activo';
                     $colores = [
                         'Activo'   => '#198754',
                         'Almacén'  => '#0d6efd',
                         'Averiado' => '#ffc107',
                         'Baja'     => '#dc3545',
+                        'Baja definitiva' => '#111111',
                         'Prestado' => '#6c757d',
                         'Privado'  => '#6f42c1',
                     ];
@@ -579,18 +778,44 @@ usort($imagenes_existentes, function ($a, $b) {
 document.addEventListener('DOMContentLoaded', function () {
     const tipoSelect       = document.querySelector('select[name="tipo"]');
     const bloqueMonitores  = document.getElementById('bloque-monitores');
+    const bloqueImei       = document.getElementById('bloque-imei-pti');
+    const bloqueSim        = document.getElementById('bloque-sim-pti');
+    const bloqueDock       = document.getElementById('bloque-dock-pti');
 
     function actualizarBloqueMonitores() {
         if (!tipoSelect) return;
         const valor = (tipoSelect.value || '').toUpperCase();
-        if (valor === 'PC' || valor === 'PORTATIL') {
+        const esPortatil = valor.includes('PORTATIL') || valor.includes('PORTÁTIL') || valor === 'PTI' || valor === 'SITEL';
+        const esPTI = valor.includes('PTI');
+        if (valor === 'PC' || esPortatil) {
             bloqueMonitores.style.display = 'block';
         } else {
             bloqueMonitores.style.display = 'none';
         }
+        if (bloqueImei) {
+            bloqueImei.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const inputImei = bloqueImei.querySelector('input[name="imei"]');
+                if (inputImei) inputImei.value = '';
+            }
+        }
+        if (bloqueSim) {
+            bloqueSim.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const selectSim = bloqueSim.querySelector('select[name="sim_id_pti"]');
+                if (selectSim) selectSim.value = '';
+            }
+        }
+        if (bloqueDock) {
+            bloqueDock.style.display = esPTI ? 'block' : 'none';
+            if (!esPTI) {
+                const selectDock = bloqueDock.querySelector('select[name="dock_id_pti"]');
+                if (selectDock) selectDock.value = '';
+            }
+        }
     }
 
-    if (tipoSelect && bloqueMonitores) {
+    if (tipoSelect) {
         tipoSelect.addEventListener('change', actualizarBloqueMonitores);
         actualizarBloqueMonitores();
     }

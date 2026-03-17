@@ -18,6 +18,11 @@ if (!$mat) {
     exit;
 }
 
+// Cargar compatibilidades (modelos de impresora)
+$stmtCompat = $pdo->prepare("SELECT modelo_impresora FROM materiales_compatibilidad WHERE material_id = :id ORDER BY modelo_impresora ASC");
+$stmtCompat->execute([':id' => $id]);
+$compatibles = $stmtCompat->fetchAll(PDO::FETCH_COLUMN);
+
 $stmtMov = $pdo->prepare("
     SELECT mm.*,
            e.hostname,
@@ -49,6 +54,14 @@ include 'includes/header.php';
 
     <table class="table table-bordered">
         <tr><th>ID</th><td><?= (int)$mat['id'] ?></td></tr>
+        <?php if (!empty($mat['imagen']) && file_exists(__DIR__ . '/' . $mat['imagen'])): ?>
+        <tr>
+            <th>Imagen</th>
+            <td>
+                <img src="<?= htmlspecialchars($mat['imagen']) ?>" alt="Imagen" style="max-width: 250px; height: auto;" class="img-thumbnail">
+            </td>
+        </tr>
+        <?php endif; ?>
         <tr><th>Referencia</th><td><?= htmlspecialchars($mat['referencia']) ?></td></tr>
         <tr><th>Descripción</th><td><?= htmlspecialchars($mat['descripcion']) ?></td></tr>
         <tr><th>Categoría</th><td><?= htmlspecialchars($mat['categoria']) ?></td></tr>
@@ -58,6 +71,18 @@ include 'includes/header.php';
         <tr><th>Proveedor</th><td><?= htmlspecialchars($mat['proveedor']) ?></td></tr>
         <tr><th>Coste unitario</th><td><?= $mat['coste_unitario'] !== null ? number_format($mat['coste_unitario'], 2) . ' €' : '-' ?></td></tr>
         <tr><th>Notas</th><td><?= nl2br(htmlspecialchars($mat['notas'])) ?></td></tr>
+        <?php if (!empty($compatibles)): ?>
+        <tr>
+            <th>Compatibilidad</th>
+            <td>
+                <ul class="mb-0">
+                    <?php foreach ($compatibles as $modelo): ?>
+                        <li><?= htmlspecialchars($modelo) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </td>
+        </tr>
+        <?php endif; ?>
     </table>
 
     <h4 class="mt-4">Últimos movimientos</h4>

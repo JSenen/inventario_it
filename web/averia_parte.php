@@ -21,6 +21,7 @@ $sql = "
         e.departamento,
         e.ubicacion,
         e.imagen,
+        e.id,
         ip.ip AS ip_principal
     FROM averias a
     JOIN equipos e ON e.id = a.equipo_id
@@ -40,6 +41,13 @@ $averia = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$averia) {
     die('Avería no encontrada');
 }
+
+$gestionInterna = empty($averia['num_asunto']);
+$gestionTexto   = $gestionInterna ? 'GATI (reparación interna)' : 'RAU / Empresa externa';
+$numAsuntoTexto = $gestionInterna ? 'Sin nº de asunto (reparación interna)' : ($averia['num_asunto'] ?? '');
+$empresaTexto   = $gestionInterna
+    ? ($averia['empresa_ext'] ?? 'GATI (INTERNA)')
+    : ($averia['empresa_ext'] ?? 'Pendiente RAU');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -143,12 +151,16 @@ if (!$averia) {
                     <td><?= htmlspecialchars($averia['tipo_averia']) ?></td>
                 </tr>
                 <tr>
-                    <th>Nº asunto empresa externa</th>
-                    <td><?= htmlspecialchars($averia['num_asunto']) ?></td>
+                    <th>Gestión</th>
+                    <td><?= htmlspecialchars($gestionTexto) ?></td>
                 </tr>
                 <tr>
-                    <th>Empresa externa</th>
-                    <td><?= htmlspecialchars($averia['empresa_ext'] ?? '') ?></td>
+                    <th>Nº asunto empresa externa</th>
+                    <td><?= htmlspecialchars($numAsuntoTexto) ?></td>
+                </tr>
+                <tr>
+                    <th>Empresa / unidad reparadora</th>
+                    <td><?= htmlspecialchars($empresaTexto) ?></td>
                 </tr>
                 <tr>
                     <th>Descripción</th>

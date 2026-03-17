@@ -4,7 +4,13 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . "/includes/logger.php";
 
-$stmt = $pdo->query("SELECT * FROM materiales ORDER BY categoria, referencia");
+$stmt = $pdo->query("
+    SELECT m.*, GROUP_CONCAT(mc.modelo_impresora SEPARATOR ', ') as modelos_compatibles
+    FROM materiales m
+    LEFT JOIN materiales_compatibilidad mc ON mc.material_id = m.id
+    GROUP BY m.id
+    ORDER BY m.categoria, m.referencia
+");
 $materiales = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -18,13 +24,16 @@ $materiales = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Imagen</th>
                 <th>Referencia</th>
                 <th>Descripción</th>
                 <th>Categoría</th>
+                <th>Compatibilidad</th>
                 <th>Stock</th>
                 <th>Mínimo</th>
                 <th>Ubicación</th>
-                <th>Proveedor</th>
+                <!--<th>Proveedor</th>-->
+                <th>Fecha actualización</th>    
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -32,19 +41,32 @@ $materiales = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php foreach ($materiales as $m): ?>
             <tr class="<?= ($m['stock_actual'] <= $m['stock_minimo']) ? 'table-danger' : '' ?>">
                 <td><?= (int)$m['id'] ?></td>
+                <td class="text-center">
+                    <?php if (!empty($m['imagen'])): ?>
+                        <img src="<?= htmlspecialchars($m['imagen']) ?>" alt="Img" style="height: 40px; width: auto; object-fit: contain;">
+                    <?php else: ?>
+                        <span class="text-muted small">-</span>
+                    <?php endif; ?>
+                </td>
                 <td><?= htmlspecialchars($m['referencia']) ?></td>
                 <td><?= htmlspecialchars($m['descripcion']) ?></td>
                 <td><?= htmlspecialchars($m['categoria']) ?></td>
+                <td>
+                    <?php if (!empty($m['modelos_compatibles'])): ?>
+                        <small class="text-muted"><?= htmlspecialchars($m['modelos_compatibles']) ?></small>
+                    <?php endif; ?>
+                </td>
                 <td><?= (int)$m['stock_actual'] ?> <?= htmlspecialchars($m['unidad']) ?></td>
                 <td><?= (int)$m['stock_minimo'] ?></td>
                 <td><?= htmlspecialchars($m['ubicacion']) ?></td>
-                <td><?= htmlspecialchars($m['proveedor']) ?></td>
+                <!--<td><?= htmlspecialchars($m['proveedor']) ?></td>-->
+                <td><?= date("d-m-y H:i",strtotime(htmlspecialchars($m['actualizado_en']))) ?></td>
                 <td>
                     <a href="material_ver.php?id=<?= (int)$m['id'] ?>" class="btn btn-sm btn-info">Ver</a>
                     <a href="material_editar.php?id=<?= (int)$m['id'] ?>" class="btn btn-sm btn-warning">Editar</a>
 
                     <form action="material_sacar1.php" method="post" style="display:inline;"
-                        onsubmit="return confirm('¿Sacar 1 unidad de <?= htmlspecialchars($m['descripcion'], ENT_QUOTES) ?>?');">
+                        data-confirm-message="¿Sacar 1 unidad de <?= htmlspecialchars($m['descripcion'], ENT_QUOTES) ?>?">
                         <input type="hidden" name="material_id" value="<?= (int)$m['id'] ?>">
                         <button type="submit" class="btn btn-sm btn-danger">Sacar 1</button>
                     </form>
@@ -72,14 +94,99 @@ $materiales = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!-- Idioma español -->
 <script src="vendor/datatables/i18n/es-ES.json"></script>
+<style>
+    #tablaMateriales mark.dt-search-hit {
+        background-color: #ffe08a;
+        color: #111;
+        font-weight: 700;
+        padding: 0 .1em;
+        border-radius: 2px;
+    }
+</style>
 <script>
 $(document).ready(function () {
+    function escapeRegex(value) {
+        return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function highlightTextNodes(container, regex) {
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
+
+        while (walker.nextNode()) {
+            textNodes.push(walker.currentNode);
+        }
+
+        textNodes.forEach((node) => {
+            const text = node.nodeValue || '';
+            regex.lastIndex = 0;
+            if (!regex.test(text)) return;
+
+            const frag = document.createDocumentFragment();
+            let lastIndex = 0;
+
+            text.replace(regex, (match, _g1, offset) => {
+                if (offset > lastIndex) {
+                    frag.appendChild(document.createTextNode(text.slice(lastIndex, offset)));
+                }
+
+                const mark = document.createElement('mark');
+                mark.className = 'dt-search-hit';
+                mark.textContent = match;
+                frag.appendChild(mark);
+
+                lastIndex = offset + match.length;
+                return match;
+            });
+
+            if (lastIndex < text.length) {
+                frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+            }
+
+            node.parentNode.replaceChild(frag, node);
+        });
+    }
+
+    function applySearchHighlight(api) {
+        const term = (api.search() || '').trim();
+        const actionColIndex = api.columns().count() - 1;
+        const rows = api.rows({ page: 'current' }).nodes().toArray();
+
+        rows.forEach((row) => {
+            row.querySelectorAll('td').forEach((cell) => {
+                if (!cell.dataset.originalHtml) {
+                    cell.dataset.originalHtml = cell.innerHTML;
+                } else {
+                    cell.innerHTML = cell.dataset.originalHtml;
+                }
+            });
+        });
+
+        if (!term) return;
+
+        const parts = term.split(/\s+/).filter(Boolean).map(escapeRegex);
+        if (!parts.length) return;
+        const regex = new RegExp('(' + parts.join('|') + ')', 'gi');
+
+        rows.forEach((row) => {
+            row.querySelectorAll('td').forEach((cell, index) => {
+                if (index === 1 || index === actionColIndex) return;
+
+                const baseHtml = cell.dataset.originalHtml ?? cell.innerHTML;
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = baseHtml;
+                highlightTextNodes(wrapper, regex);
+                cell.innerHTML = wrapper.innerHTML;
+            });
+        });
+    }
+
     $('#tablaMateriales').DataTable({
-        // Tamaño de página por defecto y opciones
+        // Tama�o de p�gina por defecto y opciones
         pageLength: 10,
         lengthMenu: [10, 25, 50, 100],
 
-        // Botones de exportación (como en index, pero sin scripts extra)
+        // Botones de exportaci�n (como en index, pero sin scripts extra)
         dom: 'Bfrtip',
         buttons: [
             {
@@ -100,21 +207,28 @@ $(document).ready(function () {
             }
         ],
 
-        // Orden por defecto (ajusta el índice de columna si quieres otra)
-        order: [[0, 'asc']],
+        // Orden por defecto (ajusta el �ndice de columna si quieres otra)
+        order: [[2, 'asc']],
 
-        // La última columna (Acciones) sin ordenar ni buscar
+        // La �ltima columna (Acciones) sin ordenar ni buscar
         columnDefs: [
             {
                 orderable: false,
                 searchable: false,
-                targets: -1   // última columna
+                targets: -1   // �ltima columna
             }
         ],
 
-        // Idioma español, igual que en index
+        // Idioma espa�ol, igual que en index
         language: {
             url: 'vendor/datatables/i18n/es-ES.json'
+        },
+
+        drawCallback: function () {
+            applySearchHighlight(this.api());
+        },
+        initComplete: function () {
+            applySearchHighlight(this.api());
         }
     });
 });

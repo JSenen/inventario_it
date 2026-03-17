@@ -304,7 +304,7 @@ if (!empty($r['mascara'])) {
                                                 </a>
 
                                                 <form method="post" class="d-inline"
-                                                      onsubmit="return confirm('¿Seguro que quieres borrar esta red? Solo se borrará si no tiene IPs asociadas.');">
+                                                      data-confirm-message="¿Seguro que quieres borrar esta red? Solo se borrará si no tiene IPs asociadas.">
                                                     <input type="hidden" name="accion" value="borrar">
                                                     <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
                                                     <button type="submit" class="btn btn-outline-danger">
